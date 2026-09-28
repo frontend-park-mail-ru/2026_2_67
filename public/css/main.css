@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* { box-sizing: border-box; }
+body { margin: 0; background: #f5f5f7; color: #111827; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 15px; line-height: 1.45; }
+button, input { font-family: inherit; }
+a { color: #005bff; }
+.page { min-height: 100vh; }
+.site-header { display: flex; align-items: center; justify-content: space-between; max-width: 1240px; margin: 0 auto; padding: 20px 24px; }
+.site-header__logo { color: #005bff; font-size: 24px; font-weight: 800; letter-spacing: -.8px; text-decoration: none; }
+.site-header__nav { display: flex; gap: 10px; font-weight: 600; }
+.site-header__action, .button-link { display: inline-flex; align-items: center; justify-content: center; padding: 10px 15px; border-radius: 9px; background: #005bff; color: #fff; font-weight: 600; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+.site-header__action:hover, .button-link:hover { background: #004ecc; transform: translateY(-1px); }
+.search-placeholder { display: flex; width: min(380px, 36vw); overflow: hidden; border: 1px solid #c9d9ff; border-radius: 10px; background: #fff; }
+.search-placeholder input { min-width: 0; flex: 1; padding: 10px 12px; border: 0; outline: 0; }
+.search-placeholder button { width: 42px; border: 0; background: #005bff; color: #fff; cursor: default; font-size: 22px; }
+.catalog-page__content { max-width: 1240px; margin: 0 auto; padding: 18px 24px 48px; }
+.catalog-page__content h1 { margin: 0 0 24px; font-size: 30px; letter-spacing: -.6px; }
+.catalog-page__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.product-card { overflow: hidden; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; box-shadow: 0 2px 7px rgb(16 24 40 / 5%); }
+.product-card__image-wrap { position: relative; aspect-ratio: 1 / .82; background: #fff; }
+.product-card__image { width: 100%; height: 100%; display: block; padding: 8px; object-fit: contain; }
+.product-card__arrow { position: absolute; top: 50%; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 88%); transform: translateY(-50%); cursor: pointer; font-size: 20px; }
+.product-card__arrow--prev { left: 10px; }
+.product-card__arrow--next { right: 10px; }
+.product-card__dots { position: absolute; bottom: 10px; left: 50%; display: flex; gap: 5px; transform: translateX(-50%); }
+.product-card__dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 65%); cursor: pointer; }
+.product-card__dot--active { background: #005bff; }
+.product-card__title { margin: 16px 16px 8px; font-size: 16px; font-weight: 600; letter-spacing: -.15px; }
+.product-card__price { margin: 0 16px 8px; font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.product-card__rating { margin: 0 16px 18px; color: #f79009; font-size: 14px; font-weight: 500; }
+.product-card__rating span { color: #667085; }
+.auth-page { display: grid; place-items: center; padding: 24px; }
+.auth-page__back { position: absolute; top: 24px; left: 24px; }
+.auth-card { width: min(100%, 420px); padding: 32px; border: 1px solid #e5e7eb; border-radius: 18px; background: #fff; box-shadow: 0 12px 30px rgb(16 24 40 / 8%); }
+.auth-card h1 { margin-top: 0; font-size: 28px; letter-spacing: -.5px; }
+.auth-card form { display: grid; gap: 8px; }
+.auth-card label { display: grid; gap: 7px; font-weight: 600; }
+.auth-card input { width: 100%; padding: 11px 12px; border: 1px solid #b9c0cc; border-radius: 9px; font: inherit; }
+.auth-card input:focus { border-color: #005bff; outline: 3px solid rgb(0 91 255 / 15%); }
+.auth-card button { padding: 12px; border: 0; border-radius: 9px; background: #005bff; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.field-error { min-height: 18px; margin: -4px 0 2px; color: #d92d20; font-size: 13px; }
+.form-message { min-height: 20px; color: #475467; }
+.auth-card__switch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; }
+.button-link--small { padding: 7px 11px; font-size: 14px; }
