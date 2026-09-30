@@ -1,8 +1,9 @@
+import { renderLoginPage } from './pages/login/login.js';
 import { renderSignupPage } from './pages/signup/signup.js';
 
 const routes = {
   catalog: window.OzonApp.renderCatalogPage,
-  login: window.OzonApp.renderLoginPage,
+  login: renderLoginPage,
   signup: renderSignupPage,
 };
 

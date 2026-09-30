@@ -1,5 +1,3 @@
-import { renderAuthPage } from './shared/forms/render-auth-page.js';
-
 window.OzonApp = window.OzonApp || {};
 
 /**
@@ -17,12 +15,4 @@ window.OzonApp.renderCatalogPage = function renderCatalogPage(app) {
     });
     window.OzonApp.initProductCard(card, product);
   });
-};
-
-/**
- * Отрисовывает страницу авторизации.
- * @param {HTMLElement} app Главный контейнер.
- */
-window.OzonApp.renderLoginPage = function renderLoginPage(app) {
-  renderAuthPage(app, window.OzonApp.templates.login);
 };

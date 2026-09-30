@@ -6,7 +6,6 @@ async function startApplication() {
   await import('./products.js');
   await import('./templates.js');
   await import('./product-card.js');
-  await import('./validation.js');
   await import('./pages.js');
 
   const { initRouter } = await import('./router.js');

@@ -4,7 +4,7 @@ module.exports = [
 
     languageOptions: {
       ecmaVersion: 2021,
-      sourceType: 'script',
+      sourceType: 'module',
 
       globals: {
         window: 'readonly',
@@ -18,19 +18,6 @@ module.exports = [
       'no-undef': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       semi: ['error', 'always']
-    }
-  },
-  {
-    files: [
-      'public/js/main.js',
-      'public/js/pages.js',
-      'public/js/router.js',
-      'public/js/pages/signup/signup.js',
-      'public/js/shared/forms/render-auth-page.js'
-    ],
-
-    languageOptions: {
-      sourceType: 'module'
     }
   }
 ];
