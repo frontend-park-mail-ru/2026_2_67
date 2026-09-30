@@ -1,19 +1,18 @@
-import Handlebars from 'handlebars';
+import '@fontsource/inter/cyrillic-400.css';
+import '@fontsource/inter/cyrillic-500.css';
+import '@fontsource/inter/cyrillic-600.css';
+import '@fontsource/inter/cyrillic-700.css';
+import '@fontsource/inter/cyrillic-800.css';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-700.css';
+import '@fontsource/inter/latin-800.css';
 
-window.Handlebars = Handlebars;
+import { initRouter } from './router.js';
 
-async function startApplication() {
-  await import('./products.js');
-  await import('./templates.js');
-  await import('./product-card.js');
-  await import('./pages.js');
+const app = document.getElementById('app');
 
-  const { initRouter } = await import('./router.js');
-  const app = document.getElementById('app');
-
-  if (app) {
-    initRouter(app);
-  }
+if (app) {
+  initRouter(app);
 }
-
-startApplication();

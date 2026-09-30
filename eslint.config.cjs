@@ -1,6 +1,6 @@
 module.exports = [
   {
-    files: ['public/js/**/*.js'],
+    files: ['public/js/**/*.js', 'test/**/*.js'],
 
     languageOptions: {
       ecmaVersion: 2021,

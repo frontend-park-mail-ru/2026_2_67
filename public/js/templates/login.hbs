@@ -1,0 +1,15 @@
+<main class="page auth-page">
+  <a class="auth-page__back button-link" href="#" data-page="catalog">← В каталог</a>
+  <section class="auth-card">
+    <h1>Авторизация</h1>
+    <form data-auth-form="login" novalidate>
+      <label>Email<input type="email" name="email" /></label>
+      <p class="field-error" data-error-for="email"></p>
+      <label>Пароль<input type="password" name="password" /></label>
+      <p class="field-error" data-error-for="password"></p>
+      <button type="submit">Войти</button>
+    </form>
+    <p class="form-message" data-form-message></p>
+    <p class="auth-card__switch">Нет аккаунта? <a class="button-link button-link--small" href="#" data-page="signup">Зарегистрироваться</a></p>
+  </section>
+</main>
