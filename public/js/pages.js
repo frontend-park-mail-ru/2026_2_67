@@ -1,3 +1,5 @@
+import { renderAuthPage } from './shared/forms/render-auth-page.js';
+
 window.OzonApp = window.OzonApp || {};
 
 /**
@@ -16,24 +18,6 @@ window.OzonApp.renderCatalogPage = function renderCatalogPage(app) {
     window.OzonApp.initProductCard(card, product);
   });
 };
-
-/**
- * Отрисовывает форму 
- * @param {HTMLElement} app Главный контейнер.
- * @param {Function} template Handlebars-шаблон.
- */
-export function renderAuthPage(app, template) {
-  app.innerHTML = template();
-  var form = app.querySelector('[data-auth-form]');
-
-  form.addEventListener('submit', function validateBeforeSubmit(event) {
-    event.preventDefault();
-    var isValid = window.OzonApp.validateAuthForm(form);
-    app.querySelector('[data-form-message]').textContent = isValid
-      ? ' '
-      : 'Исправьте поля с ошибками.';
-  });
-}
 
 /**
  * Отрисовывает страницу авторизации.

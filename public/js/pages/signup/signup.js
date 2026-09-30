@@ -1,4 +1,4 @@
-import { renderAuthPage } from '../../pages.js';
+import { renderAuthPage } from '../../shared/forms/render-auth-page.js';
 
 /**
  * Renders the signup page and connects the shared auth validation.

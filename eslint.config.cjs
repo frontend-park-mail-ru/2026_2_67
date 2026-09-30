@@ -25,7 +25,8 @@ module.exports = [
       'public/js/main.js',
       'public/js/pages.js',
       'public/js/router.js',
-      'public/js/pages/signup/signup.js'
+      'public/js/pages/signup/signup.js',
+      'public/js/shared/forms/render-auth-page.js'
     ],
 
     languageOptions: {
