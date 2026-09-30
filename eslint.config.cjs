@@ -19,5 +19,12 @@ module.exports = [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       semi: ['error', 'always']
     }
+  },
+  {
+    files: ['public/js/main.js', 'public/js/router.js'],
+
+    languageOptions: {
+      sourceType: 'module'
+    }
   }
 ];
