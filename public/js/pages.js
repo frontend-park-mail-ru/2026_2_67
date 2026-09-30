@@ -22,7 +22,7 @@ window.OzonApp.renderCatalogPage = function renderCatalogPage(app) {
  * @param {HTMLElement} app Главный контейнер.
  * @param {Function} template Handlebars-шаблон.
  */
-function renderAuthPage(app, template) {
+export function renderAuthPage(app, template) {
   app.innerHTML = template();
   var form = app.querySelector('[data-auth-form]');
 
@@ -41,12 +41,4 @@ function renderAuthPage(app, template) {
  */
 window.OzonApp.renderLoginPage = function renderLoginPage(app) {
   renderAuthPage(app, window.OzonApp.templates.login);
-};
-
-/**
- * Отрисовывает страницу регистрации.
- * @param {HTMLElement} app Главный контейнер.
- */
-window.OzonApp.renderSignupPage = function renderSignupPage(app) {
-  renderAuthPage(app, window.OzonApp.templates.signup);
 };

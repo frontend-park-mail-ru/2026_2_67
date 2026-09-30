@@ -21,7 +21,12 @@ module.exports = [
     }
   },
   {
-    files: ['public/js/main.js', 'public/js/router.js'],
+    files: [
+      'public/js/main.js',
+      'public/js/pages.js',
+      'public/js/router.js',
+      'public/js/pages/signup/signup.js'
+    ],
 
     languageOptions: {
       sourceType: 'module'

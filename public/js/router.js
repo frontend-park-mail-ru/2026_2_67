@@ -1,7 +1,9 @@
+import { renderSignupPage } from './pages/signup/signup.js';
+
 const routes = {
   catalog: window.OzonApp.renderCatalogPage,
   login: window.OzonApp.renderLoginPage,
-  signup: window.OzonApp.renderSignupPage,
+  signup: renderSignupPage,
 };
 
 /**
