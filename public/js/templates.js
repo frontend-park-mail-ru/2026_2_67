@@ -6,7 +6,7 @@ window.OzonApp = window.OzonApp || {};
  * @returns {Function} Функция Handlebars для создания HTML.
  */
 function compileTemplate(id) {
-  return Handlebars.compile(document.getElementById(id).innerHTML);
+  return window.Handlebars.compile(document.getElementById(id).innerHTML);
 }
 
 window.OzonApp.templates = {
