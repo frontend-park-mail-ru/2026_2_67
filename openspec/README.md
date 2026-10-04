@@ -24,6 +24,7 @@ public/js/data/map-api-product.js  преобразование товаров �
 public/js/shared/auth.js           запросы авторизации и сессия
 public/js/shared/forms/            валидация и обработка форм
 public/js/templates/               .hbs и загрузчик
+scripts/dev-server.js              локальная Node.js-раздача статики
 scripts/prepare-assets.js          подготовка локальных ресурсов
 ```
 

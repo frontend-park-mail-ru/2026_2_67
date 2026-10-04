@@ -13,11 +13,12 @@ Frontend интернет-магазина команды 67. Доступны �
 
 ```sh
 npm ci
+npm start
 ```
 
-В PowerShell используйте `npm.cmd ci`, если запуск `npm.ps1` запрещён. Команда копирует Handlebars, Inter и лицензии в `public/vendor/`. При отключённых lifecycle-скриптах выполните `npm.cmd run prepare` отдельно.
+В PowerShell используйте `npm.cmd ci` и `npm.cmd start`, если запуск `npm.ps1` запрещён. `npm ci` копирует Handlebars, Inter и лицензии в `public/vendor/`. При отключённых lifecycle-скриптах выполните `npm.cmd run prepare` отдельно.
 
-Frontend состоит из статических файлов в `public/`. Для локального просмотра раздайте эту папку любым статическим HTTP-сервером на порту `8081`, например `py -m http.server 8081 --directory public`, и откройте `http://localhost:8081`. Через `file://` приложение не запускается, потому что загружает `.hbs` шаблоны по HTTP. Backend запускается отдельно на `http://localhost:8080`; frontend обращается к нему напрямую по адресу из `public/js/shared/auth.js` (`API_BASE_URL`).
+`npm start` запускает Node.js-сервер, который раздаёт только статические файлы из `public/` на `http://localhost:8081`. API-прокси в нём нет. Через `file://` приложение не запускается, потому что загружает `.hbs` шаблоны по HTTP. Backend запускается отдельно на `http://localhost:8080`; frontend обращается к нему напрямую по адресу из `public/js/shared/auth.js` (`API_BASE_URL`).
 
 Для работы с разных origin backend должен разрешить `http://localhost:8081` в CORS и обрабатывать запросы `OPTIONS` до проверки авторизации. Для запросов с cookie нужны `Access-Control-Allow-Credentials: true` и конкретный `Access-Control-Allow-Origin: http://localhost:8081` (не `*`). Разрешите методы `GET`, `POST` и заголовки `Content-Type`, `Authorization`; `Content-Type: application/json` и `Authorization` вызывают предварительный запрос `OPTIONS`. Эти заголовки выставляет backend в ответе, а не frontend.
 
