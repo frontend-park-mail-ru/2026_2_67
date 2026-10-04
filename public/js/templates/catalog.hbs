@@ -4,7 +4,7 @@
     <nav class="site-header__nav" aria-label="Основная навигация">
       {{#if user}}
       <span class="site-header__profile"><strong>{{user.name}}</strong><span>{{user.email}}</span><small>userId: {{user.userId}}</small></span>
-      <button class="site-header__action" type="button" data-action="logout">Выйти</button>
+      <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
       {{else}}
       <a class="site-header__action" href="#" data-page="login">Войти</a>
       <a class="site-header__action" href="#" data-page="signup">Регистрация</a>

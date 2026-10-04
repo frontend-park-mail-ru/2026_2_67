@@ -13,8 +13,8 @@ export function validateLogin(values) {
   } else if (values.loginOrEmail.includes('@') && !EMAIL_PATTERN.test(values.loginOrEmail.trim())) {
     errors.loginOrEmail = 'Введите корректную почту.';
   }
-  if (values.password.length < 6) {
-    errors.password = 'Пароль должен содержать не менее 6 символов.';
+  if (!values.password) {
+    errors.password = 'Введите пароль.';
   }
 
   return errors;
@@ -34,8 +34,8 @@ export function validateSignup(values) {
   if (!EMAIL_PATTERN.test(values.email.trim())) {
     errors.email = 'Введите корректную почту.';
   }
-  if (values.password.length < 6) {
-    errors.password = 'Пароль должен содержать не менее 6 символов.';
+  if (values.password.length < 8) {
+    errors.password = 'Пароль должен содержать не менее 8 символов.';
   }
   if (values.password !== values.passwordRepeat) {
     errors.passwordRepeat = 'Пароли не совпадают.';
