@@ -1,18 +1,38 @@
-import '@fontsource/inter/cyrillic-400.css';
-import '@fontsource/inter/cyrillic-500.css';
-import '@fontsource/inter/cyrillic-600.css';
-import '@fontsource/inter/cyrillic-700.css';
-import '@fontsource/inter/cyrillic-800.css';
-import '@fontsource/inter/latin-400.css';
-import '@fontsource/inter/latin-500.css';
-import '@fontsource/inter/latin-600.css';
-import '@fontsource/inter/latin-700.css';
-import '@fontsource/inter/latin-800.css';
-
-import { initRouter } from './router.js';
+import { loadTemplates } from './templates/templates.js';
+import { renderCatalogPage } from './pages/catalog/catalog.js';
+import { renderLoginPage } from './pages/login/login.js';
+import { renderSignupPage } from './pages/signup/signup.js';
 
 const app = document.getElementById('app');
+const pages = { catalog: renderCatalogPage, login: renderLoginPage, signup: renderSignupPage };
 
-if (app) {
-  initRouter(app);
+/**
+ * Показывает выбранный экран внутри корневого контейнера.
+ * @param {string} name Имя экрана.
+ * @returns {void}
+ */
+function showPage(name) {
+  if (Object.hasOwn(pages, name)) {
+    pages[name](app);
+  }
 }
+
+/** Загружает шаблоны и подключает переключение экранов без перезагрузки. */
+async function startApplication() {
+  try {
+    await loadTemplates();
+    app.addEventListener('click', (event) => {
+      const link = event.target.closest('a[data-page]');
+      if (!link) {
+        return;
+      }
+      event.preventDefault();
+      showPage(link.dataset.page);
+    });
+    showPage('catalog');
+  } catch {
+    app.textContent = 'Не удалось загрузить приложение. Обновите страницу.';
+  }
+}
+
+startApplication();

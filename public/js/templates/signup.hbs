@@ -1,19 +1,32 @@
 <main class="page auth-page">
-  <a class="auth-page__back button-link" href="#" data-page="catalog">← В каталог</a>
-  <section class="auth-card">
-    <h1>Регистрация</h1>
+  <a class="auth-page__back" href="#" data-page="catalog">← В каталог</a>
+  <section class="auth-card" aria-labelledby="signup-title">
+    <a class="brand auth-card__brand" href="#" data-page="catalog" aria-label="VibeMarket — каталог"><span>Vibe</span>Market</a>
+    <h1 id="signup-title">Создайте аккаунт</h1>
     <form data-auth-form="signup" novalidate>
-      <label>Имя<input type="text" name="name" /></label>
-      <p class="field-error" data-error-for="name"></p>
-      <label>Email<input type="email" name="email" /></label>
-      <p class="field-error" data-error-for="email"></p>
-      <label>Пароль<input type="password" name="password" /></label>
-      <p class="field-error" data-error-for="password"></p>
-      <label>Повторите пароль<input type="password" name="passwordRepeat" /></label>
-      <p class="field-error" data-error-for="passwordRepeat"></p>
-      <button type="submit">Зарегистрироваться</button>
+      <div class="form-field">
+        <label class="visually-hidden" for="signup-login">Логин</label>
+        <input id="signup-login" type="text" name="login" placeholder="Логин" autocomplete="username" aria-describedby="signup-login-error" />
+        <p id="signup-login-error" class="field-error" data-error-for="login"></p>
+      </div>
+      <div class="form-field">
+        <label class="visually-hidden" for="signup-email">Почта</label>
+        <input id="signup-email" type="email" name="email" placeholder="Почта" autocomplete="email" aria-describedby="signup-email-error" />
+        <p id="signup-email-error" class="field-error" data-error-for="email"></p>
+      </div>
+      <div class="form-field">
+        <label class="visually-hidden" for="signup-password">Пароль</label>
+        <input id="signup-password" type="password" name="password" placeholder="Пароль" autocomplete="new-password" aria-describedby="signup-password-error" />
+        <p id="signup-password-error" class="field-error" data-error-for="password"></p>
+      </div>
+      <div class="form-field">
+        <label class="visually-hidden" for="signup-repeat">Повторите пароль</label>
+        <input id="signup-repeat" type="password" name="passwordRepeat" placeholder="Повторите пароль" autocomplete="new-password" aria-describedby="signup-repeat-error" />
+        <p id="signup-repeat-error" class="field-error" data-error-for="passwordRepeat"></p>
+      </div>
+      <button class="auth-card__submit" type="submit">Зарегистрироваться</button>
     </form>
-    <p class="form-message" data-form-message></p>
-    <p class="auth-card__switch">Уже есть аккаунт? <a class="button-link button-link--small" href="#" data-page="login">Войти</a></p>
+    <p class="form-message" data-form-message role="status"></p>
+    <p class="auth-card__switch">Уже есть аккаунт? <a href="#" data-page="login">Войти</a></p>
   </section>
 </main>

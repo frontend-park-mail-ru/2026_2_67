@@ -1,11 +1,30 @@
-import Handlebars from 'handlebars';
+export let catalogTemplate;
+export let loginTemplate;
+export let productCardTemplate;
+export let signupTemplate;
 
-import catalogSource from './catalog.hbs?raw';
-import loginSource from './login.hbs?raw';
-import productCardSource from './product-card.hbs?raw';
-import signupSource from './signup.hbs?raw';
+/**
+ * Загружает локальный шаблон и компилирует его.
+ * @param {string} name Имя файла без расширения.
+ * @returns {Promise<Function>} Функция отображения шаблона.
+ */
+async function loadTemplate(name) {
+  const response = await fetch(new URL(`./${name}.hbs`, import.meta.url));
+  if (!response.ok) {
+    throw new Error(`Не удалось загрузить шаблон ${name}: ${response.status}`);
+  }
+  return Handlebars.compile(await response.text());
+}
 
-export const catalogTemplate = Handlebars.compile(catalogSource);
-export const loginTemplate = Handlebars.compile(loginSource);
-export const productCardTemplate = Handlebars.compile(productCardSource);
-export const signupTemplate = Handlebars.compile(signupSource);
+/**
+ * Подготавливает шаблоны перед первым отображением приложения.
+ * @returns {Promise<void>}
+ */
+export async function loadTemplates() {
+  [catalogTemplate, loginTemplate, productCardTemplate, signupTemplate] = await Promise.all([
+    loadTemplate('catalog'),
+    loadTemplate('login'),
+    loadTemplate('product-card'),
+    loadTemplate('signup'),
+  ]);
+}

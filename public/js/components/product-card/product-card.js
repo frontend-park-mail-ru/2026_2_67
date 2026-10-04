@@ -10,8 +10,6 @@ export function createProductCard(product) {
     id: product.id,
     title: product.title,
     price: product.price,
-    rating: product.rating,
-    reviewsCount: product.reviewsCount,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
     dots: product.images.map((image, index) => ({ index, isActive: index === 0 })),

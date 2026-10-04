@@ -18,7 +18,7 @@ export function renderAuthPage(app, template, validate) {
 
     renderFieldErrors(form, errors);
     app.querySelector('[data-form-message]').textContent = isValid
-      ? ' '
+      ? 'Данные проверены. Отправка пока недоступна.'
       : 'Исправьте поля с ошибками.';
   });
 }

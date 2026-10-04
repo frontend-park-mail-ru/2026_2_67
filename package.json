@@ -1,14 +1,12 @@
 {
   "name": "2026_2_67",
   "version": "1.0.0",
-  "description": "- SPA-переходы между каталогом, авторизацией и регистрацией без перезагрузки страницы; - каталог из 9 тестовых товаров; - одна переиспользуемая карточка товара; - локальные изображения товаров; - переключение фотографий в карточках с несколькими изображениями; - формы авторизации и регистрации; - JavaScript-валидация полей форм; - Handlebars как шаблонизатор; - комментарии JSDoc у основных JavaScript-функций.",
-  "main": "index.js",
+  "description": "Учебный frontend интернет-магазина команды 67.",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "node --test",
-    "lint": "eslint public/js test"
+    "prepare": "node scripts/prepare-assets.js",
+    "start": "serve public -l 8081",
+    "lint": "eslint public/js scripts",
+    "spec:check": "openspec validate --all --strict --no-interactive"
   },
   "repository": {
     "type": "git",
@@ -23,11 +21,15 @@
   },
   "homepage": "https://github.com/frontend-park-mail-ru/2026_2_67#readme",
   "devDependencies": {
+    "@fission-ai/openspec": "1.14.0",
     "eslint": "^10.11.0",
-    "vite": "^8.3.1"
+    "serve": "^14.2.4"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "handlebars": "^4.7.9"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   }
 }
