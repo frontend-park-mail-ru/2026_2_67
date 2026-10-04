@@ -2,6 +2,7 @@ import { loadTemplates } from './templates/templates.js';
 import { renderCatalogPage } from './pages/catalog/catalog.js';
 import { renderLoginPage } from './pages/login/login.js';
 import { renderSignupPage } from './pages/signup/signup.js';
+import { logout, restoreSession } from './shared/auth.js';
 
 const app = document.getElementById('app');
 const pages = { catalog: renderCatalogPage, login: renderLoginPage, signup: renderSignupPage };
@@ -22,6 +23,12 @@ async function startApplication() {
   try {
     await loadTemplates();
     app.addEventListener('click', (event) => {
+      const logoutButton = event.target.closest('[data-action="logout"]');
+      if (logoutButton) {
+        logout().finally(() => showPage('catalog'));
+        return;
+      }
+
       const link = event.target.closest('a[data-page]');
       if (!link) {
         return;
@@ -29,6 +36,7 @@ async function startApplication() {
       event.preventDefault();
       showPage(link.dataset.page);
     });
+    await restoreSession();
     showPage('catalog');
   } catch {
     app.textContent = 'Не удалось загрузить приложение. Обновите страницу.';

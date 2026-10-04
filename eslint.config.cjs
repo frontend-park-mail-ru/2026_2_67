@@ -11,6 +11,7 @@ module.exports = [
         document: 'readonly',
         Handlebars: 'readonly',
         FormData: 'readonly',
+        localStorage: 'readonly',
         fetch: 'readonly',
         URL: 'readonly'
       }

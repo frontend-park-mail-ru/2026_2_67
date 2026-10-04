@@ -12,6 +12,8 @@ export function createProductCard(product) {
     price: product.price,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
+    rating: product.rating,
+    reviewsCount: product.reviewsCount,
     dots: product.images.map((image, index) => ({ index, isActive: index === 0 })),
   });
 }
