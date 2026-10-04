@@ -11,7 +11,7 @@ export function validateLogin(values) {
   if (!values.loginOrEmail.trim()) {
     errors.loginOrEmail = 'Введите логин или почту.';
   } else if (values.loginOrEmail.includes('@') && !EMAIL_PATTERN.test(values.loginOrEmail.trim())) {
-    errors.loginOrEmail = 'Введите корректную почту.';
+    errors.loginOrEmail = 'Введите корректный email';
   }
   if (!values.password) {
     errors.password = 'Введите пароль.';
@@ -32,13 +32,13 @@ export function validateSignup(values) {
     errors.login = 'Введите логин.';
   }
   if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = 'Введите корректную почту.';
+    errors.email = 'Введите корректный email';
   }
   if (values.password.length < 8) {
     errors.password = 'Пароль должен содержать не менее 8 символов.';
   }
   if (values.password !== values.passwordRepeat) {
-    errors.passwordRepeat = 'Пароли не совпадают.';
+    errors.passwordRepeat = 'Пароли не совпадают';
   }
 
   return errors;

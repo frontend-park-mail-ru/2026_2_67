@@ -1,18 +1,26 @@
-<main class="page catalog-page">
+<div class="page catalog-page">
   <header class="site-header">
-    <a class="brand site-header__logo" href="#" data-page="catalog" aria-label="VibeMarket — каталог"><span>Vibe</span>Market</a>
-    <nav class="site-header__nav" aria-label="Основная навигация">
-      {{#if user}}
-      <span class="site-header__profile"><strong>{{user.name}}</strong><span>{{user.email}}</span><small>userId: {{user.userId}}</small></span>
-      <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
-      {{else}}
-      <a class="site-header__action" href="#" data-page="login">Войти</a>
-      <a class="site-header__action" href="#" data-page="signup">Регистрация</a>
-      {{/if}}
-    </nav>
+    <div class="site-header__inner">
+      <a class="brand site-header__logo" href="#" data-page="catalog" aria-label="VibeMarket — каталог">
+        <img class="brand__mark" src="/images/vibemarket-logo.png" alt="" />
+        <span class="brand__name"><span>Vibe</span>Market</span>
+      </a>
+      <nav class="site-header__nav" aria-label="Основная навигация">
+        {{#if user}}
+        <span class="site-header__profile"><strong>{{user.name}}</strong><span>{{user.email}}</span><small>userId: {{user.userId}}</small></span>
+        <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
+        {{else}}
+        <a class="site-header__action" href="#" data-page="login">Войти</a>
+        <a class="site-header__action" href="#" data-page="signup">Регистрация</a>
+        {{/if}}
+      </nav>
+    </div>
   </header>
-  <section class="catalog-page__content">
-    <h1>Каталог товаров</h1>
-    <div class="catalog-page__grid">{{{productsHtml}}}</div>
-  </section>
-</main>
+  <main class="catalog-page__content">
+    <div class="catalog-page__content-inner">
+      <h1>Каталог товаров</h1>
+      <div class="catalog-page__grid">{{{productsHtml}}}</div>
+    </div>
+  </main>
+  {{> siteFooter}}
+</div>

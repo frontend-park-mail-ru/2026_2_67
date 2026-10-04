@@ -17,9 +17,9 @@ export function renderAuthPage(app, template, validate, onSuccess) {
     const errors = validate(values);
     const isValid = Object.keys(errors).length === 0;
 
-    renderFieldErrors(form, errors);
+    renderFieldErrors(form, errors, errors.passwordRepeat ? ['password'] : []);
     const message = app.querySelector('[data-form-message]');
-    message.textContent = isValid ? '' : 'Исправьте поля с ошибками.';
+    message.textContent = '';
 
     if (!isValid) {
       return;
@@ -27,7 +27,8 @@ export function renderAuthPage(app, template, validate, onSuccess) {
 
     const submitButton = form.querySelector('[type="submit"]');
     submitButton.disabled = true;
-    const request = form.dataset.authForm === 'login'
+    const isLogin = form.dataset.authForm === 'login';
+    const request = isLogin
       ? login(values.loginOrEmail, values.password)
       : register(values.login, values.email, values.password);
 
@@ -38,20 +39,27 @@ export function renderAuthPage(app, template, validate, onSuccess) {
           return;
         }
 
-        const errors = {
-          ...(result.errors.loginErrMessage ? { login: result.errors.loginErrMessage } : {}),
-          ...(result.errors.emailErrMessage ? { email: result.errors.emailErrMessage } : {}),
-          ...(result.errors.passwordErrMessage ? { password: result.errors.passwordErrMessage } : {}),
-          ...(result.errors.passswordErrMessage
-            ? { password: result.errors.passswordErrMessage }
+        if (isLogin && result.status === 401) {
+          renderFieldErrors(form, {}, ['loginOrEmail', 'password']);
+          message.textContent = 'Неверный логин или пароль';
+          return;
+        }
+
+        const responseErrors = result.errors ?? {};
+        const fieldErrors = {
+          ...(responseErrors.loginErrMessage
+            ? { [isLogin ? 'loginOrEmail' : 'login']: responseErrors.loginErrMessage }
+            : {}),
+          ...(responseErrors.emailErrMessage ? { email: responseErrors.emailErrMessage } : {}),
+          ...(responseErrors.passwordErrMessage ? { password: responseErrors.passwordErrMessage } : {}),
+          ...(responseErrors.passswordErrMessage
+            ? { password: responseErrors.passswordErrMessage }
             : {}),
         };
-        renderFieldErrors(form, errors);
-        message.textContent = Object.keys(errors).length
-          ? 'Проверьте поля формы.'
-          : result.status === 401 && form.dataset.authForm === 'login'
-            ? 'Неверный логин или пароль.'
-            : result.errors.form || 'Не удалось выполнить запрос. Попробуйте позже.';
+        renderFieldErrors(form, fieldErrors);
+        message.textContent = Object.keys(fieldErrors).length
+          ? ''
+          : responseErrors.form || 'Не удалось выполнить запрос. Попробуйте позже.';
       })
       .catch(() => {
         message.textContent = 'Не удалось связаться с сервером. Попробуйте позже.';

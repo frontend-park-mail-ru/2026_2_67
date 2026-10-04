@@ -21,6 +21,12 @@ async function loadTemplate(name) {
  * @returns {Promise<void>}
  */
 export async function loadTemplates() {
+  const footerResponse = await fetch(new URL('./site-footer.hbs', import.meta.url));
+  if (!footerResponse.ok) {
+    throw new Error(`Не удалось загрузить шаблон футера: ${footerResponse.status}`);
+  }
+  Handlebars.registerPartial('siteFooter', await footerResponse.text());
+
   [catalogTemplate, loginTemplate, productCardTemplate, signupTemplate] = await Promise.all([
     loadTemplate('catalog'),
     loadTemplate('login'),
