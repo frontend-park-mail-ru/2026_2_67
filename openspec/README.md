@@ -5,7 +5,7 @@
 - `specs/catalog/spec.md` — загрузка товаров из API, карточки и фотографии.
 - `specs/auth-forms/spec.md` — поля, валидация и отправка форм в API.
 - `specs/auth-session/spec.md` — профиль, восстановление сессии и выход.
-- `specs/app-shell/spec.md` — запуск, переключение экранов, ресурсы и локальный API-прокси.
+- `specs/app-shell/spec.md` — статическая раздача приложения, переключение экранов и ресурсы.
 - `config.yaml` — схема OpenSpec и общий контекст приложения.
 
 `Requirement` — обязательное поведение, `Scenario` — конкретная ситуация. `WHEN` описывает действие или условие, `THEN` — ожидаемый результат. Английские маркеры сохранены в формате OpenSpec, содержание написано по-русски.
@@ -24,7 +24,6 @@ public/js/data/map-api-product.js  преобразование товаров �
 public/js/shared/auth.js           запросы авторизации и сессия
 public/js/shared/forms/            валидация и обработка форм
 public/js/templates/               .hbs и загрузчик
-scripts/dev-server.js              локальный сервер и API-прокси
 scripts/prepare-assets.js          подготовка локальных ресурсов
 ```
 

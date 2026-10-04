@@ -2,7 +2,12 @@ const priceFormatter = new Intl.NumberFormat('ru-RU', {
   maximumFractionDigits: 0,
 });
 
-/** Maps the backend product contract to the product-card view model. */
+/**
+ * Maps a backend product to the product-card view model.
+ * @param {Object} product Product returned by the backend API.
+ * @param {number} index Position in the response array.
+ * @returns {Object} Product-card data.
+ */
 export function mapApiProduct(product, index) {
   return {
     id: index + 1,

@@ -7,28 +7,30 @@ Frontend интернет-магазина команды 67. Доступны �
 - Node.js: `^20.19.0`, `^22.13.0` или `>=24` (требование используемой версии ESLint).
 - npm и современный браузер с поддержкой ES-модулей и Fetch API.
 
-## Установка и запуск
+## Подготовка и локальный просмотр
 
-Из корня репозитория:
+Из корня репозитория подготовьте зависимости и ресурсы:
 
 ```sh
 npm ci
-npm start
 ```
 
-В PowerShell, если запрещён запуск `npm.ps1`, используйте `npm.cmd ci` и `npm.cmd start`.
+В PowerShell используйте `npm.cmd ci`, если запуск `npm.ps1` запрещён. Команда копирует Handlebars, Inter и лицензии в `public/vendor/`. При отключённых lifecycle-скриптах выполните `npm.cmd run prepare` отдельно.
 
-Откройте адрес, указанный сервером в терминале (обычно http://localhost:8081). Остановка — `Ctrl+C`.
+Frontend состоит из статических файлов в `public/`. Для локального просмотра раздайте эту папку любым статическим HTTP-сервером на порту `8081`, например `py -m http.server 8081 --directory public`, и откройте `http://localhost:8081`. Через `file://` приложение не запускается, потому что загружает `.hbs` шаблоны по HTTP. Backend запускается отдельно на `http://localhost:8080`; frontend обращается к нему напрямую по адресу из `public/js/shared/auth.js` (`API_BASE_URL`).
 
-`npm ci` запускает `prepare`: копирует Handlebars, Inter и лицензии из npm-пакетов в `public/vendor/`. При отключённых lifecycle-скриптах выполните `npm run prepare` отдельно. Интернет нужен для установки зависимостей, но не для загрузки библиотек в браузере.
+Для работы с разных origin backend должен разрешить `http://localhost:8081` в CORS и обрабатывать запросы `OPTIONS` до проверки авторизации. Для запросов с cookie нужны `Access-Control-Allow-Credentials: true` и конкретный `Access-Control-Allow-Origin: http://localhost:8081` (не `*`). Разрешите методы `GET`, `POST` и заголовки `Content-Type`, `Authorization`; `Content-Type: application/json` и `Authorization` вызывают предварительный запрос `OPTIONS`. Эти заголовки выставляет backend в ответе, а не frontend.
 
-`npm start` запускает локальный Node-сервер на `http://localhost:8081`: он отдаёт frontend и проксирует `/api/*` на `http://localhost:8080`, поэтому браузерные запросы к API не требуют CORS в локальной разработке. Backend должен быть запущен отдельно. Для другого адреса backend задайте переменную окружения `API_TARGET`, например `API_TARGET=http://localhost:9000 npm start`.
-
-Сборки и горячего обновления нет: после изменения исходников обновите страницу. Через `file://` приложение не запускается — шаблоны загружаются HTTP-запросами. При production-развёртывании статических файлов настройте reverse proxy для `/api` либо разрешите origin frontend в CORS backend.
 
 ## Развёртывание
 
-Выполните `npm ci`, затем разместите **содержимое `public/`**, включая созданный `vendor/`, в корне сайта на статическом HTTP-сервере. Сервер должен отдавать JS с JavaScript MIME-типом, а `.hbs` — без подмены на `index.html`. Так как dev proxy не входит в статическую публикацию, production-сервер должен проксировать `/api` на backend или backend должен разрешать production origin через CORS.
+После `npm ci` разместите **содержимое `public/`**, включая подготовленный `vendor/`, в корне сайта на статическом HTTP-сервере. Сервер должен отдавать JS с JavaScript MIME-типом, а `.hbs` — без подмены на `index.html`. Перед публикацией замените `API_BASE_URL` в `public/js/shared/auth.js` на публичный адрес backend с префиксом `/api/v1` и разрешите origin опубликованного frontend в CORS backend. `localhost` у посетителя сайта указывает на его собственный компьютер.
+
+## Запросы к backend
+
+Frontend отправляет `POST /api/v1/auth/login` с JSON-полями `loginOrEmail`, `password`, `POST /api/v1/auth/register` с `login`, `email`, `password` и `GET /api/v1/products`. Для входа и регистрации используется `credentials: 'include'`; в ответе ожидаются `accessToken` и `userId`, а cookie `refreshToken` устанавливает backend. Каталог ожидает массив товаров с полями `productName`, `productPictureUrls`, `productPrice`, `productRating`, `productReviewsCount`.
+
+Для восстановления сессии frontend отправляет `POST /api/v1/auth/refresh` без тела и с cookie, ожидает `accessToken`. Для профиля запрашивает `GET /api/v1/users/{userId}`, а для выхода — `POST /api/v1/auth/logout`. Эти маршруты описаны в [backend PR #2](https://github.com/go-park-mail-ru/2026_2_67/pull/2). PR #2 и [PR #3](https://github.com/go-park-mail-ru/2026_2_67/pull/3) пока имеют разные маршруты авторизации и должны быть согласованы перед совместным запуском.
 
 Команды сборки нет. Старый `dist/`, если остался, не используется и не должен публиковаться. Подтверждённый публичный адрес пока не указан.
 

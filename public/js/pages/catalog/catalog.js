@@ -69,8 +69,8 @@ export function renderCatalogPage(app) {
   });
 
   if (getCurrentUser() && !getCurrentUser().name) {
-    loadCurrentUser().then(() => {
-      if (app.querySelector('.catalog-page')) {
+    loadCurrentUser().then((user) => {
+      if (user?.name && app.querySelector('.catalog-page')) {
         renderCatalogPage(app);
       }
     });

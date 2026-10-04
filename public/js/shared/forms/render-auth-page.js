@@ -6,6 +6,8 @@ import { login, register } from '../auth.js';
  * @param {HTMLElement} app Main application container.
  * @param {Function} template Handlebars template.
  * @param {Function} validate Pure form-data validation function.
+ * @param {Function} onSuccess Callback after successful authentication.
+ * @returns {void}
  */
 export function renderAuthPage(app, template, validate, onSuccess) {
   app.innerHTML = template();
@@ -59,7 +61,7 @@ export function renderAuthPage(app, template, validate, onSuccess) {
         renderFieldErrors(form, fieldErrors);
         message.textContent = Object.keys(fieldErrors).length
           ? ''
-          : responseErrors.form || 'Не удалось выполнить запрос. Попробуйте позже.';
+          : responseErrors.errMessage || responseErrors.form || 'Не удалось выполнить запрос. Попробуйте позже.';
       })
       .catch(() => {
         message.textContent = 'Не удалось связаться с сервером. Попробуйте позже.';

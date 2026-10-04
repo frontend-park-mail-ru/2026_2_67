@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = 'http://localhost:8080/api/v1';
 const ACCESS_TOKEN_KEY = 'accessToken';
 const USER_ID_KEY = 'userId';
 
@@ -50,7 +50,12 @@ async function refreshAccessToken() {
   return true;
 }
 
-/** Performs an API request with the current bearer token. */
+/**
+ * Sends a request to the backend with the current access token and refresh cookie.
+ * @param {string} path API path relative to /api/v1.
+ * @param {RequestInit} options Fetch options.
+ * @returns {Promise<Response>} Backend response.
+ */
 export async function authorizedFetch(path, options = {}) {
   const send = () => fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -68,7 +73,10 @@ export async function authorizedFetch(path, options = {}) {
   return response;
 }
 
-/** Loads the current user's public profile. */
+/**
+ * Loads the current user's profile when a user ID and access token are available.
+ * @returns {Promise<Object|null>} Profile or null if it cannot be loaded.
+ */
 export async function loadCurrentUser() {
   if (!userId || !accessToken) {
     currentUser = null;
@@ -89,7 +97,10 @@ export async function loadCurrentUser() {
   return currentUser;
 }
 
-/** Restores a saved session and its user profile. */
+/**
+ * Restores a session using the refresh cookie and loads the user's profile.
+ * @returns {Promise<Object|null>} Profile or null if restoration fails.
+ */
 export async function restoreSession() {
   if (!userId) {
     return null;
@@ -117,7 +128,7 @@ async function submitCredentials(endpoint, payload) {
   }
 
   if (!result.accessToken) {
-    return { ok: false, errors: { form: 'Сервер не вернул токен авторизации.' } };
+    return { ok: false, errors: { form: result.errMessage || 'Сервер не вернул токен авторизации.' } };
   }
 
   saveSession(result);
@@ -127,17 +138,31 @@ async function submitCredentials(endpoint, payload) {
   return { ok: true };
 }
 
-/** Authenticates with a login or email and password. */
+/**
+ * Authenticates with a login or email and password.
+ * @param {string} loginOrEmail Account login or email.
+ * @param {string} password Account password.
+ * @returns {Promise<Object>} Authentication result.
+ */
 export function login(loginOrEmail, password) {
   return submitCredentials('login', { loginOrEmail, password });
 }
 
-/** Registers an account and authenticates the new user. */
+/**
+ * Registers an account and saves its session.
+ * @param {string} loginValue Account login.
+ * @param {string} email Account email.
+ * @param {string} password Account password.
+ * @returns {Promise<Object>} Registration result.
+ */
 export function register(loginValue, email, password) {
   return submitCredentials('register', { login: loginValue, email, password });
 }
 
-/** Logs out on the backend and clears the local session. */
+/**
+ * Requests logout and always clears local session data.
+ * @returns {Promise<void>}
+ */
 export async function logout() {
   try {
     if (accessToken) {
@@ -148,7 +173,10 @@ export async function logout() {
   }
 }
 
-/** Returns the identity currently available to the interface. */
+/**
+ * Returns the identity currently available to the interface.
+ * @returns {Object|null} User data or null for a guest.
+ */
 export function getCurrentUser() {
   return userId ? { ...currentUser, userId } : null;
 }

@@ -4,7 +4,6 @@
   "description": "Учебный frontend интернет-магазина команды 67.",
   "scripts": {
     "prepare": "node scripts/prepare-assets.js",
-    "start": "node scripts/dev-server.js",
     "test": "node --test",
     "lint": "eslint public/js scripts",
     "spec:check": "openspec validate --all --strict --no-interactive"
@@ -23,8 +22,7 @@
   "homepage": "https://github.com/frontend-park-mail-ru/2026_2_67#readme",
   "devDependencies": {
     "@fission-ai/openspec": "1.14.0",
-    "eslint": "^10.11.0",
-    "serve": "^14.2.4"
+    "eslint": "^10.11.0"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
