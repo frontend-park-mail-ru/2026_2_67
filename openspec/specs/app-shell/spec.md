@@ -46,7 +46,7 @@
 - **THEN** ресурсы интерфейса загружаются с адреса сайта, а фотографии товаров — по адресам из API.
 
 ### Requirement: Локальная разработка с API
-Frontend SHALL запускаться через `npm start` на `http://localhost:8081`. Локальный Node.js-сервер SHALL раздавать содержимое `public/` и проксировать запросы `/api/*` на отдельно запущенный backend `http://localhost:8080`. Frontend SHALL использовать относительный API-префикс `/api/v1`, чтобы браузер отправлял API-запросы на origin frontend. CORS для этой same-origin схемы SHALL NOT требоваться.
+Frontend SHALL запускаться из корня репозитория командой `node server.js` на `http://localhost:8081`. Node.js-сервер SHALL раздавать содержимое `public/` и проксировать запросы `/api/*` на отдельно запущенный backend `http://localhost:8080`. Frontend SHALL использовать относительный API-префикс `/api/v1`, чтобы браузер отправлял API-запросы на origin frontend. CORS для этой same-origin схемы SHALL NOT требоваться.
 
 #### Scenario: Запрос к API при локальном запуске
 - **WHEN** frontend запущен на `http://localhost:8081` и браузер запрашивает `/api/v1/products`

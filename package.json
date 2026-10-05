@@ -4,9 +4,9 @@
   "description": "Учебный frontend интернет-магазина команды 67.",
   "scripts": {
     "prepare": "node scripts/prepare-assets.js",
-    "start": "node scripts/dev-server.js",
+    "start": "node server.js",
     "test": "node --test",
-    "lint": "eslint public/js scripts",
+    "lint": "eslint public/js scripts server.js",
     "spec:check": "openspec validate --all --strict --no-interactive"
   },
   "repository": {
