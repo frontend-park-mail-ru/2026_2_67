@@ -1,0 +1,19 @@
+<article class="product-card" data-product-card data-product-id="{{id}}">
+  <div class="product-card__image-wrap">
+    <img class="product-card__image" data-product-image src="{{currentImage}}" alt="{{title}}" />
+    {{#if hasMultipleImages}}
+      <button class="product-card__arrow product-card__arrow--prev" type="button" data-image-prev aria-label="Предыдущая фотография">←</button>
+      <button class="product-card__arrow product-card__arrow--next" type="button" data-image-next aria-label="Следующая фотография">→</button>
+      <div class="product-card__dots" aria-label="Фотографии товара">
+        {{#each dots}}
+          <button class="product-card__dot {{#if isActive}}product-card__dot--active{{/if}}" type="button" data-image-dot="{{index}}" aria-label="Показать фотографию {{index}}"></button>
+        {{/each}}
+      </div>
+    {{/if}}
+  </div>
+  <p class="product-card__price">{{price}}</p>
+  <h2 class="product-card__title">{{title}}</h2>
+  {{!-- Включить после реализации рейтинга и отзывов.
+  <p class="product-card__rating">★ {{rating}} <span>({{reviewsCount}} отзывов)</span></p>
+  --}}
+</article>

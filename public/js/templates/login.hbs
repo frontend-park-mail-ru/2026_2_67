@@ -1,0 +1,27 @@
+<div class="page auth-page">
+  <main class="auth-page__content">
+    <section class="auth-card" aria-labelledby="login-title">
+      <a class="brand auth-card__brand" href="/" data-page="catalog" aria-label="VibeMarket — каталог">
+        <img class="brand__mark" src="/images/vibemarket-logo.png" alt="" />
+        <span class="brand__name"><span>Vibe</span>Market</span>
+      </a>
+      <h1 id="login-title">Войдите в аккаунт</h1>
+      <form data-auth-form="login" novalidate>
+        <div class="form-field">
+          <label class="visually-hidden" for="login-identity">Логин или email</label>
+          <input id="login-identity" type="text" name="loginOrEmail" placeholder="Логин или email" autocomplete="username" aria-describedby="login-identity-error" />
+          <p id="login-identity-error" class="field-error" data-error-for="loginOrEmail"></p>
+        </div>
+        <div class="form-field">
+          <label class="visually-hidden" for="login-password">Пароль</label>
+          <input id="login-password" type="password" name="password" placeholder="Пароль" autocomplete="current-password" aria-describedby="login-password-error" />
+          <p id="login-password-error" class="field-error" data-error-for="password"></p>
+        </div>
+        <p class="form-message" data-form-message role="status"></p>
+        <button class="auth-card__submit" type="submit">Войти</button>
+      </form>
+      <p class="auth-card__switch">Нет аккаунта? <a href="/signup" data-page="signup">Зарегистрироваться</a></p>
+    </section>
+  </main>
+  {{> siteFooter}}
+</div>
