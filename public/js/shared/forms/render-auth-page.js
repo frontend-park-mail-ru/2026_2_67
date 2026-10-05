@@ -1,6 +1,12 @@
 import { renderFieldErrors } from './render-field-errors.js';
 import { login, register } from '../auth.js';
 
+function capitalizeFirstLetter(message) {
+  return typeof message === 'string' && message
+    ? message.replace(/^./u, (letter) => letter.toLocaleUpperCase('ru-RU'))
+    : message;
+}
+
 /**
  * Renders an auth form and connects the shared validation.
  * @param {HTMLElement} app Main application container.
@@ -74,12 +80,12 @@ export function renderAuthPage(app, template, validate, onSuccess) {
         const responseErrors = result.errors ?? {};
         const fieldErrors = {
           ...(responseErrors.loginErrMessage
-            ? { [isLogin ? 'loginOrEmail' : 'login']: responseErrors.loginErrMessage }
+            ? { [isLogin ? 'loginOrEmail' : 'login']: capitalizeFirstLetter(responseErrors.loginErrMessage) }
             : {}),
-          ...(responseErrors.emailErrMessage ? { email: responseErrors.emailErrMessage } : {}),
-          ...(responseErrors.passwordErrMessage ? { password: responseErrors.passwordErrMessage } : {}),
+          ...(responseErrors.emailErrMessage ? { email: capitalizeFirstLetter(responseErrors.emailErrMessage) } : {}),
+          ...(responseErrors.passwordErrMessage ? { password: capitalizeFirstLetter(responseErrors.passwordErrMessage) } : {}),
           ...(responseErrors.passswordErrMessage
-            ? { password: responseErrors.passswordErrMessage }
+            ? { password: capitalizeFirstLetter(responseErrors.passswordErrMessage) }
             : {}),
         };
         renderFieldErrors(form, fieldErrors);
