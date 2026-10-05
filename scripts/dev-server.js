@@ -1,11 +1,12 @@
 import { createReadStream, statSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { extname, resolve, sep } from 'node:path';
 import { log } from 'node:console';
 import process from 'node:process';
 import { pipeline } from 'node:stream';
 
 const publicDirectory = resolve('public');
+const backendUrl = 'http://localhost:8080';
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.hbs': 'text/plain; charset=utf-8',
@@ -25,6 +26,32 @@ const server = createServer((request, response) => {
     pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
   } catch {
     response.writeHead(400).end('Bad request');
+    return;
+  }
+
+  if (pathname.startsWith('/api/')) {
+    const upstreamUrl = new URL(request.url, backendUrl);
+    const proxyRequest = httpRequest(upstreamUrl, {
+      method: request.method,
+      headers: {
+        ...request.headers,
+        host: upstreamUrl.host,
+      },
+    }, (proxyResponse) => {
+      response.writeHead(proxyResponse.statusCode || 500, proxyResponse.headers);
+      pipeline(proxyResponse, response, (error) => {
+        if (error && !response.headersSent) {
+          response.writeHead(502).end('Bad gateway');
+        }
+      });
+    });
+
+    proxyRequest.on('error', () => {
+      response.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Backend unavailable');
+    });
+
+    request.pipe(proxyRequest);
     return;
   }
 
