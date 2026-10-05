@@ -18,14 +18,14 @@ npm start
 
 В PowerShell используйте `npm.cmd ci` и `npm.cmd start`, если запуск `npm.ps1` запрещён. `npm ci` копирует Handlebars, Inter и лицензии в `public/vendor/`. При отключённых lifecycle-скриптах выполните `npm.cmd run prepare` отдельно.
 
-`npm start` запускает Node.js-сервер, который раздаёт только статические файлы из `public/` на `http://localhost:8081`. API-прокси в нём нет. Через `file://` приложение не запускается, потому что загружает `.hbs` шаблоны по HTTP. Backend запускается отдельно на `http://localhost:8080`; frontend обращается к нему напрямую по адресу из `public/js/shared/auth.js` (`API_BASE_URL`).
+`npm start` запускает `scripts/dev-server.js`. Node.js-сервер раздаёт статические файлы из `public/` на `http://localhost:8081` и проксирует запросы `/api/*` на backend `http://localhost:8080`. Backend запускается отдельно. Frontend использует относительный API-префикс `/api/v1`, поэтому браузер обращается к API на том же origin, что и к frontend, а не напрямую к `localhost:8080`. CORS для такой локальной схемы не требуется.
 
-Для работы с разных origin backend должен разрешить `http://localhost:8081` в CORS и обрабатывать запросы `OPTIONS` до проверки авторизации. Для запросов с cookie нужны `Access-Control-Allow-Credentials: true` и конкретный `Access-Control-Allow-Origin: http://localhost:8081` (не `*`). Разрешите методы `GET`, `POST` и заголовки `Content-Type`, `Authorization`; `Content-Type: application/json` и `Authorization` вызывают предварительный запрос `OPTIONS`. Эти заголовки выставляет backend в ответе, а не frontend.
+Через `file://` приложение не запускается, потому что загружает `.hbs` шаблоны по HTTP.
 
 
 ## Развёртывание
 
-После `npm ci` разместите **содержимое `public/`**, включая подготовленный `vendor/`, в корне сайта на статическом HTTP-сервере. Сервер должен отдавать JS с JavaScript MIME-типом, а `.hbs` — без подмены на `index.html`. Перед публикацией замените `API_BASE_URL` в `public/js/shared/auth.js` на публичный адрес backend с префиксом `/api/v1` и разрешите origin опубликованного frontend в CORS backend. `localhost` у посетителя сайта указывает на его собственный компьютер.
+После `npm ci` разместите **содержимое `public/`**, включая подготовленный `vendor/`, в корне сайта на HTTP-сервере. Сервер должен отдавать JS с JavaScript MIME-типом, `.hbs` — без подмены на `index.html`, а запросы `/api/*` — проксировать на production-backend. При такой same-origin схеме менять `API_BASE_URL` не нужно, CORS между frontend и backend не требуется. Для reverse proxy можно использовать nginx или другой HTTP-сервер; nginx не является обязательным.
 
 ## Запросы к backend
 
@@ -33,7 +33,7 @@ Frontend отправляет `POST /api/v1/auth/login` с JSON-полями `lo
 
 Для восстановления сессии frontend отправляет `POST /api/v1/auth/refresh` без тела и с cookie, ожидает `accessToken`. Для профиля запрашивает `GET /api/v1/users/{userId}`, а для выхода — `POST /api/v1/auth/logout`. Эти маршруты описаны в [backend PR #2](https://github.com/go-park-mail-ru/2026_2_67/pull/2). PR #2 и [PR #3](https://github.com/go-park-mail-ru/2026_2_67/pull/3) пока имеют разные маршруты авторизации и должны быть согласованы перед совместным запуском.
 
-Команды сборки нет. Старый `dist/`, если остался, не используется и не должен публиковаться. Подтверждённый публичный адрес пока не указан.
+Vite не используется, команды сборки нет. Старый `dist/`, если остался, не используется и не должен публиковаться. Подтверждённый публичный адрес пока не указан.
 
 ## Документация
 

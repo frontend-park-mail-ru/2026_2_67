@@ -38,8 +38,15 @@
 - **THEN** ресурсы интерфейса загружаются с адреса сайта, а фотографии товаров — по адресам из API.
 
 ### Requirement: Локальная разработка с API
-Frontend SHALL раздаваться локальным статическим HTTP-сервером. Браузер SHALL отправлять запросы API напрямую на backend по отдельному origin с включённой передачей учётных данных.
+Frontend SHALL запускаться через `npm start` на `http://localhost:8081`. Локальный Node.js-сервер SHALL раздавать содержимое `public/` и проксировать запросы `/api/*` на отдельно запущенный backend `http://localhost:8080`. Frontend SHALL использовать относительный API-префикс `/api/v1`, чтобы браузер отправлял API-запросы на origin frontend. CORS для этой same-origin схемы SHALL NOT требоваться.
 
 #### Scenario: Запрос к API при локальном запуске
-- **WHEN** frontend запущен на `http://localhost:8081` и браузер запрашивает товары
-- **THEN** запрос отправляется на `http://localhost:8080/api/v1/products`, а backend разрешает origin frontend через CORS.
+- **WHEN** frontend запущен на `http://localhost:8081` и браузер запрашивает `/api/v1/products`
+- **THEN** браузер отправляет запрос на origin frontend, а локальный сервер проксирует его на `http://localhost:8080/api/v1/products` без необходимости CORS.
+
+### Requirement: Production-развёртывание
+Production-сборка через Vite и `dist/` SHALL NOT требоваться. HTTP-сервер SHALL раздавать подготовленное содержимое `public/` и проксировать `/api/*` на production-backend. Конкретная реализация reverse proxy SHALL NOT требовать именно nginx.
+
+#### Scenario: Публикация frontend
+- **WHEN** frontend развёрнут в production и браузер запрашивает `/api/v1/products`
+- **THEN** HTTP-сервер отдаёт frontend из `public/` и проксирует API-запрос на production-backend под тем же origin.
