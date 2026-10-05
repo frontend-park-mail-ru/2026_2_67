@@ -28,6 +28,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--blue); outline-
 .site-header__inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(100%, 1220px); min-height: 66px; margin: 0 auto; padding: 10px 28px; }
 .site-header__logo .brand__name { display: none; }
 .site-header__nav { display: flex; align-items: center; justify-content: flex-end; min-width: 0; gap: 8px; }
+.site-header__profile-wrap { display: flex; align-items: center; gap: 12px; }
 .site-header__profile { display: grid; align-content: center; min-width: 0; max-width: min(36vw, 260px); gap: 1px; color: var(--text); }
 .site-header__profile strong, .site-header__profile span, .site-header__profile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-header__profile span, .site-header__profile small { color: var(--muted); font-size: 12px; }
