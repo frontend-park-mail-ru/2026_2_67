@@ -9,9 +9,33 @@ import { login, register } from '../auth.js';
  * @param {Function} onSuccess Callback after successful authentication.
  * @returns {void}
  */
+function bindPasswordVisibility(form) {
+  const passwordInputs = form.querySelectorAll('input[type="password"]');
+
+  passwordInputs.forEach((input) => {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'password-toggle';
+    toggle.setAttribute('aria-label', 'Показать пароль');
+    toggle.setAttribute('aria-pressed', 'false');
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12Zm10.5 3.3A3.3 3.3 0 1 0 12 8.7a3.3 3.3 0 0 0 0 6.6Z"/></svg>';
+
+    input.insertAdjacentElement('afterend', toggle);
+
+    toggle.addEventListener('click', () => {
+      const isPasswordHidden = input.type === 'password';
+      input.type = isPasswordHidden ? 'text' : 'password';
+      toggle.setAttribute('aria-label', isPasswordHidden ? 'Скрыть пароль' : 'Показать пароль');
+      toggle.setAttribute('aria-pressed', String(isPasswordHidden));
+      toggle.classList.toggle('is-visible', isPasswordHidden);
+    });
+  });
+}
+
 export function renderAuthPage(app, template, validate, onSuccess) {
   app.innerHTML = template();
   const form = app.querySelector('[data-auth-form]');
+  bindPasswordVisibility(form);
 
   form.addEventListener('submit', function validateBeforeSubmit(event) {
     event.preventDefault();
