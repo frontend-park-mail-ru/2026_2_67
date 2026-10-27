@@ -31,7 +31,7 @@
             </div>
             <div class="profile-page__actions">
               <button class="profile-page__text-action profile-page__photo-action" type="button" disabled>Изменить фото</button>
-              <button class="profile-page__text-action" type="button" disabled>Изменить</button>
+              <button class="profile-page__text-action" type="button" data-open-profile-editor aria-haspopup="dialog">Изменить</button>
             </div>
           </div>
           <section class="profile-page__account" aria-labelledby="account-title">
@@ -61,5 +61,40 @@
       </section>
     </div>
   </main>
+  <dialog class="profile-edit-dialog" aria-labelledby="profile-edit-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-edit-title">Личная информация</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields">
+        <label class="profile-edit-dialog__field">
+          <span>Фамилия</span>
+          <input type="text" name="surname" value="{{user.surname}}" autocomplete="family-name" />
+        </label>
+        <label class="profile-edit-dialog__field">
+          <span>Имя</span>
+          <input type="text" name="name" value="{{user.name}}" autocomplete="given-name" />
+        </label>
+        <label class="profile-edit-dialog__field">
+          <span>Отчество</span>
+          <input type="text" name="patronymic" autocomplete="additional-name" />
+        </label>
+        <label class="profile-edit-dialog__field">
+          <span>Дата рождения</span>
+          <input type="date" name="birthDate" value="{{user.birthDate}}" />
+        </label>
+      </div>
+      <fieldset class="profile-edit-dialog__gender">
+        <legend>Пол</legend>
+        <label><input type="radio" name="gender" value="male" /><span>Мужской</span></label>
+        <label><input type="radio" name="gender" value="female" /><span>Женский</span></label>
+      </fieldset>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
   {{> siteFooter}}
 </div>

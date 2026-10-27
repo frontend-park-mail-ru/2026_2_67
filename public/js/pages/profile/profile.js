@@ -10,6 +10,20 @@ export function renderProfilePage(app) {
   const page = app.querySelector('.profile-page');
   initCart(page, user?.userId);
 
+  const editButton = page.querySelector('[data-open-profile-editor]');
+  const dialog = page.querySelector('.profile-edit-dialog');
+  const closeButton = dialog.querySelector('.profile-edit-dialog__close');
+  const surnameInput = dialog.querySelector('input[name="surname"]');
+
+  editButton.addEventListener('click', () => {
+    dialog.showModal();
+    surnameInput.focus();
+  });
+
+  closeButton.addEventListener('click', () => {
+    dialog.close();
+  });
+
   const searchForm = page.querySelector('[data-catalog-search]');
   searchForm.addEventListener('submit', (event) => event.preventDefault());
 }
