@@ -25,12 +25,22 @@ export function renderProfilePage(app) {
   });
 
   const emailDialog = page.querySelector('#profile-email-dialog');
+  const phoneDialog = page.querySelector('#profile-phone-dialog');
+
   page.querySelector('[data-open-email-editor]').addEventListener('click', () => {
     emailDialog.showModal();
     emailDialog.querySelector('input').focus();
   });
   emailDialog.querySelector('.profile-edit-dialog__close').addEventListener('click', () => {
     emailDialog.close();
+  });
+
+  page.querySelector('[data-open-phone-editor]').addEventListener('click', () => {
+    phoneDialog.showModal();
+    phoneDialog.querySelector('input').focus();
+  });
+  phoneDialog.querySelector('.profile-edit-dialog__close').addEventListener('click', () => {
+    phoneDialog.close();
   });
 
   const searchForm = page.querySelector('[data-catalog-search]');

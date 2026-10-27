@@ -48,7 +48,7 @@
                 <dt>Номер телефона</dt>
                 <dd>
                   <span>{{#if user.phoneNumber}}{{user.phoneNumber}}{{else}}Не указано{{/if}}</span>
-                  <button class="profile-page__text-action" type="button" disabled aria-label="Изменить номер телефона">Изменить</button>
+                  <button class="profile-page__text-action" type="button" data-open-phone-editor aria-haspopup="dialog" aria-label="Изменить номер телефона">Изменить</button>
                 </dd>
               </div>
             </dl>
@@ -106,6 +106,24 @@
         <label class="profile-edit-dialog__field">
           <span>Почта</span>
           <input type="email" name="email" value="{{user.email}}" autocomplete="email" />
+        </label>
+      </div>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--contact" id="profile-phone-dialog" aria-labelledby="profile-phone-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-phone-title">Изменить номер телефона</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        <label class="profile-edit-dialog__field">
+          <span>Номер телефона</span>
+          <input type="tel" name="phoneNumber" value="{{user.phoneNumber}}" autocomplete="tel" />
         </label>
       </div>
       <div class="profile-edit-dialog__footer">
