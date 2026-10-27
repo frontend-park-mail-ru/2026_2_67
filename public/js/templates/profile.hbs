@@ -1,0 +1,65 @@
+<div class="page profile-page">
+  {{> siteHeader}}
+  <main class="profile-page__content">
+    <div class="profile-page__layout">
+      <h1 id="profile-title" class="profile-page__title">Профиль</h1>
+      <aside class="profile-page__sidebar" aria-labelledby="profile-title">
+        <nav class="profile-page__menu" aria-label="Разделы личного кабинета">
+          <button class="profile-page__menu-item profile-page__menu-item--current" type="button" aria-current="page">Профиль</button>
+          <button class="profile-page__menu-item" type="button" disabled>Заказы</button>
+          <button class="profile-page__menu-item" type="button" disabled>Купленные товары</button>
+          <button class="profile-page__menu-item" type="button" {{#if user}}data-action="logout"{{else}}disabled title="Для выхода нужно войти в аккаунт"{{/if}}>Выход</button>
+        </nav>
+      </aside>
+      <section class="profile-page__information" aria-labelledby="personal-info-title">
+        <div class="profile-page__card">
+          <h2 id="personal-info-title">Личная информация</h2>
+          <div class="profile-page__summary">
+            <div class="profile-page__avatar" aria-hidden="true"></div>
+            <div class="profile-page__details">
+              <p class="profile-page__name">{{#if user.name}}{{user.name}}{{else}}Заполните информацию о себе{{/if}}</p>
+              <dl class="profile-page__facts">
+                <div>
+                  <dt>Дата рождения</dt>
+                  <dd>{{#if user.birthDate}}{{user.birthDate}}{{else}}Не указано{{/if}}</dd>
+                </div>
+                <div>
+                  <dt>Пол</dt>
+                  <dd>Не указано</dd>
+                </div>
+              </dl>
+            </div>
+            <div class="profile-page__actions">
+              <button class="profile-page__text-action profile-page__photo-action" type="button" disabled>Изменить фото</button>
+              <button class="profile-page__text-action" type="button" disabled>Изменить</button>
+            </div>
+          </div>
+          <section class="profile-page__account" aria-labelledby="account-title">
+            <h3 id="account-title">Учётные данные</h3>
+            <dl class="profile-page__account-facts">
+              <div>
+                <dt>Почта</dt>
+                <dd>
+                  <span>{{#if user.email}}{{user.email}}{{else}}Не указано{{/if}}</span>
+                  <button class="profile-page__text-action" type="button" disabled aria-label="Изменить почту">Изменить</button>
+                </dd>
+              </div>
+              <div>
+                <dt>Номер телефона</dt>
+                <dd>
+                  <span>{{#if user.phoneNumber}}{{user.phoneNumber}}{{else}}Не указано{{/if}}</span>
+                  <button class="profile-page__text-action" type="button" disabled aria-label="Изменить номер телефона">Изменить</button>
+                </dd>
+              </div>
+            </dl>
+          </section>
+          <section class="profile-page__security" aria-labelledby="security-title">
+            <h3 id="security-title">Безопасность</h3>
+            <button class="profile-page__text-action" type="button" disabled>Поменять пароль</button>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+  {{> siteFooter}}
+</div>
