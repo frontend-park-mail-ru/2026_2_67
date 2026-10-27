@@ -52,13 +52,15 @@ async function loadProducts(grid, page) {
  * @param {HTMLElement} app Main application container.
  */
 export function renderCatalogPage(app) {
-  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser() });
+  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true });
   const page = app.querySelector('.catalog-page');
   const grid = page.querySelector('.catalog-page__grid');
+  const searchForm = page.querySelector('[data-catalog-search]');
   grid.setAttribute('aria-busy', 'true');
   grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
 
   loadProducts(grid, page).finally(() => grid.setAttribute('aria-busy', 'false'));
+  searchForm.addEventListener('submit', (event) => event.preventDefault());
 
   grid.addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-products]')) {

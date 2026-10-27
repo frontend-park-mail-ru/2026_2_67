@@ -21,6 +21,10 @@ async function loadTemplate(name) {
  * @returns {Promise<void>}
  */
 export async function loadTemplates() {
+  const headerResponse = await fetch(new URL('./site-header.hbs', import.meta.url));
+  if (!headerResponse.ok) throw new Error('?? ??????? ????????? ?????? ?????: ' + headerResponse.status);
+  Handlebars.registerPartial('siteHeader', await headerResponse.text());
+
   const footerResponse = await fetch(new URL('./site-footer.hbs', import.meta.url));
   if (!footerResponse.ok) {
     throw new Error(`Не удалось загрузить шаблон футера: ${footerResponse.status}`);

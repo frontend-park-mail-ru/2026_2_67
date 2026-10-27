@@ -1,0 +1,27 @@
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand site-header__logo" href="/" data-page="catalog" aria-label="VIBE — каталог">
+      <span class="brand__wordmark">VIBE</span>
+    </a>
+    <div class="site-header__controls">
+      <a class="site-header__action site-header__section" href="/" data-page="catalog"{{#if isCatalog}} aria-current="page"{{/if}}>Каталог</a>
+      <button class="site-header__action site-header__section" type="button" disabled>Категории</button>
+      <form class="site-header__search" role="search" data-catalog-search>
+        <label class="visually-hidden" for="catalog-search">Поиск товаров</label>
+        <input id="catalog-search" type="search" name="query" placeholder="Поиск товаров" autocomplete="off" />
+      </form>
+    </div>
+    <nav class="site-header__nav" aria-label="Действия и аккаунт">
+      <span class="site-header__icon site-header__icon--inactive" aria-label="???????"><img src="/images/cart-icon.png" alt="" /></span>
+      <span class="site-header__icon site-header__icon--inactive"><img src="/images/notifications-icon.png" alt="Уведомления" /></span>
+      {{#if user}}
+      <div class="site-header__profile-wrap">
+        <span class="site-header__icon site-header__icon--inactive" aria-label="?????? ???????"><img src="/images/account-icon.png" alt="" /></span>
+        <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
+      </div>
+      {{else}}
+      <a class="site-header__icon site-header__icon--link" href="/login" data-page="login" aria-label="Войти в аккаунт"><img src="/images/account-icon.png" alt="" /></a>
+      {{/if}}
+    </nav>
+  </div>
+</header>
