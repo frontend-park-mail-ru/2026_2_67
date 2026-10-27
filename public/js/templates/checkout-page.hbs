@@ -1,0 +1,41 @@
+<div class="page checkout-page">
+  {{> siteHeader}}
+  <main class="checkout-page__content">
+    <a class="checkout-page__back" href="/cart" data-page="cart">← Вернуться в корзину</a>
+    <h1>Оформление заказа</h1>
+    <div class="checkout-page__layout">
+      <div class="checkout-page__sections">
+        <section class="checkout-page__card" aria-labelledby="checkout-contact-title">
+          <div class="checkout-page__card-heading">
+            <h2 id="checkout-contact-title">Контактные данные</h2>
+            <a class="checkout-page__edit" href="/profile" data-page="profile">Изменить</a>
+          </div>
+          <dl class="checkout-page__contacts">
+            <div>
+              <dt>Имя</dt>
+              <dd>{{#if user.name}}{{user.name}}{{else}}Не указано{{/if}}</dd>
+            </div>
+            <div>
+              <dt>Контактный телефон</dt>
+              <dd>{{#if user.phoneNumber}}{{user.phoneNumber}}{{else}}Не указано{{/if}}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+      <aside class="checkout-page__card checkout-page__summary" aria-labelledby="checkout-summary-title">
+        <h2 id="checkout-summary-title">Ваш заказ</h2>
+        <p class="checkout-page__cart-error" role="alert"></p>
+        <div class="checkout-page__summary-row">
+          <span class="checkout-page__summary-count"></span>
+          <span class="checkout-page__subtotal"></span>
+        </div>
+        <div class="checkout-page__total">
+          <span>Итого</span>
+          <strong class="checkout-page__total-price"></strong>
+        </div>
+        <button class="checkout-page__submit" type="button" disabled>Оформить заказ</button>
+      </aside>
+    </div>
+  </main>
+  {{> siteFooter}}
+</div>

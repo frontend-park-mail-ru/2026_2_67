@@ -4,16 +4,18 @@ import { renderLoginPage } from './pages/login/login.js';
 import { renderSignupPage } from './pages/signup/signup.js';
 import { renderProfilePage } from './pages/profile/profile.js';
 import { renderCartPage } from './pages/cart/cart-page.js';
+import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
 import { logout, restoreSession } from './shared/auth.js';
 
 const app = document.getElementById('app');
-const pathsByPage = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart' };
+const pathsByPage = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout' };
 const routes = {
   '/': () => renderCatalogPage(app),
   '/login': () => renderLoginPage(app, () => navigate('/')),
   '/signup': () => renderSignupPage(app, () => navigate('/')),
   '/profile': () => renderProfilePage(app),
   '/cart': () => renderCartPage(app),
+  '/checkout': () => renderCheckoutPage(app),
 };
 
 /**

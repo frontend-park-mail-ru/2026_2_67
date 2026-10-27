@@ -1,7 +1,8 @@
 export let catalogTemplate;
 export let cartTemplate;
-export let cartPageTemplate;
 export let cartItemsTemplate;
+export let cartPageTemplate;
+export let checkoutPageTemplate;
 export let loginTemplate;
 export let productCardTemplate;
 export let profileTemplate;
@@ -45,10 +46,11 @@ export async function loadTemplates() {
   Handlebars.registerPartial('cartItems', cartItemsSource);
   cartItemsTemplate = Handlebars.compile(cartItemsSource);
 
-  [catalogTemplate, cartTemplate, cartPageTemplate, loginTemplate, productCardTemplate, profileTemplate, signupTemplate] = await Promise.all([
+  [catalogTemplate, cartTemplate, cartPageTemplate, checkoutPageTemplate, loginTemplate, productCardTemplate, profileTemplate, signupTemplate] = await Promise.all([
     loadTemplate('catalog'),
     loadTemplate('cart'),
     loadTemplate('cart-page'),
+    loadTemplate('checkout-page'),
     loadTemplate('login'),
     loadTemplate('product-card'),
     loadTemplate('profile'),
