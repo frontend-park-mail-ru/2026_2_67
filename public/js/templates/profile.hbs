@@ -41,7 +41,7 @@
                 <dt>Почта</dt>
                 <dd>
                   <span>{{#if user.email}}{{user.email}}{{else}}Не указано{{/if}}</span>
-                  <button class="profile-page__text-action" type="button" disabled aria-label="Изменить почту">Изменить</button>
+                  <button class="profile-page__text-action" type="button" data-open-email-editor aria-haspopup="dialog" aria-label="Изменить почту">Изменить</button>
                 </dd>
               </div>
               <div>
@@ -90,6 +90,24 @@
         <label><input type="radio" name="gender" value="male" /><span>Мужской</span></label>
         <label><input type="radio" name="gender" value="female" /><span>Женский</span></label>
       </fieldset>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--contact" id="profile-email-dialog" aria-labelledby="profile-email-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-email-title">Изменить почту</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        <label class="profile-edit-dialog__field">
+          <span>Почта</span>
+          <input type="email" name="email" value="{{user.email}}" autocomplete="email" />
+        </label>
+      </div>
       <div class="profile-edit-dialog__footer">
         <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
         <button class="profile-edit-dialog__apply" type="button">Применить</button>

@@ -24,6 +24,15 @@ export function renderProfilePage(app) {
     dialog.close();
   });
 
+  const emailDialog = page.querySelector('#profile-email-dialog');
+  page.querySelector('[data-open-email-editor]').addEventListener('click', () => {
+    emailDialog.showModal();
+    emailDialog.querySelector('input').focus();
+  });
+  emailDialog.querySelector('.profile-edit-dialog__close').addEventListener('click', () => {
+    emailDialog.close();
+  });
+
   const searchForm = page.querySelector('[data-catalog-search]');
   searchForm.addEventListener('submit', (event) => event.preventDefault());
 }

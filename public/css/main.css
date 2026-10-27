@@ -664,6 +664,19 @@ a:focus-visible, button:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+.profile-edit-dialog--contact {
+  width: min(480px, calc(100vw - 32px));
+  height: min(260px, calc(100dvh - 32px));
+}
+.profile-edit-dialog__fields--single {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 560px) {
+  .profile-edit-dialog--contact .profile-edit-dialog__footer button {
+    flex: 1;
+    min-width: 0;
+  }
+}
 .auth-card {
   width: min(100%, 340px);
   padding: 30px 26px 28px;
