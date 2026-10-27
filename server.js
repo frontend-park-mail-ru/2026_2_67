@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream';
 
 const publicDirectory = resolve('public');
 const backendUrl = 'http://localhost:8080';
-const frontendRoutes = new Set(['/', '/login', '/signup']);
+const frontendRoutes = new Set(['/', '/login', '/signup', '/cart']);
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.hbs': 'text/plain; charset=utf-8',

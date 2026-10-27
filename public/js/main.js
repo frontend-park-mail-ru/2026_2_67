@@ -2,14 +2,16 @@ import { loadTemplates } from './templates/templates.js';
 import { renderCatalogPage } from './pages/catalog/catalog.js';
 import { renderLoginPage } from './pages/login/login.js';
 import { renderSignupPage } from './pages/signup/signup.js';
+import { renderCartPage } from './pages/cart/cart-page.js';
 import { logout, restoreSession } from './shared/auth.js';
 
 const app = document.getElementById('app');
-const pathsByPage = { catalog: '/', login: '/login', signup: '/signup' };
+const pathsByPage = { catalog: '/', login: '/login', signup: '/signup', cart: '/cart' };
 const routes = {
   '/': () => renderCatalogPage(app),
   '/login': () => renderLoginPage(app, () => navigate('/')),
   '/signup': () => renderSignupPage(app, () => navigate('/')),
+  '/cart': () => renderCartPage(app),
 };
 
 /**
