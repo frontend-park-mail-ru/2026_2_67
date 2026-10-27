@@ -5,12 +5,11 @@ const priceFormatter = new Intl.NumberFormat('ru-RU', {
 /**
  * Maps a backend product to the product-card view model.
  * @param {Object} product Product returned by the backend API.
- * @param {number} index Position in the response array.
  * @returns {Object} Product-card data.
  */
-export function mapApiProduct(product, index) {
+export function mapApiProduct(product) {
   return {
-    id: index + 1,
+    id: product.id,
     title: product.productName,
     images: product.productPictureUrls,
     price: `${priceFormatter.format(product.productPrice)} ₽`,

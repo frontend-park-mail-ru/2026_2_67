@@ -3,9 +3,11 @@ import { productCardTemplate } from '../../templates/templates.js';
 /**
  * Creates product-card HTML from product data.
  * @param {Object} product Catalog product.
+ * @param {boolean} showAddToCartButton Whether to show cart actions.
+ * @param {number} quantity Current quantity of this product in the cart.
  * @returns {string} Product-card HTML.
  */
-export function createProductCard(product) {
+export function createProductCard(product, showAddToCartButton, quantity = 0) {
   return productCardTemplate({
     id: product.id,
     title: product.title,
@@ -14,6 +16,8 @@ export function createProductCard(product) {
     hasMultipleImages: product.images.length > 1,
     rating: product.rating,
     reviewsCount: product.reviewsCount,
+    showAddToCartButton,
+    quantity,
     dots: product.images.map((image, index) => ({ index, isActive: index === 0 })),
   });
 }

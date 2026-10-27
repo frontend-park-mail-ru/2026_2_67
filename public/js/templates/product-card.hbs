@@ -13,7 +13,18 @@
   </div>
   <p class="product-card__price">{{price}}</p>
   <h2 class="product-card__title">{{title}}</h2>
-  {{!-- Включить после реализации рейтинга и отзывов.
-  <p class="product-card__rating">★ {{rating}} <span>({{reviewsCount}} отзывов)</span></p>
-  --}}
+  {{#if showAddToCartButton}}
+    <div class="product-card__cart-actions" data-cart-controls>
+      {{#if quantity}}
+        <div class="product-card__quantity-control">
+          <button class="product-card__decrease" type="button" aria-label="Уменьшить количество товара {{title}}">−</button>
+          <span class="product-card__quantity">{{quantity}}</span>
+          <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}">+</button>
+        </div>
+        <span class="product-card__in-cart">В корзине</span>
+      {{else}}
+        <button class="product-card__add-to-cart" type="button">В корзину</button>
+      {{/if}}
+    </div>
+  {{/if}}
 </article>

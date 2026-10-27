@@ -1,4 +1,6 @@
 export let catalogTemplate;
+export let cartTemplate;
+export let cartItemsTemplate;
 export let loginTemplate;
 export let productCardTemplate;
 export let signupTemplate;
@@ -22,7 +24,9 @@ async function loadTemplate(name) {
  */
 export async function loadTemplates() {
   const headerResponse = await fetch(new URL('./site-header.hbs', import.meta.url));
-  if (!headerResponse.ok) throw new Error('?? ??????? ????????? ?????? ?????: ' + headerResponse.status);
+  if (!headerResponse.ok) {
+    throw new Error(`Не удалось загрузить шаблон шапки: ${headerResponse.status}`);
+  }
   Handlebars.registerPartial('siteHeader', await headerResponse.text());
 
   const footerResponse = await fetch(new URL('./site-footer.hbs', import.meta.url));
@@ -31,8 +35,17 @@ export async function loadTemplates() {
   }
   Handlebars.registerPartial('siteFooter', await footerResponse.text());
 
-  [catalogTemplate, loginTemplate, productCardTemplate, signupTemplate] = await Promise.all([
+  const cartItemsResponse = await fetch(new URL('./cart-items.hbs', import.meta.url));
+  if (!cartItemsResponse.ok) {
+    throw new Error(`Не удалось загрузить шаблон товаров корзины: ${cartItemsResponse.status}`);
+  }
+  const cartItemsSource = await cartItemsResponse.text();
+  Handlebars.registerPartial('cartItems', cartItemsSource);
+  cartItemsTemplate = Handlebars.compile(cartItemsSource);
+
+  [catalogTemplate, cartTemplate, loginTemplate, productCardTemplate, signupTemplate] = await Promise.all([
     loadTemplate('catalog'),
+    loadTemplate('cart'),
     loadTemplate('login'),
     loadTemplate('product-card'),
     loadTemplate('signup'),

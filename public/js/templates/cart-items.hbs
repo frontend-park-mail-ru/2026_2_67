@@ -1,0 +1,32 @@
+{{#if errorMessage}}
+  <p class="cart-message" role="alert">{{errorMessage}}</p>
+{{/if}}
+{{#if loading}}
+  <p class="cart-message" role="status">Загрузка корзины…</p>
+{{else}}
+{{#if items}}
+  <ul class="cart-list">
+    {{#each items}}
+      <li class="cart-item" data-cart-item-id="{{id}}">
+        <img class="cart-item__image" src="{{image}}" alt="" />
+        <div class="cart-item__details">
+          <p class="cart-item__title">{{title}}</p>
+          <p class="cart-item__price">{{price}}</p>
+          <div class="cart-item__actions">
+            <div class="cart-item__quantity-control">
+              <button class="cart-item__decrease" type="button" aria-label="Уменьшить количество товара {{title}}"{{#unless ../canUseCart}} disabled{{/unless}}>−</button>
+              <span class="cart-item__quantity">{{quantity}}</span>
+              <button class="cart-item__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#unless ../canUseCart}} disabled{{/unless}}>+</button>
+            </div>
+            <button class="cart-item__remove" type="button" aria-label="Удалить товар {{title}} из корзины"{{#unless ../canUseCart}} disabled{{/unless}}>Удалить</button>
+          </div>
+        </div>
+      </li>
+    {{/each}}
+  </ul>
+{{else}}
+  {{#unless errorMessage}}
+    <p class="cart-empty">Корзина пуста</p>
+  {{/unless}}
+{{/if}}
+{{/if}}

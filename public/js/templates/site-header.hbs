@@ -12,11 +12,11 @@
       </form>
     </div>
     <nav class="site-header__nav" aria-label="Действия и аккаунт">
-      <span class="site-header__icon site-header__icon--inactive" aria-label="???????"><img src="/images/cart-icon.png" alt="" /></span>
+      <button class="site-header__icon site-header__icon--cart" type="button" aria-label="Корзина" aria-expanded="false"><img src="/images/cart-icon.png" alt="" /></button>
       <span class="site-header__icon site-header__icon--inactive"><img src="/images/notifications-icon.png" alt="Уведомления" /></span>
       {{#if user}}
       <div class="site-header__profile-wrap">
-        <span class="site-header__icon site-header__icon--inactive" aria-label="?????? ???????"><img src="/images/account-icon.png" alt="" /></span>
+        <span class="site-header__icon site-header__icon--logged-in"><img src="/images/account-icon.png" alt="" /></span>
         <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
       </div>
       {{else}}
@@ -24,4 +24,5 @@
       {{/if}}
     </nav>
   </div>
+  <div class="site-header__cart-panel" id="cart-panel" hidden></div>
 </header>
