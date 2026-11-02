@@ -53,6 +53,7 @@ export function renderCatalogPage(app) {
   const page = app.querySelector('.catalog-page');
   const grid = page.querySelector('.catalog-page__grid');
   const searchForm = page.querySelector('[data-catalog-search]');
+  const searchInput = searchForm.querySelector('input[name="query"]');
   let products = null;
 
   const cart = initCart(
@@ -104,7 +105,16 @@ export function renderCatalogPage(app) {
       return;
     }
 
-    renderProducts(grid, products, cart.getProductQuantity, cart.canUseCart());
+    const query = searchInput.value.trim().toLocaleLowerCase();
+    const matchingProducts = products.filter((product) =>
+      product.title.toLocaleLowerCase().includes(query));
+
+    if (matchingProducts.length === 0) {
+      grid.textContent = 'Товары не найдены';
+      return;
+    }
+
+    renderProducts(grid, matchingProducts, cart.getProductQuantity, cart.canUseCart());
   }
 
   function acceptProducts(loadedProducts) {
@@ -118,6 +128,7 @@ export function renderCatalogPage(app) {
   loadProducts(grid, page, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
 
   searchForm.addEventListener('submit', (event) => event.preventDefault());
+  searchInput.addEventListener('input', showProducts);
 
   grid.addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-products]')) {
