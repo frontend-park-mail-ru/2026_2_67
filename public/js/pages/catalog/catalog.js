@@ -28,15 +28,15 @@ async function loadProducts(grid, page, onProducts) {
     }
 
     const result = await response.json();
-    if (!Array.isArray(result)) {
-      throw new Error('Products response must be an array.');
+    if (!Array.isArray(result.products)) {
+      throw new Error('Products response must contain an array of products.');
     }
 
     if (page !== grid.closest('.catalog-page')) {
       return;
     }
 
-    onProducts(result.map(mapApiProduct));
+    onProducts(result.products.map(mapApiProduct));
   } catch {
     if (page === grid.closest('.catalog-page')) {
       grid.innerHTML = '<p class="catalog-page__message" role="alert">Не удалось загрузить товары. <button type="button" data-retry-products>Повторить</button></p>';

@@ -10,10 +10,10 @@ const priceFormatter = new Intl.NumberFormat('ru-RU', {
 export function mapApiProduct(product) {
   return {
     id: product.id,
-    title: product.productName,
-    images: product.productPictureUrls,
-    price: `${priceFormatter.format(product.productPrice)} ₽`,
-    rating: product.productRating,
-    reviewsCount: product.productReviewsCount,
+    title: product.name,
+    images: product.pictureUrls,
+    price: `${priceFormatter.format(product.priceResult)} ₽`,
+    rating: product.rating,
+    reviewsCount: product.reviewsCount,
   };
 }
