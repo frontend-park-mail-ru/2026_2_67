@@ -2,9 +2,10 @@ import { initCart } from '../../components/cart/cart.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, checkoutPageTemplate } from '../../templates/templates.js';
 import { showPickupMap } from './pickup-map.js';
+import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
 
 /** Показывает товары корзины и итоговую сумму перед оформлением заказа. */
-export function renderCheckoutPage(app) {
+export function renderCheckoutPage(app, onEmptyCart = () => {}) {
   const user = getCurrentUser();
   app.innerHTML = checkoutPageTemplate({ user });
 
@@ -21,6 +22,16 @@ export function renderCheckoutPage(app) {
   pickupButton.disabled = !user?.userId;
 
   function renderCheckout() {
+    if (shouldLeaveEmptyCheckout({
+      isPageActive: page.isConnected,
+      isLoading: cart.isLoading(),
+      errorMessage: cart.getErrorMessage(),
+      canCheckout: cart.canCheckout(),
+    })) {
+      onEmptyCart();
+      return;
+    }
+
     itemsContainer.innerHTML = cartItemsTemplate({
       items: cart.getItems(),
       loading: cart.isLoading(),

@@ -1,6 +1,7 @@
 import { getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, cartPageTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
+import { blockUnavailableNavigation } from '../../shared/route-guards.js';
 
 /** Показывает товары корзины и отдельную плашку с итоговой суммой. */
 export function renderCartPage(app) {
@@ -11,6 +12,7 @@ export function renderCartPage(app) {
   const itemsContainer = page.querySelector('.cart-page__items');
   const count = page.querySelector('.cart-page__count');
   const totalPrice = page.querySelector('.cart-page__total-price');
+  const checkoutLink = page.querySelector('.cart-page__checkout');
   const cart = initCart(page, user?.userId, renderPageCart);
 
   function renderPageCart() {
@@ -22,7 +24,14 @@ export function renderCartPage(app) {
     });
     count.textContent = cart.getDisplayCount();
     totalPrice.textContent = cart.getDisplayTotal();
+    const canCheckout = cart.canCheckout();
+    checkoutLink.setAttribute('aria-disabled', String(!canCheckout));
+    checkoutLink.tabIndex = canCheckout ? 0 : -1;
   }
+
+  checkoutLink.addEventListener('click', (event) => {
+    blockUnavailableNavigation(event, cart.canCheckout());
+  });
 
   itemsContainer.addEventListener('click', (event) => {
     const button = event.target.closest('button');

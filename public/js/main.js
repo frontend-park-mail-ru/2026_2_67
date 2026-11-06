@@ -5,7 +5,8 @@ import { renderSignupPage } from './pages/signup/signup.js';
 import { renderProfilePage } from './pages/profile/profile.js';
 import { renderCartPage } from './pages/cart/cart-page.js';
 import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
-import { logout, restoreSession } from './shared/auth.js';
+import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
+import { requiresAuthentication } from './shared/route-guards.js';
 
 const app = document.getElementById('app');
 const pathsByPage = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout' };
@@ -15,7 +16,7 @@ const routes = {
   '/signup': () => renderSignupPage(app, () => navigate('/')),
   '/profile': () => renderProfilePage(app),
   '/cart': () => renderCartPage(app),
-  '/checkout': () => renderCheckoutPage(app),
+  '/checkout': () => renderCheckoutPage(app, () => navigate('/cart')),
 };
 
 /**
@@ -23,6 +24,10 @@ const routes = {
  * @returns {void}
  */
 function renderCurrentRoute() {
+  if (requiresAuthentication(window.location.pathname, getCurrentUser())) {
+    window.history.replaceState({}, '', '/login');
+  }
+
   const renderPage = routes[window.location.pathname];
   if (renderPage) {
     renderPage();
@@ -70,6 +75,10 @@ async function startApplication() {
   try {
     await loadTemplates();
     app.addEventListener('click', (event) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+
       const catalogButton = event.target.closest('[data-catalog-toggle]');
       if (catalogButton) {
         toggleCatalogMenu();

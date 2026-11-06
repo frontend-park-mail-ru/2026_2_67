@@ -22,6 +22,10 @@ export function initCart(page, userId, onCartChange = () => {}) {
     return getItems().find((item) => item.id === productId)?.quantity ?? 0;
   }
 
+  function canCheckout() {
+    return Boolean(cart?.items.length) && !isUpdating;
+  }
+
   function isLoading() {
     return Boolean(userId) && cart === null && !errorMessage;
   }
@@ -222,6 +226,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
     getDisplayTotal,
     isLoading,
     canUseCart: () => Boolean(cart) && !isUpdating,
+    canCheckout,
     getErrorMessage: () => errorMessage,
     changeProductQuantity,
     removeProduct,
