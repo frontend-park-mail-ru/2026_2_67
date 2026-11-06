@@ -15,7 +15,7 @@ async function requestBasket(path, options) {
 export async function getBasket(userId) {
   const response = await requestBasket(basketPath(userId));
   const basket = await response.json();
-  if (!Array.isArray(basket.basketProducts) || !Number.isFinite(basket.priceSum)) {
+  if (!Array.isArray(basket.basketProducts) || !Number.isFinite(basket.basketSumResult)) {
     throw new Error('Сервер вернул корзину в неожиданном формате.');
   }
   return basket;

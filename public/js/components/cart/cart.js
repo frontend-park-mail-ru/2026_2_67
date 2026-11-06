@@ -69,10 +69,10 @@ export function initCart(page, userId, onCartChange = () => {}) {
         id: product.id,
         title: product.name,
         image: product.pictureUrl,
-        price: `${priceFormatter.format(product.price)} ₽`,
+        price: `${priceFormatter.format(product.priceResult)} ₽`,
         quantity: product.count,
       })),
-      priceSum: basket.priceSum,
+      priceSum: basket.basketSumResult,
     };
   }
 
