@@ -255,9 +255,8 @@ a:focus-visible, button:focus-visible {
   font-size: 13px;
   white-space: nowrap;
 }
-.site-header__strip-category:disabled {
-  opacity: 1;
-  cursor: default;
+.site-header__strip-category:hover {
+  background: var(--vm-warm);
 }
 .site-header__strip-category .site-header__category-icon {
   width: 26px;

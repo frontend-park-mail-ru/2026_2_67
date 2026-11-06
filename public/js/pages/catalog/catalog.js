@@ -20,9 +20,12 @@ function renderProducts(grid, products, getCartQuantity, canUseCart) {
   });
 }
 
-async function loadProducts(grid, page, onProducts) {
+async function loadProducts(grid, page, category, onProducts) {
   try {
-    const response = await authorizedFetch('/products');
+    const params = new window.URLSearchParams();
+    if (category) params.set('category', category);
+    const path = params.size ? `/products?${params}` : '/products';
+    const response = await authorizedFetch(path);
     if (!response.ok) {
       throw new Error(`Products request failed: ${response.status}`);
     }
@@ -49,7 +52,8 @@ async function loadProducts(grid, page, onProducts) {
  * @param {HTMLElement} app Main application container.
  */
 export function renderCatalogPage(app) {
-  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true });
+  const category = new window.URLSearchParams(window.location.search).get('category');
+  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, heading: category || 'Каталог товаров' });
   const page = app.querySelector('.catalog-page');
   const grid = page.querySelector('.catalog-page__grid');
   const searchForm = page.querySelector('[data-catalog-search]');
@@ -101,7 +105,7 @@ export function renderCatalogPage(app) {
     }
 
     if (products.length === 0) {
-      grid.textContent = 'Товары пока не добавлены.';
+      grid.textContent = category ? 'В этой категории пока нет товаров.' : 'Товары пока не добавлены.';
       return;
     }
 
@@ -125,7 +129,7 @@ export function renderCatalogPage(app) {
   grid.setAttribute('aria-busy', 'true');
   grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
 
-  loadProducts(grid, page, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
+  loadProducts(grid, page, category, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
 
   searchForm.addEventListener('submit', (event) => event.preventDefault());
   searchInput.addEventListener('input', showProducts);
@@ -134,7 +138,7 @@ export function renderCatalogPage(app) {
     if (event.target.closest('[data-retry-products]')) {
       grid.setAttribute('aria-busy', 'true');
       grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
-      loadProducts(grid, page, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
+      loadProducts(grid, page, category, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
     }
   });
 

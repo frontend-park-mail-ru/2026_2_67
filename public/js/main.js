@@ -40,7 +40,7 @@ function renderCurrentRoute() {
  */
 function navigate(path) {
   closeCatalogMenu();
-  if (window.location.pathname !== path) {
+  if (window.location.pathname + window.location.search !== path) {
     window.history.pushState({}, '', path);
   }
   renderCurrentRoute();
@@ -73,6 +73,13 @@ async function startApplication() {
       const catalogButton = event.target.closest('[data-catalog-toggle]');
       if (catalogButton) {
         toggleCatalogMenu();
+        return;
+      }
+
+      // Открываем каталог с категорией в адресе, чтобы ссылку можно было сохранить.
+      const categoryButton = event.target.closest('[data-category]');
+      if (categoryButton) {
+        navigate(`/?${new window.URLSearchParams({ category: categoryButton.dataset.category })}`);
         return;
       }
 
