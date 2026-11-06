@@ -15,7 +15,7 @@
         <div class="profile-page__card">
           <h2 id="personal-info-title">Личная информация</h2>
           <div class="profile-page__summary">
-            <div class="profile-page__avatar" aria-hidden="true"></div>
+            <div class="profile-page__avatar" aria-hidden="true"><img src="/images/profile-avatar-placeholder.png" alt="" /></div>
             <div class="profile-page__details">
               <p class="profile-page__name">{{#if user.name}}{{user.name}}{{else}}Заполните информацию о себе{{/if}}</p>
               <dl class="profile-page__facts">
@@ -30,7 +30,7 @@
               </dl>
             </div>
             <div class="profile-page__actions">
-              <button class="profile-page__text-action profile-page__photo-action" type="button" disabled>Изменить фото</button>
+              <button class="profile-page__text-action profile-page__photo-action" type="button" data-open-photo-editor aria-haspopup="dialog">Изменить фото</button>
               <button class="profile-page__text-action" type="button" data-open-profile-editor aria-haspopup="dialog">Изменить</button>
             </div>
           </div>
@@ -55,7 +55,7 @@
           </section>
           <section class="profile-page__security" aria-labelledby="security-title">
             <h3 id="security-title">Безопасность</h3>
-            <button class="profile-page__text-action" type="button" disabled>Поменять пароль</button>
+            <button class="profile-page__text-action" type="button" data-open-password-editor aria-haspopup="dialog">Поменять пароль</button>
           </section>
         </div>
       </section>
@@ -129,6 +129,51 @@
       <div class="profile-edit-dialog__footer">
         <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
         <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--password" id="profile-password-dialog" aria-labelledby="profile-password-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-password-title">Поменять пароль</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        <label class="profile-edit-dialog__field">
+          <span>Текущий пароль</span>
+          <input type="password" name="currentPassword" autocomplete="current-password" />
+        </label>
+        <label class="profile-edit-dialog__field">
+          <span>Новый пароль</span>
+          <input type="password" name="newPassword" autocomplete="new-password" aria-describedby="profile-new-password-rules" />
+        </label>
+        <p class="profile-edit-dialog__password-rules password-requirements" id="profile-new-password-rules" aria-live="polite"></p>
+        <label class="profile-edit-dialog__field">
+          <span>Подтвердите новый пароль</span>
+          <input type="password" name="confirmPassword" autocomplete="new-password" />
+        </label>
+      </div>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--photo" id="profile-photo-dialog" aria-labelledby="profile-photo-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-photo-title">Загрузить фото профиля</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <p class="profile-edit-dialog__photo-description">Выберите изображение для профиля.</p>
+      <div class="profile-edit-dialog__photo-info">
+        <span class="profile-edit-dialog__photo-avatar" aria-hidden="true"><img src="/images/profile-avatar-placeholder.png" alt="" /></span>
+        <span>Сейчас используется аватар по умолчанию</span>
+      </div>
+      <button class="profile-edit-dialog__file-button" type="button">Выбрать файл</button>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Сохранить фото</button>
       </div>
     </div>
   </dialog>
