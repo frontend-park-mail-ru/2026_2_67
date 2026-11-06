@@ -39,10 +39,30 @@ function renderCurrentRoute() {
  * @returns {void}
  */
 function navigate(path) {
+  closeCatalogMenu();
   if (window.location.pathname !== path) {
     window.history.pushState({}, '', path);
   }
   renderCurrentRoute();
+}
+
+/** Закрывает список категорий и снова разрешает прокрутку страницы. */
+function closeCatalogMenu() {
+  const menu = app.querySelector('#catalog-menu');
+  const button = app.querySelector('[data-catalog-toggle]');
+  if (menu) menu.hidden = true;
+  if (button) button.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+
+/** Открывает или закрывает список категорий при повторном нажатии. */
+function toggleCatalogMenu() {
+  const menu = app.querySelector('#catalog-menu');
+  const button = app.querySelector('[data-catalog-toggle]');
+  const shouldOpen = menu.hidden;
+  menu.hidden = !shouldOpen;
+  button.setAttribute('aria-expanded', String(shouldOpen));
+  document.body.style.overflow = shouldOpen ? 'hidden' : '';
 }
 
 /** Загружает шаблоны и подключает переключение экранов без перезагрузки. */
@@ -50,6 +70,12 @@ async function startApplication() {
   try {
     await loadTemplates();
     app.addEventListener('click', (event) => {
+      const catalogButton = event.target.closest('[data-catalog-toggle]');
+      if (catalogButton) {
+        toggleCatalogMenu();
+        return;
+      }
+
       const logoutButton = event.target.closest('[data-action="logout"]');
       if (logoutButton) {
         logout().finally(() => navigate('/'));
@@ -67,7 +93,25 @@ async function startApplication() {
       event.preventDefault();
       navigate(path);
     });
-    window.addEventListener('popstate', renderCurrentRoute);
+    // Клик вне панели и кнопки закрывает список без перехода на другую страницу.
+    document.addEventListener('click', (event) => {
+      const menu = app.querySelector('#catalog-menu');
+      if (menu && !menu.hidden && !event.target.closest('#catalog-menu, [data-catalog-toggle]')) {
+        closeCatalogMenu();
+      }
+    });
+    // Escape закрывает панель и возвращает фокус на кнопку «Каталог».
+    document.addEventListener('keydown', (event) => {
+      const menu = app.querySelector('#catalog-menu');
+      if (event.key === 'Escape' && menu && !menu.hidden) {
+        closeCatalogMenu();
+        app.querySelector('[data-catalog-toggle]')?.focus();
+      }
+    });
+    window.addEventListener('popstate', () => {
+      closeCatalogMenu();
+      renderCurrentRoute();
+    });
     await restoreSession();
     renderCurrentRoute();
   } catch {
