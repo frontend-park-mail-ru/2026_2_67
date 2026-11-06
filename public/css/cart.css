@@ -327,6 +327,14 @@
   text-decoration: none;
 }
 
+.cart-page__checkout[aria-disabled="true"] {
+  border-color: var(--vm-border);
+  background: var(--vm-subtle);
+  color: var(--vm-muted);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 @media (max-width: 780px) {
   .cart-page__layout {
     grid-template-columns: 1fr;
