@@ -43,6 +43,16 @@ export function renderAuthPage(app, template, validate, onSuccess) {
   const form = app.querySelector('[data-auth-form]');
   bindPasswordVisibility(form);
 
+  if (form.dataset.authForm === 'signup') {
+    const passwordInput = form.elements.namedItem('password');
+    const passwordError = form.querySelector('[data-error-for="password"]');
+    passwordInput.addEventListener('input', () => {
+      const error = validate(Object.fromEntries(new FormData(form))).password || '';
+      passwordError.textContent = error;
+      passwordInput.setAttribute('aria-invalid', String(Boolean(error)));
+    });
+  }
+
   form.addEventListener('submit', function validateBeforeSubmit(event) {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(form));

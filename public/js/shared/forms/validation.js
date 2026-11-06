@@ -1,19 +1,13 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_REQUIREMENTS = `Пароль должен:
-- содержать не менее 8 символов;
-- содержать хотя бы одну заглавную букву;
-- содержать хотя бы одну строчную букву;
-- содержать хотя бы одну цифру;
-- содержать хотя бы один специальный символ;
-- не содержать пробелов.`;
-
-function isValidSignupPassword(password) {
-  return [...password].length >= 8
-    && /\p{Lu}/u.test(password)
-    && /\p{Ll}/u.test(password)
-    && /\p{N}/u.test(password)
-    && /[\p{P}\p{S}]/u.test(password)
-    && !/\p{White_Space}/u.test(password);
+export function getMissingPasswordRequirements(password) {
+  const missing = [];
+  if ([...password].length < 8) missing.push('содержать не менее 8 символов');
+  if (!/\p{Lu}/u.test(password)) missing.push('содержать хотя бы одну заглавную букву');
+  if (!/\p{Ll}/u.test(password)) missing.push('содержать хотя бы одну строчную букву');
+  if (!/\p{N}/u.test(password)) missing.push('содержать хотя бы одну цифру');
+  if (!/[\p{P}\p{S}]/u.test(password)) missing.push('содержать хотя бы один специальный символ');
+  if (/\p{White_Space}/u.test(password)) missing.push('не содержать пробелов');
+  return missing.length ? `Пароль должен:\n- ${missing.join(';\n- ')}.` : '';
 }
 
 /**
@@ -50,8 +44,9 @@ export function validateSignup(values) {
   if (!EMAIL_PATTERN.test(values.email.trim())) {
     errors.email = 'Введите корректный email';
   }
-  if (!isValidSignupPassword(values.password)) {
-    errors.password = PASSWORD_REQUIREMENTS;
+  const passwordError = getMissingPasswordRequirements(values.password);
+  if (passwordError) {
+    errors.password = passwordError;
   }
   if (values.password !== values.passwordRepeat) {
     errors.passwordRepeat = 'Пароли не совпадают';
