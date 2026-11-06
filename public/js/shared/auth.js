@@ -83,7 +83,7 @@ export async function loadCurrentUser() {
     return null;
   }
 
-  const response = await authorizedFetch(`/users/${encodeURIComponent(userId)}`);
+  const response = await authorizedFetch(`/buyers/${encodeURIComponent(userId)}/profile`);
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
@@ -93,7 +93,8 @@ export async function loadCurrentUser() {
     return null;
   }
 
-  currentUser = await readResponse(response);
+  const profile = await readResponse(response);
+  currentUser = { ...profile, phoneNumber: profile.telephone };
   return currentUser;
 }
 
