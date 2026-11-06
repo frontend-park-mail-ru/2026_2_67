@@ -17,10 +17,18 @@ export function renderCheckoutPage(app) {
   const pickupStatus = page.querySelector('.checkout-page__pickup-status');
   const pickupHint = page.querySelector('.checkout-page__pickup-hint');
   const pickupMap = page.querySelector('.checkout-page__pickup-map');
+  const submitButton = page.querySelector('.checkout-page__submit');
+  const orderStatus = page.querySelector('.checkout-page__order-status');
+  let deliveryCoordinates = null;
+  let orderCompleted = false;
   const cart = initCart(page, user?.userId, renderCheckout);
   pickupButton.disabled = !user?.userId;
 
   function renderCheckout() {
+    if (orderCompleted) {
+      return;
+    }
+
     itemsContainer.innerHTML = cartItemsTemplate({
       items: cart.getItems(),
       loading: cart.isLoading(),
@@ -33,12 +41,16 @@ export function renderCheckoutPage(app) {
     summaryCount.textContent = itemCountText;
     subtotal.textContent = formattedTotal;
     totalPrice.textContent = formattedTotal;
+    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates;
   }
 
   const searchForm = page.querySelector('[data-catalog-search]');
   searchForm.addEventListener('submit', (event) => event.preventDefault());
 
   pickupButton.addEventListener('click', () => {
+    deliveryCoordinates = null;
+    submitButton.disabled = true;
+    orderStatus.textContent = '';
     if (!window.navigator.geolocation) {
       pickupStatus.textContent = 'Браузер не поддерживает определение местоположения.';
       return;
@@ -69,6 +81,8 @@ export function renderCheckoutPage(app) {
         await showPickupMap(pickupMap, pickupPoint);
         pickupStatus.textContent = 'Ближайший пункт выдачи показан на карте.';
         pickupHint.hidden = true;
+        deliveryCoordinates = { longitude: coords.longitude, latitude: coords.latitude };
+        renderCheckout();
       } catch {
         pickupStatus.textContent = 'Не удалось показать пункт выдачи. Попробуйте ещё раз.';
         pickupMap.hidden = true;
@@ -79,6 +93,39 @@ export function renderCheckoutPage(app) {
       pickupStatus.textContent = 'Не удалось получить местоположение. Проверьте разрешение в браузере.';
       pickupButton.disabled = false;
     }, { timeout: 10000 });
+  });
+
+  submitButton.addEventListener('click', async () => {
+    if (submitButton.disabled || !deliveryCoordinates) {
+      return;
+    }
+
+    submitButton.disabled = true;
+    orderStatus.textContent = 'Оформляем заказ…';
+    try {
+      const response = await authorizedFetch('/orders/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(deliveryCoordinates),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !Number.isInteger(result.orderId)) {
+        throw new Error('Заказ не оформлен.');
+      }
+
+      orderCompleted = true;
+      orderStatus.textContent = `Заказ №${result.orderId} оформлен.`;
+      submitButton.textContent = 'Заказ оформлен';
+      pickupButton.disabled = true;
+      page.querySelector('#checkout-basket-title').textContent = 'Товары в заказе';
+      await cart.reloadCart();
+    } catch {
+      orderStatus.textContent = 'Не удалось оформить заказ. Попробуйте ещё раз.';
+    } finally {
+      if (!orderCompleted) {
+        renderCheckout();
+      }
+    }
   });
 
   renderCheckout();

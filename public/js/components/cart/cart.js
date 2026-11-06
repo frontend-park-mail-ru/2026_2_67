@@ -223,6 +223,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
     isLoading,
     canUseCart: () => Boolean(cart) && !isUpdating,
     getErrorMessage: () => errorMessage,
+    reloadCart: loadCart,
     changeProductQuantity,
     removeProduct,
   };
