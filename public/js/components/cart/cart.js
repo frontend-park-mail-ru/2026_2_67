@@ -181,6 +181,11 @@ export function initCart(page, userId, onCartChange = () => {}) {
 
   function handleCartButtonClick(event) {
     event.stopPropagation();
+    if (!userId && cartPanel.hidden) {
+      cartPanel.innerHTML = cartTemplate({ isGuest: true });
+      cartPanel.style.width = 'min(348px, calc(100vw - 32px))';
+      cartPanel.style.height = '222px';
+    }
     cartPanel.hidden = !cartPanel.hidden;
     cartButton.setAttribute('aria-expanded', String(!cartPanel.hidden));
   }
@@ -200,8 +205,10 @@ export function initCart(page, userId, onCartChange = () => {}) {
     }
   }
 
-  renderCart();
-  loadCart();
+  if (userId) {
+    renderCart();
+    loadCart();
+  }
   productGrid?.addEventListener('click', handleProductButtonClick);
   cartPanel.addEventListener('click', handleCartItemClick);
   cartPanel.addEventListener('click', handleCloseButtonClick);
