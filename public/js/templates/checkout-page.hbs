@@ -5,26 +5,25 @@
     <h1>Оформление заказа</h1>
     <div class="checkout-page__layout">
       <div class="checkout-page__sections">
-        <section class="checkout-page__card" aria-labelledby="checkout-contact-title">
-          <div class="checkout-page__card-heading">
-            <h2 id="checkout-contact-title">Контактные данные</h2>
-            <a class="checkout-page__edit" href="/profile" data-page="profile">Изменить</a>
+        <section class="checkout-page__card" aria-label="Оплата">
+          <p class="checkout-page__payment">Оплата: при получении</p>
+        </section>
+        <section class="checkout-page__card checkout-page__pickup" aria-labelledby="checkout-pickup-title">
+          <div class="checkout-page__pickup-header">
+            <h2 id="checkout-pickup-title">Пункт выдачи</h2>
+            <button class="checkout-page__pickup-button" type="button">Найти ближайший пункт выдачи</button>
           </div>
-          <dl class="checkout-page__contacts">
-            <div>
-              <dt>Имя</dt>
-              <dd>{{#if user.name}}{{user.name}}{{else}}Не указано{{/if}}</dd>
-            </div>
-            <div>
-              <dt>Контактный телефон</dt>
-              <dd>{{#if user.phoneNumber}}{{user.phoneNumber}}{{else}}Не указано{{/if}}</dd>
-            </div>
-          </dl>
+          <p class="checkout-page__pickup-status">Ближайший пункт выдачи не найден</p>
+          <p class="checkout-page__pickup-hint">Разрешите доступ к местоположению, чтобы найти ближайший пункт выдачи.</p>
+          <div class="checkout-page__pickup-map" hidden aria-label="Карта ближайшего пункта выдачи"></div>
+        </section>
+        <section class="checkout-page__card checkout-page__basket" aria-labelledby="checkout-basket-title">
+          <h2 id="checkout-basket-title">Товары в корзине</h2>
+          <div class="checkout-page__basket-items"></div>
         </section>
       </div>
       <aside class="checkout-page__card checkout-page__summary" aria-labelledby="checkout-summary-title">
         <h2 id="checkout-summary-title">Ваш заказ</h2>
-        <p class="checkout-page__cart-error" role="alert"></p>
         <div class="checkout-page__summary-row">
           <span class="checkout-page__summary-count"></span>
           <span class="checkout-page__subtotal"></span>
