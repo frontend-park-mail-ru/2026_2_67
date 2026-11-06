@@ -20,10 +20,12 @@ function renderProducts(grid, products, getCartQuantity, canUseCart) {
   });
 }
 
-async function loadProducts(grid, page, category, onProducts) {
+async function loadProducts(grid, page, category, cursor, onProducts) {
   try {
+    // При следующей загрузке сохраняем категорию и добавляем курсор из прошлого ответа.
     const params = new window.URLSearchParams();
     if (category) params.set('category', category);
+    if (cursor) params.set('cursor', cursor);
     const path = params.size ? `/products?${params}` : '/products';
     const response = await authorizedFetch(path);
     if (!response.ok) {
@@ -36,14 +38,16 @@ async function loadProducts(grid, page, category, onProducts) {
     }
 
     if (page !== grid.closest('.catalog-page')) {
-      return;
+      return false;
     }
 
-    onProducts(result.products.map(mapApiProduct));
+    onProducts(result.products.map(mapApiProduct), result.nextCursor || '');
+    return true;
   } catch {
-    if (page === grid.closest('.catalog-page')) {
+    if (!cursor && page === grid.closest('.catalog-page')) {
       grid.innerHTML = '<p class="catalog-page__message" role="alert">Не удалось загрузить товары. <button type="button" data-retry-products>Повторить</button></p>';
     }
+    return false;
   }
 }
 
@@ -56,9 +60,12 @@ export function renderCatalogPage(app) {
   app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, heading: category || 'Каталог товаров' });
   const page = app.querySelector('.catalog-page');
   const grid = page.querySelector('.catalog-page__grid');
+  const loadMoreWrap = page.querySelector('.catalog-page__load-more-wrap');
+  const loadMoreButton = loadMoreWrap.querySelector('button');
   const searchForm = page.querySelector('[data-catalog-search]');
   const searchInput = searchForm.querySelector('input[name="query"]');
   let products = null;
+  let nextCursor = '';
 
   const cart = initCart(
     page,
@@ -114,22 +121,36 @@ export function renderCatalogPage(app) {
       product.title.toLocaleLowerCase().includes(query));
 
     if (matchingProducts.length === 0) {
-      grid.textContent = 'Товары не найдены';
+      grid.textContent = 'Среди загруженных товаров ничего не найдено.';
       return;
     }
 
     renderProducts(grid, matchingProducts, cart.getProductQuantity, cart.canUseCart());
   }
 
-  function acceptProducts(loadedProducts) {
+  function acceptProducts(loadedProducts, cursor) {
     products = loadedProducts;
+    nextCursor = cursor;
+    loadMoreWrap.hidden = !nextCursor;
     showProducts();
+  }
+
+  function appendProducts(loadedProducts, cursor) {
+    acceptProducts([...products, ...loadedProducts], cursor);
   }
 
   grid.setAttribute('aria-busy', 'true');
   grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
 
-  loadProducts(grid, page, category, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
+  loadProducts(grid, page, category, '', acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
+
+  loadMoreButton.addEventListener('click', async () => {
+    loadMoreButton.disabled = true;
+    loadMoreButton.textContent = 'Загрузка…';
+    const loaded = await loadProducts(grid, page, category, nextCursor, appendProducts);
+    loadMoreButton.disabled = false;
+    loadMoreButton.textContent = loaded ? 'Показать ещё' : 'Не удалось загрузить. Повторить';
+  });
 
   searchForm.addEventListener('submit', (event) => event.preventDefault());
   searchInput.addEventListener('input', showProducts);
@@ -138,7 +159,7 @@ export function renderCatalogPage(app) {
     if (event.target.closest('[data-retry-products]')) {
       grid.setAttribute('aria-busy', 'true');
       grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
-      loadProducts(grid, page, category, acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
+      loadProducts(grid, page, category, '', acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
     }
   });
 

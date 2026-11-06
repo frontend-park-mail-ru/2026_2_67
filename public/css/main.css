@@ -416,6 +416,20 @@ a:focus-visible, button:focus-visible {
   justify-content: center;
   gap: 14px 12px;
 }
+.catalog-page__load-more-wrap {
+  margin-top: 24px;
+  text-align: center;
+}
+.catalog-page__load-more {
+  min-height: 44px;
+  padding: 0 24px;
+  border: 1px solid var(--vm-border);
+  background: var(--vm-subtle);
+  color: var(--vm-text);
+}
+.catalog-page__load-more:hover {
+  background: var(--vm-warm);
+}
 .catalog-page__message {
   grid-column: 1 / -1;
   margin: 20px 0;
