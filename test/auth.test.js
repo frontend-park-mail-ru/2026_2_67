@@ -39,9 +39,9 @@ test('authentication preserves session, refresh, failures and logout', async (t)
   assert.equal(auth.getCurrentUser(), null);
 
   responses = [json({ accessToken: 'old', userId: 7 }), json({ name: 'Ира', telephone: '123' })];
-  assert.deepEqual(await auth.login('ira', 'secret'), { ok: true });
+  assert.deepEqual(await auth.login('ira@example.com', 'secret'), { ok: true });
   assert.equal(calls[0].url, '/api/v1/auth/login');
-  assert.deepEqual(JSON.parse(calls[0].options.body), { loginOrEmail: 'ira', password: 'secret' });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { email: 'ira@example.com', password: 'secret' });
   assert.equal(calls[0].options.credentials, 'include');
   assert.equal(calls[1].url, '/api/v1/buyers/7/profile');
   assert.deepEqual(auth.getCurrentUser(), { name: 'Ира', telephone: '123', phoneNumber: '123', userId: '7' });
@@ -59,15 +59,15 @@ test('authentication preserves session, refresh, failures and logout', async (t)
   assert.equal(localStorage.getItem('accessToken'), 'new');
 
   responses = [json({ emailErrMessage: 'занято' }, 409)];
-  assert.deepEqual(await auth.register('ira', 'ira@example.com', 'secret'), {
+  assert.deepEqual(await auth.register('ira@example.com', 'secret'), {
     ok: false, status: 409, errors: { emailErrMessage: 'занято' },
   });
-  assert.deepEqual(JSON.parse(calls[5].options.body), { login: 'ira', email: 'ira@example.com', password: 'secret' });
+  assert.deepEqual(JSON.parse(calls[5].options.body), { email: 'ira@example.com', password: 'secret' });
 
   responses = [json({ errMessage: 'нет токена' })];
-  assert.deepEqual(await auth.login('ira', 'secret'), { ok: false, errors: { form: 'нет токена' } });
+  assert.deepEqual(await auth.login('ira@example.com', 'secret'), { ok: false, errors: { form: 'нет токена' } });
   responses = [new Response('not-json')];
-  assert.deepEqual(await auth.login('ira', 'secret'), {
+  assert.deepEqual(await auth.login('ira@example.com', 'secret'), {
     ok: false, errors: { form: 'Сервер не вернул токен авторизации.' },
   });
   globalThis.fetch = async () => { throw new Error('network'); };

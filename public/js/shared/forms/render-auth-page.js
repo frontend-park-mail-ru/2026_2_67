@@ -71,8 +71,8 @@ export function renderAuthPage(app, template, validate, onSuccess) {
     submitButton.disabled = true;
     const isLogin = form.dataset.authForm === 'login';
     const request = isLogin
-      ? login(values.loginOrEmail, values.password)
-      : register(values.login, values.email, values.password);
+      ? login(values.email, values.password)
+      : register(values.email, values.password);
 
     request
       .then((result) => {
@@ -82,16 +82,13 @@ export function renderAuthPage(app, template, validate, onSuccess) {
         }
 
         if (isLogin && result.status === 401) {
-          renderFieldErrors(form, {}, ['loginOrEmail', 'password']);
-          message.textContent = 'Неверный логин или пароль';
+          renderFieldErrors(form, {}, ['email', 'password']);
+          message.textContent = 'Неверный email или пароль';
           return;
         }
 
         const responseErrors = result.errors ?? {};
         const fieldErrors = {
-          ...(responseErrors.loginErrMessage
-            ? { [isLogin ? 'loginOrEmail' : 'login']: capitalizeFirstLetter(responseErrors.loginErrMessage) }
-            : {}),
           ...(responseErrors.emailErrMessage ? { email: capitalizeFirstLetter(responseErrors.emailErrMessage) } : {}),
           ...(responseErrors.passwordErrMessage ? { password: capitalizeFirstLetter(responseErrors.passwordErrMessage) } : {}),
           ...(responseErrors.passswordErrMessage

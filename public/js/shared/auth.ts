@@ -22,7 +22,7 @@ export type AuthResult =
   | { ok: true }
   | { ok: false; status?: number; errors: unknown };
 
-type Credentials = { loginOrEmail: string; password: string } | { login: string; email: string; password: string };
+type Credentials = { email: string; password: string };
 
 let accessToken: unknown = localStorage.getItem(ACCESS_TOKEN_KEY);
 let userId = localStorage.getItem(USER_ID_KEY);
@@ -171,24 +171,23 @@ async function submitCredentials(endpoint: 'login' | 'register', payload: Creden
 }
 
 /**
- * Authenticates with a login or email and password.
- * @param {string} loginOrEmail Account login or email.
+ * Authenticates with an email and password.
+ * @param {string} email Account email.
  * @param {string} password Account password.
  * @returns {Promise<Object>} Authentication result.
  */
-export function login(loginOrEmail: string, password: string): Promise<AuthResult> {
-  return submitCredentials('login', { loginOrEmail, password });
+export function login(email: string, password: string): Promise<AuthResult> {
+  return submitCredentials('login', { email, password });
 }
 
 /**
  * Registers an account and saves its session.
- * @param {string} loginValue Account login.
  * @param {string} email Account email.
  * @param {string} password Account password.
  * @returns {Promise<Object>} Registration result.
  */
-export function register(loginValue: string, email: string, password: string): Promise<AuthResult> {
-  return submitCredentials('register', { login: loginValue, email, password });
+export function register(email: string, password: string): Promise<AuthResult> {
+  return submitCredentials('register', { email, password });
 }
 
 /**

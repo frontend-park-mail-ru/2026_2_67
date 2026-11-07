@@ -12,16 +12,16 @@ export function getMissingPasswordRequirements(password) {
 
 /**
  * Validates login form values without accessing the DOM.
- * @param {{loginOrEmail: string, password: string}} values Login values.
+ * @param {{email: string, password: string}} values Login values.
  * @returns {Record<string, string>} Errors by field name.
  */
 export function validateLogin(values) {
   const errors = {};
 
-  if (!values.loginOrEmail.trim()) {
-    errors.loginOrEmail = 'Введите логин или почту.';
-  } else if (values.loginOrEmail.includes('@') && !EMAIL_PATTERN.test(values.loginOrEmail.trim())) {
-    errors.loginOrEmail = 'Введите корректный email';
+  if (!values.email.trim()) {
+    errors.email = 'Введите почту.';
+  } else if (!EMAIL_PATTERN.test(values.email.trim())) {
+    errors.email = 'Введите корректный email';
   }
   if (!values.password) {
     errors.password = 'Введите пароль.';
@@ -32,15 +32,12 @@ export function validateLogin(values) {
 
 /**
  * Validates signup form values without accessing the DOM.
- * @param {{login: string, email: string, password: string, passwordRepeat: string}} values Signup values.
+ * @param {{email: string, password: string, passwordRepeat: string}} values Signup values.
  * @returns {Record<string, string>} Errors by field name.
  */
 export function validateSignup(values) {
   const errors = {};
 
-  if (!values.login.trim()) {
-    errors.login = 'Введите логин.';
-  }
   if (!EMAIL_PATTERN.test(values.email.trim())) {
     errors.email = 'Введите корректный email';
   }

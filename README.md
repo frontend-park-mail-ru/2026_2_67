@@ -50,7 +50,7 @@ npm run preview
 
 ## Запросы к backend
 
-Frontend отправляет `POST /api/v1/auth/login` с JSON-полями `loginOrEmail`, `password`, `POST /api/v1/auth/register` с `login`, `email`, `password` и `GET /api/v1/products`. Для входа и регистрации используется `credentials: 'include'`; в ответе ожидаются `accessToken` и `userId`, а cookie `refreshToken` устанавливает backend. Каталог ожидает объект с массивом `products`; каждый товар использует поля `id`, `name`, `pictureUrls`, `priceResult`, `rating` и `reviewsCount`.
+Frontend отправляет `POST /api/v1/auth/login` и `POST /api/v1/auth/register` с JSON-полями `email`, `password`, а также `GET /api/v1/products`. Для входа и регистрации используется `credentials: 'include'`; в ответе ожидаются `accessToken` и `userId`, а cookie `refreshToken` устанавливает backend. Каталог ожидает объект с массивом `products`; каждый товар использует поля `id`, `name`, `pictureUrls`, `priceResult`, `rating` и `reviewsCount`.
 
 Для восстановления сессии frontend отправляет `POST /api/v1/auth/refresh` без тела и с cookie, ожидает `accessToken`. Для профиля запрашивает `GET /api/v1/users/{userId}`, а для выхода — `POST /api/v1/auth/logout`. Эти маршруты описаны в [backend PR #2](https://github.com/go-park-mail-ru/2026_2_67/pull/2). PR #2 и [PR #3](https://github.com/go-park-mail-ru/2026_2_67/pull/3) пока имеют разные маршруты авторизации и должны быть согласованы перед совместным запуском.
 
