@@ -17,13 +17,16 @@
           <p class="cart-item__price">{{price}}</p>
           {{#if ../readonly}}
             <p class="cart-item__count">Количество: {{quantity}}</p>
+            {{#if stockWarning}}<p class="cart-item__stock-warning" role="alert">{{stockWarning}}</p>{{/if}}
+            {{#if previewError}}<p class="cart-item__stock-warning" role="alert">{{previewError}}</p>{{/if}}
           {{else}}
             <div class="cart-item__actions">
               <div class="cart-item__quantity-control">
                 <button class="cart-item__decrease" type="button" aria-label="Уменьшить количество товара {{title}}"{{#unless ../canUseCart}} disabled{{/unless}}>−</button>
                 <span class="cart-item__quantity">{{quantity}}</span>
-                <button class="cart-item__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#unless ../canUseCart}} disabled{{/unless}}>+</button>
+                <button class="cart-item__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if increaseDisabled}} disabled{{else}}{{#unless ../canUseCart}} disabled{{/unless}}{{/if}}>+</button>
               </div>
+              {{#if stockWarning}}<span class="cart-item__stock-warning" role="status">{{stockWarning}}</span>{{/if}}
               <button class="cart-item__remove" type="button" aria-label="Удалить товар {{title}} из корзины"{{#unless ../canUseCart}} disabled{{/unless}}>Удалить</button>
             </div>
           {{/if}}

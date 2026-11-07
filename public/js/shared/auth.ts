@@ -1,3 +1,5 @@
+import { clearStockState } from '../components/cart/stock-state.js';
+
 const API_BASE_URL = '/api/v1';
 const ACCESS_TOKEN_KEY = 'accessToken';
 const USER_ID_KEY = 'userId';
@@ -61,6 +63,7 @@ function saveSession(session: AuthSession): void {
 }
 
 function clearSession(): void {
+  clearStockState();
   sessionGeneration += 1;
   accessToken = null;
   userId = null;
@@ -262,4 +265,10 @@ export async function logout(): Promise<void> {
  */
 export function getCurrentUser(): CurrentUser | null {
   return userId ? { ...currentUser, userId } : null;
+}
+
+/** Replaces the cached profile only after a confirmed backend update. */
+export function setCurrentUserProfile(profile: object, expectedUserId: string): void {
+  if (userId !== expectedUserId || !accessToken) return;
+  currentUser = { ...profile, phoneNumber: Reflect.get(profile, 'telephone') };
 }

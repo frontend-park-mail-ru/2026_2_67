@@ -18,7 +18,7 @@ export interface BasketResponse {
 }
 
 export class BasketRequestError extends Error {
-  constructor(readonly status: number, readonly method: string) {
+  constructor(readonly status: number, readonly method: string, readonly responseBody: string | null) {
     super(`Запрос корзины не выполнен: ${status}`);
   }
 }
@@ -30,7 +30,8 @@ function basketPath(userId: string): string {
 async function requestBasket(path: string, options?: RequestInit): Promise<Response> {
   const response = await authorizedFetch(path, options);
   if (!response.ok) {
-    throw new BasketRequestError(response.status, options?.method ?? 'GET');
+    const responseBody = await response.text().catch(() => null);
+    throw new BasketRequestError(response.status, options?.method ?? 'GET', responseBody);
   }
   return response;
 }

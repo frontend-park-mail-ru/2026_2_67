@@ -19,12 +19,13 @@
         <div class="product-card__quantity-control">
           <button class="product-card__decrease" type="button" aria-label="Уменьшить количество товара {{title}}">−</button>
           <span class="product-card__quantity">{{quantity}}</span>
-          <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}">+</button>
+          <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if stockLimited}} disabled{{/if}}>+</button>
         </div>
         <span class="product-card__in-cart">В корзине</span>
       {{else}}
-        <button class="product-card__add-to-cart" type="button">В корзину</button>
+        {{#unless stockLimited}}<button class="product-card__add-to-cart" type="button">В корзину</button>{{/unless}}
       {{/if}}
+      {{#if stockLimited}}<span class="product-card__stock-warning" role="status" tabindex="-1">{{#if quantity}}В наличии больше нет{{else}}Нет в наличии{{/if}}</span>{{/if}}
     </div>
   {{/if}}
 </article>

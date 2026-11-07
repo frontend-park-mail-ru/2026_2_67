@@ -32,10 +32,10 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
   return element;
 }
 
-function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, canUseCart: boolean): void {
+function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, isIncreaseDisabled: (productId: number) => boolean, canUseCart: boolean): void {
   const showAddToCartButton = Boolean(getCurrentUser()) && canUseCart;
   grid.innerHTML = products.map((product) =>
-    createProductCard(product, showAddToCartButton && Number.isInteger(product.id), getCartQuantity(product.id))).join('');
+    createProductCard(product, showAddToCartButton && Number.isInteger(product.id), getCartQuantity(product.id), isIncreaseDisabled(product.id))).join('');
   grid.querySelectorAll('[data-product-card]').forEach((card, index) => {
     if (card instanceof HTMLElement) initProductCard(card, products[index]);
   });
@@ -115,20 +115,14 @@ export function renderCatalogPage(app: HTMLElement): void {
     }
 
     const quantity = cart.getProductQuantity(productId);
-    const quantityText = oldControls.querySelector('.product-card__quantity');
-    if (quantityText && quantity > 0) {
-      quantityText.textContent = String(quantity);
-      return;
-    }
-
     const container = document.createElement('div');
-    container.innerHTML = createProductCard(product, true, quantity);
+    container.innerHTML = createProductCard(product, true, quantity, cart.isIncreaseDisabled(productId));
     const newControls = container.querySelector('[data-cart-controls]');
     if (!newControls) throw new Error('Не найдены элементы управления корзиной.');
     const hadFocus = oldControls.contains(document.activeElement);
     oldControls.replaceWith(newControls);
     if (hadFocus) {
-      const focusTarget = newControls.querySelector('.product-card__increase, .product-card__add-to-cart');
+      const focusTarget = newControls.querySelector('.product-card__decrease:not(:disabled), .product-card__increase:not(:disabled), .product-card__add-to-cart:not(:disabled), .product-card__stock-warning');
       if (!(focusTarget instanceof HTMLElement)) throw new Error('Не найдена кнопка корзины.');
       focusTarget.focus();
     }
@@ -153,7 +147,7 @@ export function renderCatalogPage(app: HTMLElement): void {
       return;
     }
 
-    renderProducts(grid, matchingProducts, cart.getProductQuantity, cart.canUseCart());
+    renderProducts(grid, matchingProducts, cart.getProductQuantity, cart.isIncreaseDisabled, cart.canUseCart());
   }
 
   function acceptProducts(loadedProducts: ProductCard[], cursor: string): void {

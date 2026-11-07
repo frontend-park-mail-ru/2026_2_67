@@ -33,7 +33,7 @@ export function renderCartPage(app: HTMLElement): void {
 
   function renderPageCart(): void {
     itemsContainer.innerHTML = cartItemsTemplate({
-      items: cart.getItems(),
+      items: cart.getDisplayItems(),
       loading: cart.isLoading(),
       updating: cart.isUpdating(),
       errorMessage: cart.getErrorMessage(),

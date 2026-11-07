@@ -2,6 +2,7 @@
 import { addBasketProduct, BasketRequestError, getBasket, setBasketProductCount } from './cart-api.js';
 import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
+import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isStockRejection, markRejectedCount, reconcileStockState } from './stock-state.js';
 
 const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const itemCountRules = new Intl.PluralRules('ru-RU');
@@ -10,6 +11,8 @@ const itemCountWords: Record<string, string> = { one: 'товар', few: 'тов
 export interface CartController {
   getProductQuantity(productId: number): number;
   getItems(): CartItem[];
+  getDisplayItems(): (CartItem & { stockWarning: string; increaseDisabled: boolean })[];
+  isIncreaseDisabled(productId: number): boolean;
   getDisplayCount(): string;
   getDisplayTotal(): string;
   isLoading(): boolean;
@@ -41,6 +44,14 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
 
   function getItems(): CartItem[] {
     return cart?.items ?? [];
+  }
+
+  function getDisplayItems(): (CartItem & { stockWarning: string; increaseDisabled: boolean })[] {
+    return userId ? decorateStockItems(userId, getItems()) : [];
+  }
+
+  function isIncreaseDisabled(productId: number): boolean {
+    return Boolean(userId && isQuantityRejected(userId, productId, getProductQuantity(productId)));
   }
 
   function getProductQuantity(productId: number): number {
@@ -78,7 +89,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
 
   function renderCart(): void {
     cartPanel.innerHTML = cartTemplate({
-      items: getItems(),
+      items: getDisplayItems(),
       loading: isLoading(),
       updating: isUpdating,
       errorMessage,
@@ -99,6 +110,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
     try {
       cart = mapBasket(await getBasket(userId));
+      reconcileStockState(userId, cart.items);
       errorMessage = '';
     } catch {
       cart = null;
@@ -125,6 +137,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (newCount === currentCount || (currentCount === 0 && newCount !== 1)) {
       return;
     }
+    if (newCount > currentCount && isIncreaseDisabled(productId)) return;
 
     isUpdating = true;
     errorMessage = '';
@@ -137,12 +150,15 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
         await setBasketProductCount(userId, productId, newCount);
       }
       cart = mapBasket(await getBasket(userId));
+      reconcileStockState(userId, cart.items);
+      confirmAvailableCount(userId, productId, newCount);
       errorMessage = '';
     } catch (error) {
-      const stockExceeded = error instanceof BasketRequestError && error.method === 'PATCH'
-        && error.status === 422 && newCount > currentCount;
+      const stockExceeded = error instanceof BasketRequestError
+        && isStockRejection(error.status, error.method, currentCount, newCount, error.responseBody);
+      if (stockExceeded) markRejectedCount(userId, productId, newCount);
       errorMessage = stockExceeded
-        ? 'Нельзя добавить больше товара: недостаточно на складе'
+        ? currentCount === 0 ? 'Товара сейчас нет в наличии.' : 'В наличии больше нет'
         : 'Не удалось обновить корзину. Попробуйте снова.';
       if (stockExceeded && productGrid) {
         cartPanel.hidden = false;
@@ -150,8 +166,14 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       }
     } finally {
       isUpdating = false;
-      updatePage(cart ? productId : null);
       setActionButtonsDisabled(!cart);
+      page.querySelectorAll('[data-product-card]').forEach((card) => {
+        const id = Number(card.getAttribute('data-product-id'));
+        if (!isIncreaseDisabled(id)) return;
+        const button = card.querySelector('.product-card__increase');
+        if (button instanceof HTMLButtonElement) button.disabled = true;
+      });
+      updatePage(cart ? productId : null);
     }
   }
 
@@ -246,6 +268,8 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   return {
     getProductQuantity,
     getItems,
+    getDisplayItems,
+    isIncreaseDisabled,
     getDisplayCount,
     getDisplayTotal,
     isLoading,

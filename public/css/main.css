@@ -532,6 +532,7 @@ a:focus-visible, button:focus-visible {
 }
 .product-card__cart-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -576,6 +577,17 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-muted);
   font-size: 12px;
   white-space: nowrap;
+}
+.product-card__stock-warning {
+  width: 100%;
+  color: var(--vm-sale);
+  font-size: 12px;
+  line-height: 1.3;
+}
+.product-card__increase:disabled,
+.product-card__add-to-cart:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 .auth-page__content {
   display: grid;
@@ -804,6 +816,22 @@ a:focus-visible, button:focus-visible {
   border-radius: var(--button-radius);
   background: var(--vm-subtle);
   color: var(--vm-text);
+}
+.profile-edit-dialog__error,
+.profile-edit-dialog__message {
+  color: var(--vm-sale);
+  font-size: 12px;
+  line-height: 1.3;
+}
+.profile-edit-dialog__message {
+  margin: 12px 0 0;
+}
+.profile-edit-dialog__error:empty,
+.profile-edit-dialog__message:empty {
+  display: none;
+}
+.profile-edit-dialog__field input[aria-invalid="true"] {
+  border-color: var(--vm-sale);
 }
 .profile-edit-dialog__gender {
   display: flex;

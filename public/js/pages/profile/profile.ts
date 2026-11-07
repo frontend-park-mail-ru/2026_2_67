@@ -1,7 +1,9 @@
-import { getCurrentUser } from '../../shared/auth.js';
+import { getCurrentUser, setCurrentUserProfile } from '../../shared/auth.js';
 import { profileTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
 import { getMissingPasswordRequirements } from '../../shared/forms/validation.js';
+import { ProfileRequestError, profileFields, updateProfile } from './profile-api.js';
+import type { ProfileFields } from './profile-api.js';
 
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
@@ -45,6 +47,93 @@ export function renderProfilePage(app: HTMLElement): void {
 
   const emailDialog = requireDialog(page, '#profile-email-dialog');
   const phoneDialog = requireDialog(page, '#profile-phone-dialog');
+
+  const editableDialogs = [dialog, emailDialog, phoneDialog];
+  const errorNames: Record<keyof ProfileFields, string> = {
+    name: 'nameErrMessage', surname: 'surnameErrMessage', telephone: 'telephoneErrMessage',
+    email: 'emailErrMessage', birthDate: 'birthDateErrMessage', description: 'descriptionErrMessage',
+  };
+  let saved = profileFields(user ?? {});
+  const birthDateInput = requireInput(dialog, 'input[name="birthDate"]');
+  if (/^\d{4}-\d{2}-\d{2}/.test(saved.birthDate)) {
+    birthDateInput.value = saved.birthDate.slice(0, 10);
+  }
+  function errorText(value: unknown, key: string): string {
+    if (typeof value !== 'object' || value === null) return '';
+    const text: unknown = Reflect.get(value, key);
+    return typeof text === 'string' ? text : '';
+  }
+  editableDialogs.forEach((editor) => {
+    const apply = requireElement(editor, '.profile-edit-dialog__apply');
+    if (!(apply instanceof HTMLButtonElement)) throw new Error('Кнопка сохранения профиля не найдена.');
+    const message = document.createElement('p');
+    message.className = 'profile-edit-dialog__message';
+    message.setAttribute('role', 'alert');
+    editor.querySelector('.profile-edit-dialog__footer')?.before(message);
+    editor.querySelectorAll('input').forEach((input) => {
+      if (!(input instanceof HTMLInputElement) || !(input.name in errorNames || input.name === 'phoneNumber')) return;
+      const error = document.createElement('span');
+      error.className = 'profile-edit-dialog__error';
+      error.setAttribute('data-profile-error', input.name === 'phoneNumber' ? 'telephone' : input.name);
+      error.setAttribute('role', 'alert');
+      input.closest('label')?.append(error);
+      input.addEventListener('input', () => {
+        error.textContent = '';
+        input.removeAttribute('aria-invalid');
+      });
+    });
+    apply.addEventListener('click', async () => {
+      if (!user?.userId || apply.disabled) return;
+      if (!(Object.keys(errorNames) as (keyof ProfileFields)[]).every((key) => typeof user[key] === 'string')) {
+        message.textContent = 'Не удалось загрузить профиль. Обновите страницу и попробуйте снова.';
+        return;
+      }
+      message.textContent = '';
+      editor.querySelectorAll('[data-profile-error]').forEach((element) => { element.textContent = ''; });
+      const fields = { ...saved };
+      editor.querySelectorAll('input').forEach((input) => {
+        if (!(input instanceof HTMLInputElement) || !(input.name in fields || input.name === 'phoneNumber')) return;
+        const key = (input.name === 'phoneNumber' ? 'telephone' : input.name) as keyof ProfileFields;
+        if (input.type !== 'date' || input.dataset.changed === 'true') {
+          fields[key] = input.value;
+        }
+      });
+      apply.disabled = true;
+      try {
+        const result = await updateProfile(user.userId, fields);
+        saved = profileFields(result);
+        setCurrentUserProfile(result, user.userId);
+        if (page.isConnected) renderProfilePage(app);
+      } catch (error) {
+        if (error instanceof ProfileRequestError && error.status === 422) {
+          let shown = false;
+          (Object.keys(errorNames) as (keyof ProfileFields)[]).forEach((key) => {
+            const text = errorText(error.details, errorNames[key]);
+            if (!text) return;
+            const target = editor.querySelector(`[data-profile-error="${key}"]`);
+            if (target) {
+              target.textContent = text;
+              const input = editor.querySelector(`input[name="${key === 'telephone' ? 'phoneNumber' : key}"]`);
+              input?.setAttribute('aria-invalid', 'true');
+              shown = true;
+            }
+          });
+          message.textContent = shown ? '' : errorText(error.details, 'errMessage') || 'Проверьте данные профиля.';
+        } else if (error instanceof ProfileRequestError) {
+          message.textContent = ({ 400: 'Некорректный запрос.', 403: 'Нет доступа к изменению профиля.',
+            404: 'Профиль не найден.', 405: 'Сохранение профиля пока не поддерживается сервером.' } as Record<number, string>)[error.status]
+            || 'Не удалось сохранить профиль. Попробуйте позже.';
+        } else {
+          message.textContent = 'Не удалось сохранить профиль. Попробуйте позже.';
+        }
+      } finally {
+        apply.disabled = false;
+      }
+    });
+  });
+  birthDateInput.addEventListener('input', (event) => {
+    if (event.target instanceof HTMLInputElement) event.target.dataset.changed = 'true';
+  });
 
   requireElement(page, '[data-open-email-editor]').addEventListener('click', () => {
     emailDialog.showModal();

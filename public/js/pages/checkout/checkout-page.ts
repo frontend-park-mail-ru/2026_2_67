@@ -4,6 +4,7 @@ import { cartItemsTemplate, checkoutPageTemplate } from '../../templates/templat
 import { showPickupMap } from './pickup-map.js';
 import type { PickupPoint } from './pickup-map.js';
 import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
+import { readPreviewProductErrors } from './preview-errors.js';
 
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
@@ -21,6 +22,15 @@ function isPickupPoint(value: unknown): value is PickupPoint {
   return typeof value === 'object' && value !== null && 'longitude' in value && 'latitude' in value
     && typeof value.longitude === 'number' && typeof value.latitude === 'number'
     && Number.isFinite(value.longitude) && Number.isFinite(value.latitude);
+}
+
+function checkoutWarning(stockWarning: string, previewError: string): string {
+  const stock = stockWarning.trim();
+  const preview = previewError.trim();
+  if (!stock) return preview;
+  if (!preview || stock.includes(preview)) return stock;
+  if (preview.includes(stock)) return preview;
+  return `${stock}. ${preview}`;
 }
 
 /** Показывает товары корзины и итоговую сумму перед оформлением заказа. */
@@ -41,6 +51,9 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
   const orderStatus = requireElement(page, '.checkout-page__order-status');
   let deliveryCoordinates: PickupPoint | null = null;
   let orderCompleted = false;
+  let isSubmitting = false;
+  let previewErrors = new Map<number, string>();
+  let availabilityConfirmed = false;
   const cart = initCart(page, user?.userId, renderCheckout);
   pickupButton.disabled = !user?.userId;
 
@@ -60,7 +73,10 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     }
 
     itemsContainer.innerHTML = cartItemsTemplate({
-      items: cart.getItems(),
+      items: cart.getDisplayItems().map((item) => ({
+        ...item,
+        stockWarning: checkoutWarning(item.stockWarning, previewErrors.get(item.id) || ''),
+      })),
       loading: cart.isLoading(),
       updating: cart.isUpdating(),
       errorMessage: cart.getErrorMessage(),
@@ -72,11 +88,36 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     summaryCount.textContent = itemCountText;
     subtotal.textContent = formattedTotal;
     totalPrice.textContent = formattedTotal;
-    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates || cart.isUpdating();
+    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates || cart.isUpdating() || isSubmitting || !availabilityConfirmed || previewErrors.size > 0;
+  }
+
+  async function checkPreview(coordinates: PickupPoint): Promise<PickupPoint> {
+    if (!user) throw new Error('Пользователь не найден.');
+    const response = await authorizedFetch(`/buyers/${encodeURIComponent(user.userId)}/basket/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ longitude: coordinates.longitude, latitude: coordinates.latitude, promocode: '' }),
+    });
+    const result: unknown = await response.json().catch(() => ({}));
+    const productErrors = response.status === 422 ? readPreviewProductErrors(result) : null;
+    if (productErrors) {
+      previewErrors = productErrors;
+      availabilityConfirmed = false;
+      renderCheckout();
+      throw new Error('Некоторые товары недоступны. Проверьте корзину.');
+    }
+    if (!response.ok) throw new Error(`Не удалось проверить наличие: ${response.status}`);
+    const pickupPoint: unknown = typeof result === 'object' && result !== null && 'pickupPoint' in result ? result.pickupPoint : undefined;
+    if (!isPickupPoint(pickupPoint)) throw new Error('Сервер не вернул координаты пункта выдачи.');
+    previewErrors.clear();
+    availabilityConfirmed = true;
+    renderCheckout();
+    return pickupPoint;
   }
 
   pickupButton.addEventListener('click', () => {
     deliveryCoordinates = null;
+    availabilityConfirmed = false;
     submitButton.disabled = true;
     orderStatus.textContent = '';
     if (!window.navigator.geolocation) {
@@ -91,21 +132,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     window.navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       try {
         pickupStatus.textContent = 'Ищем ближайший пункт выдачи...';
-        if (!user) throw new TypeError('Пользователь не найден.');
-        const response = await authorizedFetch(`/buyers/${encodeURIComponent(user.userId)}/basket/preview`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ longitude: coords.longitude, latitude: coords.latitude, promocode: '' }),
-        });
-        if (!response.ok) {
-          throw new Error(`Не удалось найти пункт выдачи: ${response.status}`);
-        }
-
-        const result: unknown = await response.json();
-        const pickupPoint: unknown = typeof result === 'object' && result !== null && 'pickupPoint' in result ? result.pickupPoint : undefined;
-        if (!isPickupPoint(pickupPoint)) {
-          throw new Error('Сервер не вернул координаты пункта выдачи.');
-        }
+        const pickupPoint = await checkPreview({ longitude: coords.longitude, latitude: coords.latitude });
 
         pickupStatus.textContent = 'Загружаем карту...';
         await showPickupMap(pickupMap, pickupPoint);
@@ -113,8 +140,8 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
         pickupHint.hidden = true;
         deliveryCoordinates = { longitude: coords.longitude, latitude: coords.latitude };
         renderCheckout();
-      } catch {
-        pickupStatus.textContent = 'Не удалось показать пункт выдачи. Попробуйте ещё раз.';
+      } catch (error) {
+        pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось показать пункт выдачи. Попробуйте ещё раз.';
         pickupMap.hidden = true;
       } finally {
         pickupButton.disabled = false;
@@ -126,13 +153,16 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
   });
 
   submitButton.addEventListener('click', async () => {
-    if (submitButton.disabled || !deliveryCoordinates) {
+    if (submitButton.disabled || isSubmitting || !deliveryCoordinates) {
       return;
     }
 
+    isSubmitting = true;
     submitButton.disabled = true;
     orderStatus.textContent = 'Оформляем заказ…';
     try {
+      availabilityConfirmed = false;
+      await checkPreview(deliveryCoordinates);
       const response = await authorizedFetch('/orders/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,9 +179,10 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       pickupButton.disabled = true;
       requireElement(page, '#checkout-basket-title').textContent = 'Товары в заказе';
       await cart.reloadCart();
-    } catch {
-      orderStatus.textContent = 'Не удалось оформить заказ. Попробуйте ещё раз.';
+    } catch (error) {
+      orderStatus.textContent = error instanceof Error ? error.message : 'Не удалось оформить заказ. Попробуйте ещё раз.';
     } finally {
+      isSubmitting = false;
       if (!orderCompleted) {
         renderCheckout();
       }

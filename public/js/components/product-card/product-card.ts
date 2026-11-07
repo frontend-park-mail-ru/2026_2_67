@@ -8,7 +8,7 @@ import type { ProductCard } from '../../data/map-api-product.js';
  * @param {number} quantity Current quantity of this product in the cart.
  * @returns {string} Product-card HTML.
  */
-export function createProductCard(product: ProductCard, showAddToCartButton: boolean, quantity = 0): string {
+export function createProductCard(product: ProductCard, showAddToCartButton: boolean, quantity = 0, stockLimited = false): string {
   return productCardTemplate({
     id: product.id,
     title: product.title,
@@ -19,6 +19,7 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
     reviewsCount: product.reviewsCount,
     showAddToCartButton,
     quantity,
+    stockLimited,
     dots: product.images.map((image, index) => ({ index, isActive: index === 0 })),
   });
 }
