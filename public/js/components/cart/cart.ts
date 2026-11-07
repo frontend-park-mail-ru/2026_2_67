@@ -1,5 +1,5 @@
 ﻿import { cartTemplate } from '../../templates/templates.js';
-import { addBasketProduct, getBasket, setBasketProductCount } from './cart-api.js';
+import { addBasketProduct, BasketRequestError, getBasket, setBasketProductCount } from './cart-api.js';
 import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
 
@@ -13,6 +13,7 @@ export interface CartController {
   getDisplayCount(): string;
   getDisplayTotal(): string;
   isLoading(): boolean;
+  isUpdating(): boolean;
   canUseCart(): boolean;
   canCheckout(): boolean;
   getErrorMessage(): string;
@@ -58,7 +59,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (isLoading()) {
       return 'Загрузка…';
     }
-    if (errorMessage) {
+    if (errorMessage && !cart) {
       return '—';
     }
     const count = getItems().reduce((sum, item) => sum + item.quantity, 0);
@@ -69,7 +70,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (isLoading()) {
       return 'Загрузка…';
     }
-    if (errorMessage) {
+    if (errorMessage && !cart) {
       return '—';
     }
     return `${priceFormatter.format(cart?.priceSum ?? 0)} ₽`;
@@ -79,6 +80,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     cartPanel.innerHTML = cartTemplate({
       items: getItems(),
       loading: isLoading(),
+      updating: isUpdating,
       errorMessage,
       canUseCart: Boolean(cart) && !isUpdating,
       itemCountText: getDisplayCount(),
@@ -125,6 +127,8 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
 
     isUpdating = true;
+    errorMessage = '';
+    updatePage(productId);
     setActionButtonsDisabled(true);
     try {
       if (currentCount === 0) {
@@ -134,9 +138,16 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       }
       cart = mapBasket(await getBasket(userId));
       errorMessage = '';
-    } catch {
-      cart = null;
-      errorMessage = 'Не удалось обновить корзину. Обновите страницу и попробуйте снова.';
+    } catch (error) {
+      const stockExceeded = error instanceof BasketRequestError && error.method === 'PATCH'
+        && error.status === 422 && newCount > currentCount;
+      errorMessage = stockExceeded
+        ? 'Нельзя добавить больше товара: недостаточно на складе'
+        : 'Не удалось обновить корзину. Попробуйте снова.';
+      if (stockExceeded && productGrid) {
+        cartPanel.hidden = false;
+        cartButton.setAttribute('aria-expanded', 'true');
+      }
     } finally {
       isUpdating = false;
       updatePage(cart ? productId : null);
@@ -238,6 +249,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     getDisplayCount,
     getDisplayTotal,
     isLoading,
+    isUpdating: () => isUpdating,
     canUseCart: () => Boolean(cart) && !isUpdating,
     canCheckout,
     getErrorMessage: () => errorMessage,

@@ -35,6 +35,7 @@ export function renderCartPage(app: HTMLElement): void {
     itemsContainer.innerHTML = cartItemsTemplate({
       items: cart.getItems(),
       loading: cart.isLoading(),
+      updating: cart.isUpdating(),
       errorMessage: cart.getErrorMessage(),
       canUseCart: cart.canUseCart(),
     });

@@ -1,6 +1,9 @@
 {{#if errorMessage}}
   <p class="cart-message" role="alert">{{errorMessage}}</p>
 {{/if}}
+{{#if updating}}
+  <p class="cart-message" role="status">Обновляем корзину…</p>
+{{/if}}
 {{#if loading}}
   <p class="cart-message" role="status">Загрузка корзины…</p>
 {{else}}

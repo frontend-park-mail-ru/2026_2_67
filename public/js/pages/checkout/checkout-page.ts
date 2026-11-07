@@ -49,7 +49,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       return;
     }
 
-    if (shouldLeaveEmptyCheckout({
+    if (!cart.isUpdating() && shouldLeaveEmptyCheckout({
       isPageActive: page.isConnected,
       isLoading: cart.isLoading(),
       errorMessage: cart.getErrorMessage(),
@@ -62,6 +62,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     itemsContainer.innerHTML = cartItemsTemplate({
       items: cart.getItems(),
       loading: cart.isLoading(),
+      updating: cart.isUpdating(),
       errorMessage: cart.getErrorMessage(),
       readonly: true,
     });
@@ -71,7 +72,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     summaryCount.textContent = itemCountText;
     subtotal.textContent = formattedTotal;
     totalPrice.textContent = formattedTotal;
-    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates;
+    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates || cart.isUpdating();
   }
 
   pickupButton.addEventListener('click', () => {
