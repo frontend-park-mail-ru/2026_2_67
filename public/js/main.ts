@@ -144,4 +144,10 @@ async function startApplication(): Promise<void> {
   }
 }
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').catch((error: unknown) => {
+    console.warn('Service Worker registration failed:', error);
+  });
+}
+
 startApplication();
