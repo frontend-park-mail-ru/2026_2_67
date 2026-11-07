@@ -1,19 +1,26 @@
-export let catalogTemplate;
-export let cartTemplate;
-export let cartItemsTemplate;
-export let cartPageTemplate;
-export let checkoutPageTemplate;
-export let loginTemplate;
-export let productCardTemplate;
-export let profileTemplate;
-export let signupTemplate;
+export type Template = (context?: unknown) => string;
+
+declare const Handlebars: {
+  compile(source: string): Template;
+  registerPartial(name: string, source: string): void;
+};
+
+export let catalogTemplate: Template;
+export let cartTemplate: Template;
+export let cartItemsTemplate: Template;
+export let cartPageTemplate: Template;
+export let checkoutPageTemplate: Template;
+export let loginTemplate: Template;
+export let productCardTemplate: Template;
+export let profileTemplate: Template;
+export let signupTemplate: Template;
 
 /**
  * Загружает локальный шаблон и компилирует его.
  * @param {string} name Имя файла без расширения.
  * @returns {Promise<Function>} Функция отображения шаблона.
  */
-async function loadTemplate(name) {
+async function loadTemplate(name: string): Promise<Template> {
   const response = await fetch(new URL(`./${name}.hbs`, import.meta.url));
   if (!response.ok) {
     throw new Error(`Не удалось загрузить шаблон ${name}: ${response.status}`);
