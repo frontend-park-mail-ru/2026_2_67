@@ -1,3 +1,5 @@
+const tseslint = require('typescript-eslint');
+
 module.exports = [
   {
     files: ['public/js/**/*.js', 'scripts/**/*.js'],
@@ -20,6 +22,17 @@ module.exports = [
     rules: {
       'no-undef': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      semi: ['error', 'always']
+    }
+  },
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: ['public/js/**/*.ts'],
+  })),
+  {
+    files: ['public/js/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       semi: ['error', 'always']
     }
   }
