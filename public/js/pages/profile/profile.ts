@@ -100,6 +100,4 @@ export function renderProfilePage(app: HTMLElement): void {
     });
   });
 
-  const searchForm = requireElement(page, '[data-catalog-search]');
-  searchForm.addEventListener('submit', (event) => event.preventDefault());
 }

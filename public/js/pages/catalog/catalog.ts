@@ -88,6 +88,7 @@ export function renderCatalogPage(app: HTMLElement): void {
   const loadMoreButton = requireButton(loadMoreWrap, 'button');
   const searchForm = requireHTMLElement(page, '[data-catalog-search]');
   const searchInput = requireInput(searchForm, 'input[name="query"]');
+  searchInput.value = new window.URLSearchParams(window.location.search).get('query') ?? '';
   let products: ProductCard[] | null = null;
   let nextCursor: string = '';
 
@@ -180,8 +181,12 @@ export function renderCatalogPage(app: HTMLElement): void {
     loadMoreButton.textContent = loaded ? 'Показать ещё' : 'Не удалось загрузить. Повторить';
   });
 
-  searchForm.addEventListener('submit', (event) => event.preventDefault());
-  searchInput.addEventListener('input', showProducts);
+  searchInput.addEventListener('input', () => {
+    if (!searchInput.value.trim() && new window.URLSearchParams(window.location.search).has('query')) {
+      window.history.replaceState({}, '', '/');
+    }
+    showProducts();
+  });
 
   grid.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('[data-retry-products]')) {

@@ -74,9 +74,6 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates;
   }
 
-  const searchForm = requireElement(page, '[data-catalog-search]');
-  searchForm.addEventListener('submit', (event) => event.preventDefault());
-
   pickupButton.addEventListener('click', () => {
     deliveryCoordinates = null;
     submitButton.disabled = true;

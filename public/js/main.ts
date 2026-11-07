@@ -81,6 +81,14 @@ function toggleCatalogMenu(): void {
 async function startApplication(): Promise<void> {
   try {
     await loadTemplates();
+    app.addEventListener('submit', (event) => {
+      if (!(event.target instanceof HTMLFormElement) || !event.target.matches('[data-catalog-search]')) return;
+      event.preventDefault();
+      const input = event.target.querySelector('input[name="query"]');
+      if (!(input instanceof HTMLInputElement)) return;
+      const query = input.value.trim();
+      navigate(query ? `/?${new window.URLSearchParams({ query })}` : '/');
+    });
     app.addEventListener('click', (event) => {
       if (event.defaultPrevented) {
         return;

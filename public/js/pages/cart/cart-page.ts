@@ -67,10 +67,5 @@ export function renderCartPage(app: HTMLElement): void {
     }
   });
 
-  const searchForm = requireElement(page, '[data-catalog-search]');
-  if (!(searchForm instanceof HTMLFormElement)) {
-    throw new Error('Форма поиска не найдена.');
-  }
-  searchForm.addEventListener('submit', (event) => event.preventDefault());
   renderPageCart();
 }
