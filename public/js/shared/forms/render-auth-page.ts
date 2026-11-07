@@ -1,10 +1,23 @@
 import { renderFieldErrors } from './render-field-errors.js';
 import { login, register } from '../auth.js';
+import type { LoginFormValues, SignupFormValues, LoginErrors, SignupErrors } from './validation.js';
 
-function capitalizeFirstLetter(message) {
-  return typeof message === 'string' && message
-    ? message.replace(/^./u, (letter) => letter.toLocaleUpperCase('ru-RU'))
-    : message;
+type ValidateForm = ((values: LoginFormValues) => LoginErrors) | ((values: SignupFormValues) => SignupErrors);
+
+function capitalizeFirstLetter(message: string): string {
+  return message ? message.replace(/^./u, (letter) => letter.toLocaleUpperCase('ru-RU')) : message;
+}
+
+function readFormValues(form: HTMLFormElement): SignupFormValues {
+  const entries = Object.fromEntries(new FormData(form));
+  const text = (value: FormDataEntryValue | undefined): string => typeof value === 'string' ? value : '';
+  return { email: text(entries.email), password: text(entries.password), passwordRepeat: text(entries.passwordRepeat) };
+}
+
+function getErrorText(errors: unknown, key: string): string {
+  if (typeof errors !== 'object' || errors === null) return '';
+  const value: unknown = Reflect.get(errors, key);
+  return typeof value === 'string' ? value : '';
 }
 
 /**
@@ -15,10 +28,11 @@ function capitalizeFirstLetter(message) {
  * @param {Function} onSuccess Callback after successful authentication.
  * @returns {void}
  */
-function bindPasswordVisibility(form) {
+function bindPasswordVisibility(form: HTMLFormElement): void {
   const passwordInputs = form.querySelectorAll('input[type="password"]');
 
   passwordInputs.forEach((input) => {
+    if (!(input instanceof HTMLInputElement)) return;
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'password-toggle';
@@ -38,29 +52,32 @@ function bindPasswordVisibility(form) {
   });
 }
 
-export function renderAuthPage(app, template, validate, onSuccess) {
+export function renderAuthPage(app: HTMLElement, template: () => string, validate: ValidateForm, onSuccess: () => void): void {
   app.innerHTML = template();
   const form = app.querySelector('[data-auth-form]');
+  if (!(form instanceof HTMLFormElement)) throw new Error('Форма авторизации не найдена.');
   bindPasswordVisibility(form);
 
   if (form.dataset.authForm === 'signup') {
     const passwordInput = form.elements.namedItem('password');
     const passwordError = form.querySelector('[data-error-for="password"]');
+    if (!(passwordInput instanceof HTMLInputElement) || !passwordError) throw new Error('Поле пароля не найдено.');
     passwordInput.addEventListener('input', () => {
-      const error = validate(Object.fromEntries(new FormData(form))).password || '';
+      const error = validate(readFormValues(form)).password || '';
       passwordError.textContent = error;
       passwordInput.setAttribute('aria-invalid', String(Boolean(error)));
     });
   }
 
-  form.addEventListener('submit', function validateBeforeSubmit(event) {
+  form.addEventListener('submit', function validateBeforeSubmit(event: Event): void {
     event.preventDefault();
-    const values = Object.fromEntries(new FormData(form));
+    const values = readFormValues(form);
     const errors = validate(values);
     const isValid = Object.keys(errors).length === 0;
 
-    renderFieldErrors(form, errors, errors.passwordRepeat ? ['password'] : []);
+    renderFieldErrors(form, errors, 'passwordRepeat' in errors && errors.passwordRepeat ? ['password'] : []);
     const message = app.querySelector('[data-form-message]');
+    if (!message) throw new Error('Сообщение формы авторизации не найдено.');
     message.textContent = '';
 
     if (!isValid) {
@@ -68,6 +85,7 @@ export function renderAuthPage(app, template, validate, onSuccess) {
     }
 
     const submitButton = form.querySelector('[type="submit"]');
+    if (!(submitButton instanceof HTMLButtonElement)) throw new Error('Кнопка отправки не найдена.');
     submitButton.disabled = true;
     const isLogin = form.dataset.authForm === 'login';
     const request = isLogin
@@ -87,18 +105,21 @@ export function renderAuthPage(app, template, validate, onSuccess) {
           return;
         }
 
-        const responseErrors = result.errors ?? {};
+        const responseErrors: unknown = result.errors;
+        const emailError = getErrorText(responseErrors, 'emailErrMessage');
+        const passwordError = getErrorText(responseErrors, 'passwordErrMessage');
+        const legacyPasswordError = getErrorText(responseErrors, 'passswordErrMessage');
         const fieldErrors = {
-          ...(responseErrors.emailErrMessage ? { email: capitalizeFirstLetter(responseErrors.emailErrMessage) } : {}),
-          ...(responseErrors.passwordErrMessage ? { password: capitalizeFirstLetter(responseErrors.passwordErrMessage) } : {}),
-          ...(responseErrors.passswordErrMessage
-            ? { password: capitalizeFirstLetter(responseErrors.passswordErrMessage) }
+          ...(emailError ? { email: capitalizeFirstLetter(emailError) } : {}),
+          ...(passwordError ? { password: capitalizeFirstLetter(passwordError) } : {}),
+          ...(legacyPasswordError
+            ? { password: capitalizeFirstLetter(legacyPasswordError) }
             : {}),
         };
         renderFieldErrors(form, fieldErrors);
         message.textContent = Object.keys(fieldErrors).length
           ? ''
-          : responseErrors.errMessage || responseErrors.form || 'Не удалось выполнить запрос. Попробуйте позже.';
+          : getErrorText(responseErrors, 'errMessage') || getErrorText(responseErrors, 'form') || 'Не удалось выполнить запрос. Попробуйте позже.';
       })
       .catch(() => {
         message.textContent = 'Не удалось связаться с сервером. Попробуйте позже.';

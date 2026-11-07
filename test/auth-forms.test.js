@@ -16,7 +16,9 @@ const { validateLogin, validateSignup } = await import(moduleUrl(validationCode.
 
 const authUrl = moduleUrl('export const login = (...args) => globalThis.authFormMock.login(...args); export const register = (...args) => globalThis.authFormMock.register(...args);');
 const errorsUrl = new URL('../public/js/shared/forms/render-field-errors.js', import.meta.url).href;
-const source = (await readFile(new URL('../public/js/shared/forms/render-auth-page.js', import.meta.url), 'utf8'))
+const formSource = new URL('../public/js/shared/forms/render-auth-page.ts', import.meta.url);
+const formCode = await transformFileAsync(fileURLToPath(formSource), { presets: ['@babel/preset-typescript'] });
+const source = formCode.code
   .replace('./render-field-errors.js', errorsUrl)
   .replace('../auth.js', authUrl);
 const { renderAuthPage } = await import(moduleUrl(source));
@@ -27,9 +29,12 @@ Handlebars.registerPartial('siteFooter', '');
 test('email forms validate, display API errors and keep password controls', async (t) => {
   const dom = new JSDOM('<div id="app"></div>', { url: 'http://localhost/' });
   const saved = new Map();
-  for (const key of ['document', 'FormData', 'authFormMock']) saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+  for (const key of ['document', 'FormData', 'HTMLFormElement', 'HTMLInputElement', 'HTMLButtonElement', 'authFormMock']) saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
   globalThis.document = dom.window.document;
   globalThis.FormData = dom.window.FormData;
+  globalThis.HTMLFormElement = dom.window.HTMLFormElement;
+  globalThis.HTMLInputElement = dom.window.HTMLInputElement;
+  globalThis.HTMLButtonElement = dom.window.HTMLButtonElement;
   t.after(() => {
     for (const [key, descriptor] of saved) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -53,8 +58,19 @@ test('email forms validate, display API errors and keep password controls', asyn
   assert.equal(requests.length, 0);
   assert.equal(form.querySelector('[data-error-for="email"]').textContent, 'Введите корректный email');
   form.elements.namedItem('email').value = 'user@example.com';
+  const fileInput = dom.window.document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.name = 'email';
+  const emailInput = form.elements.namedItem('email');
+  emailInput.replaceWith(fileInput);
   form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+  assert.equal(requests.length, 0);
+  assert.equal(form.querySelector('[data-error-for="email"]').textContent, 'Введите почту.');
+  fileInput.replaceWith(emailInput);
+  form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+  assert.equal(form.querySelector('[type="submit"]').disabled, true);
   await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(form.querySelector('[type="submit"]').disabled, false);
   assert.deepEqual(requests[0], ['login', 'user@example.com', 'x']);
   assert.equal(form.elements.namedItem('email').getAttribute('aria-invalid'), 'true');
   assert.equal(form.elements.namedItem('password').getAttribute('aria-invalid'), 'true');
