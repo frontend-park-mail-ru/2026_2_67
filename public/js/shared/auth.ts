@@ -24,13 +24,35 @@ export type AuthResult =
 
 type Credentials = { email: string; password: string };
 
-let accessToken: unknown = localStorage.getItem(ACCESS_TOKEN_KEY);
+let accessToken: string | null = localStorage.getItem(ACCESS_TOKEN_KEY);
 let userId = localStorage.getItem(USER_ID_KEY);
 let currentUser: UserProfile | null = null;
+let refreshPromise: Promise<boolean> | null = null;
+let sessionGeneration = 0;
+
+function tokenExpiresAt(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: unknown };
+    return typeof payload.exp === 'number' && Number.isFinite(payload.exp) ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function tokenIsExpired(token: string): boolean {
+  const expiresAt = tokenExpiresAt(token);
+  return expiresAt !== null && Date.now() >= expiresAt;
+}
 
 function saveSession(session: AuthSession): void {
+  if (typeof session.accessToken !== 'string' || tokenExpiresAt(session.accessToken) === null) {
+    throw new TypeError('Access token has no valid expiration.');
+  }
   accessToken = session.accessToken;
   userId = session.userId === undefined ? userId : String(session.userId);
+  sessionGeneration += 1;
   localStorage.setItem(ACCESS_TOKEN_KEY, String(accessToken));
 
   if (userId !== null) {
@@ -39,6 +61,7 @@ function saveSession(session: AuthSession): void {
 }
 
 function clearSession(): void {
+  sessionGeneration += 1;
   accessToken = null;
   userId = null;
   currentUser = null;
@@ -58,26 +81,40 @@ function readField(value: unknown, key: string): unknown {
 }
 
 async function refreshAccessToken(): Promise<boolean> {
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    if (response.status === 400 || response.status === 403) {
+  const generation = sessionGeneration;
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (generation !== sessionGeneration) return false;
+    if (!response.ok) {
       clearSession();
+      return false;
     }
+
+    const result = await readResponse(response);
+    if (generation !== sessionGeneration) return false;
+    const token = readField(result, 'accessToken');
+    if (typeof token !== 'string' || tokenExpiresAt(token) === null || tokenIsExpired(token)) {
+      clearSession();
+      return false;
+    }
+    saveSession({ accessToken: token, userId: readField(result, 'userId') });
+    return true;
+  } catch {
+    if (generation === sessionGeneration) clearSession();
     return false;
   }
+}
 
-  const result = await readResponse(response);
-  const token = readField(result, 'accessToken');
-  if (!token) {
-    return false;
+function refreshOnce(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
   }
-
-  saveSession({ accessToken: token, userId: readField(result, 'userId') });
-  return true;
+  return refreshPromise;
 }
 
 /**
@@ -87,18 +124,28 @@ async function refreshAccessToken(): Promise<boolean> {
  * @returns {Promise<Response>} Backend response.
  */
 export async function authorizedFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const send = () => fetch(`${API_BASE_URL}${path}`, {
+  if (accessToken && tokenIsExpired(accessToken) && !await refreshOnce()) {
+    return new Response(null, { status: 401 });
+  }
+
+  const send = (token: string | null) => fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...options.headers,
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: 'include',
   });
 
-  let response = await send();
-  if (response.status === 401 && await refreshAccessToken()) {
-    response = await send();
+  const sentToken = accessToken;
+  const response = await send(sentToken);
+  if (response.status !== 401 || !sentToken || !accessToken) return response;
+
+  if (accessToken !== sentToken && !tokenIsExpired(accessToken)) {
+    return send(accessToken);
+  }
+  if (tokenIsExpired(accessToken) && await refreshOnce() && accessToken) {
+    return send(accessToken);
   }
   return response;
 }
@@ -129,16 +176,21 @@ export async function loadCurrentUser(): Promise<UserProfile | null> {
 }
 
 /**
- * Restores a session using the refresh cookie and loads the user's profile.
+ * Restores a session with the saved access token, refreshing only after expiration.
  * @returns {Promise<Object|null>} Profile or null if restoration fails.
  */
 export async function restoreSession(): Promise<UserProfile | null> {
-  if (!userId) {
+  if (!userId || !accessToken) {
+    if (userId || accessToken) clearSession();
     return null;
   }
 
   try {
-    await refreshAccessToken();
+    if (tokenExpiresAt(accessToken) === null) {
+      clearSession();
+      return null;
+    }
+    if (tokenIsExpired(accessToken) && !await refreshOnce()) return null;
     return await loadCurrentUser();
   } catch {
     return null;
