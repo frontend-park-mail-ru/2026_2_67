@@ -2,21 +2,43 @@ const API_BASE_URL = '/api/v1';
 const ACCESS_TOKEN_KEY = 'accessToken';
 const USER_ID_KEY = 'userId';
 
-let accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-let userId = localStorage.getItem(USER_ID_KEY);
-let currentUser = null;
+export interface AuthSession {
+  accessToken: unknown;
+  userId: unknown;
+}
 
-function saveSession(session) {
+export interface UserProfile {
+  [field: string]: unknown;
+  phoneNumber: unknown;
+}
+
+export interface CurrentUser {
+  [field: string]: unknown;
+  userId: string;
+  phoneNumber?: unknown;
+}
+
+export type AuthResult =
+  | { ok: true }
+  | { ok: false; status?: number; errors: unknown };
+
+type Credentials = { loginOrEmail: string; password: string } | { login: string; email: string; password: string };
+
+let accessToken: unknown = localStorage.getItem(ACCESS_TOKEN_KEY);
+let userId = localStorage.getItem(USER_ID_KEY);
+let currentUser: UserProfile | null = null;
+
+function saveSession(session: AuthSession): void {
   accessToken = session.accessToken;
   userId = session.userId === undefined ? userId : String(session.userId);
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(ACCESS_TOKEN_KEY, String(accessToken));
 
   if (userId !== null) {
     localStorage.setItem(USER_ID_KEY, userId);
   }
 }
 
-function clearSession() {
+function clearSession(): void {
   accessToken = null;
   userId = null;
   currentUser = null;
@@ -24,11 +46,18 @@ function clearSession() {
   localStorage.removeItem(USER_ID_KEY);
 }
 
-async function readResponse(response) {
+async function readResponse(response: Response): Promise<unknown> {
   return response.json().catch(() => ({}));
 }
 
-async function refreshAccessToken() {
+function readField(value: unknown, key: string): unknown {
+  if (value === null || value === undefined) {
+    throw new TypeError(`Cannot read property ${key} from null or undefined`);
+  }
+  return Reflect.get(Object(value), key);
+}
+
+async function refreshAccessToken(): Promise<boolean> {
   const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
@@ -42,11 +71,12 @@ async function refreshAccessToken() {
   }
 
   const result = await readResponse(response);
-  if (!result.accessToken) {
+  const token = readField(result, 'accessToken');
+  if (!token) {
     return false;
   }
 
-  saveSession(result);
+  saveSession({ accessToken: token, userId: readField(result, 'userId') });
   return true;
 }
 
@@ -56,7 +86,7 @@ async function refreshAccessToken() {
  * @param {RequestInit} options Fetch options.
  * @returns {Promise<Response>} Backend response.
  */
-export async function authorizedFetch(path, options = {}) {
+export async function authorizedFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const send = () => fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -77,7 +107,7 @@ export async function authorizedFetch(path, options = {}) {
  * Loads the current user's profile when a user ID and access token are available.
  * @returns {Promise<Object|null>} Profile or null if it cannot be loaded.
  */
-export async function loadCurrentUser() {
+export async function loadCurrentUser(): Promise<UserProfile | null> {
   if (!userId || !accessToken) {
     currentUser = null;
     return null;
@@ -94,7 +124,7 @@ export async function loadCurrentUser() {
   }
 
   const profile = await readResponse(response);
-  currentUser = { ...profile, phoneNumber: profile.telephone };
+  currentUser = { ...Object(profile), phoneNumber: readField(profile, 'telephone') };
   return currentUser;
 }
 
@@ -102,7 +132,7 @@ export async function loadCurrentUser() {
  * Restores a session using the refresh cookie and loads the user's profile.
  * @returns {Promise<Object|null>} Profile or null if restoration fails.
  */
-export async function restoreSession() {
+export async function restoreSession(): Promise<UserProfile | null> {
   if (!userId) {
     return null;
   }
@@ -115,7 +145,7 @@ export async function restoreSession() {
   }
 }
 
-async function submitCredentials(endpoint, payload) {
+async function submitCredentials(endpoint: 'login' | 'register', payload: Credentials): Promise<AuthResult> {
   const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -128,11 +158,12 @@ async function submitCredentials(endpoint, payload) {
     return { ok: false, status: response.status, errors: result };
   }
 
-  if (!result.accessToken) {
-    return { ok: false, errors: { form: result.errMessage || 'Сервер не вернул токен авторизации.' } };
+  const token = readField(result, 'accessToken');
+  if (!token) {
+    return { ok: false, errors: { form: readField(result, 'errMessage') || 'Сервер не вернул токен авторизации.' } };
   }
 
-  saveSession(result);
+  saveSession({ accessToken: token, userId: readField(result, 'userId') });
   if (userId) {
     await loadCurrentUser();
   }
@@ -145,7 +176,7 @@ async function submitCredentials(endpoint, payload) {
  * @param {string} password Account password.
  * @returns {Promise<Object>} Authentication result.
  */
-export function login(loginOrEmail, password) {
+export function login(loginOrEmail: string, password: string): Promise<AuthResult> {
   return submitCredentials('login', { loginOrEmail, password });
 }
 
@@ -156,7 +187,7 @@ export function login(loginOrEmail, password) {
  * @param {string} password Account password.
  * @returns {Promise<Object>} Registration result.
  */
-export function register(loginValue, email, password) {
+export function register(loginValue: string, email: string, password: string): Promise<AuthResult> {
   return submitCredentials('register', { login: loginValue, email, password });
 }
 
@@ -164,7 +195,7 @@ export function register(loginValue, email, password) {
  * Requests logout and always clears local session data.
  * @returns {Promise<void>}
  */
-export async function logout() {
+export async function logout(): Promise<void> {
   try {
     if (accessToken) {
       await authorizedFetch('/auth/logout', { method: 'POST' });
@@ -178,6 +209,6 @@ export async function logout() {
  * Returns the identity currently available to the interface.
  * @returns {Object|null} User data or null for a guest.
  */
-export function getCurrentUser() {
+export function getCurrentUser(): CurrentUser | null {
   return userId ? { ...currentUser, userId } : null;
 }
