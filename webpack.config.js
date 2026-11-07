@@ -5,9 +5,20 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 const projectDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 export default {
-  entry: './public/js/main.js',
+  entry: [
+    './public/css/main.css',
+    './public/css/cart.css',
+    './public/css/checkout.css',
+    './public/js/main.js',
+  ],
   module: {
     rules: [
+      {
+        test: /\.css$/,
+        type: 'asset/resource',
+        generator: { filename: 'css/[name][ext]' },
+        use: ['postcss-loader'],
+      },
       {
         test: /\.[jt]s$/,
         exclude: /node_modules/,
@@ -56,7 +67,6 @@ export default {
             );
           },
         },
-        { from: 'public/css', to: 'css' },
         { from: 'public/images', to: 'images' },
         { from: 'public/vendor', to: 'vendor' },
       ],
