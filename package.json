@@ -34,6 +34,7 @@
     "babel-loader": "^10.1.1",
     "copy-webpack-plugin": "^14.0.0",
     "eslint": "^10.11.0",
+    "jsdom": "^26.1.0",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.72.1",
     "webpack": "^5.112.2",
