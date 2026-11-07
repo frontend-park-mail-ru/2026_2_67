@@ -1,5 +1,6 @@
 ﻿import { cartTemplate } from '../../templates/templates.js';
 import { addBasketProduct, getBasket, setBasketProductCount } from './cart-api.js';
+import { mapBasket } from './cart-model.js';
 
 const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const itemCountRules = new Intl.PluralRules('ru-RU');
@@ -65,19 +66,6 @@ export function initCart(page, userId, onCartChange = () => {}) {
   function updatePage(productId) {
     renderCart();
     onCartChange(productId);
-  }
-
-  function mapBasket(basket) {
-    return {
-      items: basket.basketProducts.map((product) => ({
-        id: product.id,
-        title: product.name,
-        image: product.pictureUrl,
-        price: `${priceFormatter.format(product.priceResult)} ₽`,
-        quantity: product.count,
-      })),
-      priceSum: basket.basketSumResult,
-    };
   }
 
   async function loadCart() {
