@@ -1,21 +1,37 @@
 import { getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, cartPageTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
+import type { CartController } from '../../components/cart/cart.js';
 import { blockUnavailableNavigation } from '../../shared/route-guards.js';
 
+function requireElement(parent: Element, selector: string): Element {
+  const element = parent.querySelector(selector);
+  if (!element) throw new Error(`Не найден элемент страницы корзины: ${selector}`);
+  return element;
+}
+
+function requireCheckoutLink(parent: Element): HTMLAnchorElement {
+  const link = requireElement(parent, '.cart-page__checkout');
+  if (!(link instanceof HTMLAnchorElement)) {
+    throw new Error('Ссылка оформления заказа не найдена.');
+  }
+  return link;
+}
+
 /** Показывает товары корзины и отдельную плашку с итоговой суммой. */
-export function renderCartPage(app) {
+export function renderCartPage(app: HTMLElement): void {
   const user = getCurrentUser();
   app.innerHTML = cartPageTemplate({ user });
 
-  const page = app.querySelector('.cart-page');
-  const itemsContainer = page.querySelector('.cart-page__items');
-  const count = page.querySelector('.cart-page__count');
-  const totalPrice = page.querySelector('.cart-page__total-price');
-  const checkoutLink = page.querySelector('.cart-page__checkout');
-  const cart = initCart(page, user?.userId, renderPageCart);
+  const page = requireElement(app, '.cart-page');
+  const itemsContainer = requireElement(page, '.cart-page__items');
+  const count = requireElement(page, '.cart-page__count');
+  const totalPrice = requireElement(page, '.cart-page__total-price');
+  const checkoutLink = requireCheckoutLink(page);
+  const userId = user && 'userId' in user && typeof user.userId === 'string' ? user.userId : undefined;
+  const cart: CartController = initCart(page, userId, renderPageCart);
 
-  function renderPageCart() {
+  function renderPageCart(): void {
     itemsContainer.innerHTML = cartItemsTemplate({
       items: cart.getItems(),
       loading: cart.isLoading(),
@@ -34,13 +50,14 @@ export function renderCartPage(app) {
   });
 
   itemsContainer.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
     const button = event.target.closest('button');
     const itemElement = button?.closest('[data-cart-item-id]');
-    if (!itemElement) {
+    if (!(button instanceof HTMLButtonElement) || !itemElement) {
       return;
     }
 
-    const productId = Number(itemElement.dataset.cartItemId);
+    const productId = Number(itemElement.getAttribute('data-cart-item-id') ?? undefined);
     if (button.classList.contains('cart-item__remove')) {
       cart.removeProduct(productId);
     } else if (button.classList.contains('cart-item__increase')) {
@@ -50,7 +67,10 @@ export function renderCartPage(app) {
     }
   });
 
-  const searchForm = page.querySelector('[data-catalog-search]');
+  const searchForm = requireElement(page, '[data-catalog-search]');
+  if (!(searchForm instanceof HTMLFormElement)) {
+    throw new Error('Форма поиска не найдена.');
+  }
   searchForm.addEventListener('submit', (event) => event.preventDefault());
   renderPageCart();
 }
