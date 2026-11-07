@@ -6,6 +6,30 @@ const projectDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 export default {
   entry: './public/js/main.js',
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env', {
+                targets: {
+                  chrome: '109',
+                  edge: '109',
+                  firefox: '115',
+                  safari: '16.4',
+                },
+                modules: false,
+              }],
+            ],
+          },
+        },
+      },
+    ],
+  },
   output: {
     path: path.resolve(projectDirectory, 'dist'),
     filename: 'main.js',
