@@ -5,7 +5,8 @@ import { log } from 'node:console';
 import process from 'node:process';
 import { pipeline } from 'node:stream';
 
-const publicDirectory = resolve('public');
+const staticRoot = process.argv.includes('--dist') ? 'dist' : 'public';
+const publicDirectory = resolve(staticRoot);
 const backendUrl = 'http://localhost:8080';
 const frontendRoutes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout']);
 const contentTypes = {
@@ -82,5 +83,5 @@ const server = createServer((request, response) => {
 
 const port = Number(process.env.PORT || 8081);
 server.listen(port, () => {
-  log(`Frontend: http://localhost:${port}`);
+  log(`Frontend (${staticRoot}): http://localhost:${port}`);
 });
