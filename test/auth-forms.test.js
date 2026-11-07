@@ -1,13 +1,18 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { transformFileAsync } from '@babel/core';
 import Handlebars from 'handlebars';
 import { JSDOM } from 'jsdom';
-import { validateLogin, validateSignup } from '../public/js/shared/forms/validation.js';
 
 function moduleUrl(code) {
   return `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
 }
+
+const validationSource = new URL('../public/js/shared/forms/validation.ts', import.meta.url);
+const validationCode = await transformFileAsync(fileURLToPath(validationSource), { presets: ['@babel/preset-typescript'] });
+const { validateLogin, validateSignup } = await import(moduleUrl(validationCode.code));
 
 const authUrl = moduleUrl('export const login = (...args) => globalThis.authFormMock.login(...args); export const register = (...args) => globalThis.authFormMock.register(...args);');
 const errorsUrl = new URL('../public/js/shared/forms/render-field-errors.js', import.meta.url).href;

@@ -1,5 +1,17 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-export function getMissingPasswordRequirements(password) {
+export interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
+export interface SignupFormValues extends LoginFormValues {
+  passwordRepeat: string;
+}
+
+export type LoginErrors = Partial<Record<keyof LoginFormValues, string>>;
+export type SignupErrors = Partial<Record<keyof SignupFormValues, string>>;
+
+export function getMissingPasswordRequirements(password: string): string {
   const missing = [];
   if ([...password].length < 8) missing.push('содержать не менее 8 символов');
   if (!/\p{Lu}/u.test(password)) missing.push('содержать хотя бы одну заглавную букву');
@@ -15,8 +27,8 @@ export function getMissingPasswordRequirements(password) {
  * @param {{email: string, password: string}} values Login values.
  * @returns {Record<string, string>} Errors by field name.
  */
-export function validateLogin(values) {
-  const errors = {};
+export function validateLogin(values: LoginFormValues): LoginErrors {
+  const errors: LoginErrors = {};
 
   if (!values.email.trim()) {
     errors.email = 'Введите почту.';
@@ -35,8 +47,8 @@ export function validateLogin(values) {
  * @param {{email: string, password: string, passwordRepeat: string}} values Signup values.
  * @returns {Record<string, string>} Errors by field name.
  */
-export function validateSignup(values) {
-  const errors = {};
+export function validateSignup(values: SignupFormValues): SignupErrors {
+  const errors: SignupErrors = {};
 
   if (!EMAIL_PATTERN.test(values.email.trim())) {
     errors.email = 'Введите корректный email';

@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getMissingPasswordRequirements, validateLogin, validateSignup } from '../public/js/shared/forms/validation.js';
+import { fileURLToPath } from 'node:url';
+import { transformFileAsync } from '@babel/core';
+
+const source = new URL('../public/js/shared/forms/validation.ts', import.meta.url);
+const result = await transformFileAsync(fileURLToPath(source), { presets: ['@babel/preset-typescript'] });
+const moduleUrl = `data:text/javascript;base64,${Buffer.from(result.code).toString('base64')}`;
+const { getMissingPasswordRequirements, validateLogin, validateSignup } = await import(moduleUrl);
 
 test('login validates email and permits a nonempty short password', () => {
   assert.deepEqual(validateLogin({ email: '', password: '' }), { email: 'Введите почту.', password: 'Введите пароль.' });
