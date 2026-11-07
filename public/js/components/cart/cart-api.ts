@@ -1,10 +1,27 @@
 import { authorizedFetch } from '../../shared/auth.js';
 
-function basketPath(userId) {
+export interface BasketProduct {
+  id: number;
+  category: string;
+  name: string;
+  pictureUrl: string;
+  price: number;
+  discount: number;
+  priceResult: number;
+  count: number;
+}
+
+export interface BasketResponse {
+  basketProducts: BasketProduct[];
+  basketSum: number;
+  basketSumResult: number;
+}
+
+function basketPath(userId: string): string {
   return `/buyers/${encodeURIComponent(userId)}/basket`;
 }
 
-async function requestBasket(path, options) {
+async function requestBasket(path: string, options?: RequestInit): Promise<Response> {
   const response = await authorizedFetch(path, options);
   if (!response.ok) {
     throw new Error(`Запрос корзины не выполнен: ${response.status}`);
@@ -12,16 +29,16 @@ async function requestBasket(path, options) {
   return response;
 }
 
-export async function getBasket(userId) {
+export async function getBasket(userId: string): Promise<BasketResponse> {
   const response = await requestBasket(basketPath(userId));
-  const basket = await response.json();
+  const basket = await response.json() as BasketResponse;
   if (!Array.isArray(basket.basketProducts) || !Number.isFinite(basket.basketSumResult)) {
     throw new Error('Сервер вернул корзину в неожиданном формате.');
   }
   return basket;
 }
 
-export async function addBasketProduct(userId, productId) {
+export async function addBasketProduct(userId: string, productId: number): Promise<void> {
   await requestBasket(`${basketPath(userId)}/products`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,7 +46,7 @@ export async function addBasketProduct(userId, productId) {
   });
 }
 
-export async function setBasketProductCount(userId, productId, count) {
+export async function setBasketProductCount(userId: string, productId: number, count: number): Promise<void> {
   await requestBasket(`${basketPath(userId)}/products/${encodeURIComponent(productId)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

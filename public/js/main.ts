@@ -8,9 +8,15 @@ import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
 
-const app = document.getElementById('app');
-const pathsByPage = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout' };
-const routes = {
+function requireApp(): HTMLElement {
+  const element = document.getElementById('app');
+  if (!element) throw new Error('Контейнер приложения не найден.');
+  return element;
+}
+
+const app = requireApp();
+const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout' };
+const routes: Record<string, () => void> = {
   '/': () => renderCatalogPage(app),
   '/login': () => renderLoginPage(app, () => navigate('/')),
   '/signup': () => renderSignupPage(app, () => navigate('/')),
@@ -23,7 +29,7 @@ const routes = {
  * Renders the page for the current URL and normalizes unknown routes to the catalog.
  * @returns {void}
  */
-function renderCurrentRoute() {
+function renderCurrentRoute(): void {
   if (requiresAuthentication(window.location.pathname, getCurrentUser())) {
     window.history.replaceState({}, '', '/login');
   }
@@ -43,7 +49,7 @@ function renderCurrentRoute() {
  * @param {string} path Frontend route.
  * @returns {void}
  */
-function navigate(path) {
+function navigate(path: string): void {
   closeCatalogMenu();
   if (window.location.pathname + window.location.search !== path) {
     window.history.pushState({}, '', path);
@@ -52,18 +58,19 @@ function navigate(path) {
 }
 
 /** Закрывает список категорий и снова разрешает прокрутку страницы. */
-function closeCatalogMenu() {
+function closeCatalogMenu(): void {
   const menu = app.querySelector('#catalog-menu');
   const button = app.querySelector('[data-catalog-toggle]');
-  if (menu) menu.hidden = true;
+  if (menu instanceof HTMLElement) menu.hidden = true;
   if (button) button.setAttribute('aria-expanded', 'false');
   document.body.style.overflow = '';
 }
 
 /** Открывает или закрывает список категорий при повторном нажатии. */
-function toggleCatalogMenu() {
+function toggleCatalogMenu(): void {
   const menu = app.querySelector('#catalog-menu');
   const button = app.querySelector('[data-catalog-toggle]');
+  if (!(menu instanceof HTMLElement) || !button) throw new Error('Меню каталога не найдено.');
   const shouldOpen = menu.hidden;
   menu.hidden = !shouldOpen;
   button.setAttribute('aria-expanded', String(shouldOpen));
@@ -71,13 +78,14 @@ function toggleCatalogMenu() {
 }
 
 /** Загружает шаблоны и подключает переключение экранов без перезагрузки. */
-async function startApplication() {
+async function startApplication(): Promise<void> {
   try {
     await loadTemplates();
     app.addEventListener('click', (event) => {
       if (event.defaultPrevented) {
         return;
       }
+      if (!(event.target instanceof Element)) return;
 
       const catalogButton = event.target.closest('[data-catalog-toggle]');
       if (catalogButton) {
@@ -88,7 +96,7 @@ async function startApplication() {
       // Открываем каталог с категорией в адресе, чтобы ссылку можно было сохранить.
       const categoryButton = event.target.closest('[data-category]');
       if (categoryButton) {
-        navigate(`/?${new window.URLSearchParams({ category: categoryButton.dataset.category })}`);
+        navigate(`/?${new window.URLSearchParams({ category: categoryButton.getAttribute('data-category') ?? '' })}`);
         return;
       }
 
@@ -102,7 +110,7 @@ async function startApplication() {
       if (!link) {
         return;
       }
-      const path = pathsByPage[link.dataset.page];
+      const path = pathsByPage[link.getAttribute('data-page') ?? ''];
       if (!path) {
         return;
       }
@@ -112,16 +120,17 @@ async function startApplication() {
     // Клик вне панели и кнопки закрывает список без перехода на другую страницу.
     document.addEventListener('click', (event) => {
       const menu = app.querySelector('#catalog-menu');
-      if (menu && !menu.hidden && !event.target.closest('#catalog-menu, [data-catalog-toggle]')) {
+      if (menu instanceof HTMLElement && !menu.hidden && (!(event.target instanceof Element) || !event.target.closest('#catalog-menu, [data-catalog-toggle]'))) {
         closeCatalogMenu();
       }
     });
     // Escape закрывает панель и возвращает фокус на кнопку «Каталог».
     document.addEventListener('keydown', (event) => {
       const menu = app.querySelector('#catalog-menu');
-      if (event.key === 'Escape' && menu && !menu.hidden) {
+      if (event.key === 'Escape' && menu instanceof HTMLElement && !menu.hidden) {
         closeCatalogMenu();
-        app.querySelector('[data-catalog-toggle]')?.focus();
+        const button = app.querySelector('[data-catalog-toggle]');
+        if (button instanceof HTMLElement) button.focus();
       }
     });
     window.addEventListener('popstate', () => {
@@ -133,6 +142,12 @@ async function startApplication() {
   } catch {
     app.textContent = 'Не удалось загрузить приложение. Обновите страницу.';
   }
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').catch((error: unknown) => {
+    console.warn('Service Worker registration failed:', error);
+  });
 }
 
 startApplication();

@@ -2,30 +2,49 @@ import { initCart } from '../../components/cart/cart.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, checkoutPageTemplate } from '../../templates/templates.js';
 import { showPickupMap } from './pickup-map.js';
+import type { PickupPoint } from './pickup-map.js';
 import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
 
+function requireElement(parent: Element, selector: string): HTMLElement {
+  const element = parent.querySelector(selector);
+  if (!(element instanceof HTMLElement)) throw new Error(`Не найден элемент оформления заказа: ${selector}`);
+  return element;
+}
+
+function requireButton(parent: Element, selector: string): HTMLButtonElement {
+  const button = parent.querySelector(selector);
+  if (!(button instanceof HTMLButtonElement)) throw new Error(`Не найдена кнопка оформления заказа: ${selector}`);
+  return button;
+}
+
+function isPickupPoint(value: unknown): value is PickupPoint {
+  return typeof value === 'object' && value !== null && 'longitude' in value && 'latitude' in value
+    && typeof value.longitude === 'number' && typeof value.latitude === 'number'
+    && Number.isFinite(value.longitude) && Number.isFinite(value.latitude);
+}
+
 /** Показывает товары корзины и итоговую сумму перед оформлением заказа. */
-export function renderCheckoutPage(app, onEmptyCart = () => {}) {
+export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = () => {}): void {
   const user = getCurrentUser();
   app.innerHTML = checkoutPageTemplate({ user });
 
-  const page = app.querySelector('.checkout-page');
-  const itemsContainer = page.querySelector('.checkout-page__basket-items');
-  const summaryCount = page.querySelector('.checkout-page__summary-count');
-  const subtotal = page.querySelector('.checkout-page__subtotal');
-  const totalPrice = page.querySelector('.checkout-page__total-price');
-  const pickupButton = page.querySelector('.checkout-page__pickup-button');
-  const pickupStatus = page.querySelector('.checkout-page__pickup-status');
-  const pickupHint = page.querySelector('.checkout-page__pickup-hint');
-  const pickupMap = page.querySelector('.checkout-page__pickup-map');
-  const submitButton = page.querySelector('.checkout-page__submit');
-  const orderStatus = page.querySelector('.checkout-page__order-status');
-  let deliveryCoordinates = null;
+  const page = requireElement(app, '.checkout-page');
+  const itemsContainer = requireElement(page, '.checkout-page__basket-items');
+  const summaryCount = requireElement(page, '.checkout-page__summary-count');
+  const subtotal = requireElement(page, '.checkout-page__subtotal');
+  const totalPrice = requireElement(page, '.checkout-page__total-price');
+  const pickupButton = requireButton(page, '.checkout-page__pickup-button');
+  const pickupStatus = requireElement(page, '.checkout-page__pickup-status');
+  const pickupHint = requireElement(page, '.checkout-page__pickup-hint');
+  const pickupMap = requireElement(page, '.checkout-page__pickup-map');
+  const submitButton = requireButton(page, '.checkout-page__submit');
+  const orderStatus = requireElement(page, '.checkout-page__order-status');
+  let deliveryCoordinates: PickupPoint | null = null;
   let orderCompleted = false;
   const cart = initCart(page, user?.userId, renderCheckout);
   pickupButton.disabled = !user?.userId;
 
-  function renderCheckout() {
+  function renderCheckout(): void {
     if (orderCompleted) {
       return;
     }
@@ -55,7 +74,7 @@ export function renderCheckoutPage(app, onEmptyCart = () => {}) {
     submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates;
   }
 
-  const searchForm = page.querySelector('[data-catalog-search]');
+  const searchForm = requireElement(page, '[data-catalog-search]');
   searchForm.addEventListener('submit', (event) => event.preventDefault());
 
   pickupButton.addEventListener('click', () => {
@@ -74,6 +93,7 @@ export function renderCheckoutPage(app, onEmptyCart = () => {}) {
     window.navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       try {
         pickupStatus.textContent = 'Ищем ближайший пункт выдачи...';
+        if (!user) throw new TypeError('Пользователь не найден.');
         const response = await authorizedFetch(`/buyers/${encodeURIComponent(user.userId)}/basket/preview`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -83,8 +103,9 @@ export function renderCheckoutPage(app, onEmptyCart = () => {}) {
           throw new Error(`Не удалось найти пункт выдачи: ${response.status}`);
         }
 
-        const { pickupPoint } = await response.json();
-        if (!Number.isFinite(pickupPoint?.longitude) || !Number.isFinite(pickupPoint?.latitude)) {
+        const result: unknown = await response.json();
+        const pickupPoint: unknown = typeof result === 'object' && result !== null && 'pickupPoint' in result ? result.pickupPoint : undefined;
+        if (!isPickupPoint(pickupPoint)) {
           throw new Error('Сервер не вернул координаты пункта выдачи.');
         }
 
@@ -119,8 +140,8 @@ export function renderCheckoutPage(app, onEmptyCart = () => {}) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(deliveryCoordinates),
       });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !Number.isInteger(result.orderId)) {
+      const result: unknown = await response.json().catch(() => ({}));
+      if (!response.ok || typeof result !== 'object' || result === null || !('orderId' in result) || !Number.isInteger(result.orderId)) {
         throw new Error('Заказ не оформлен.');
       }
 
@@ -128,7 +149,7 @@ export function renderCheckoutPage(app, onEmptyCart = () => {}) {
       orderStatus.textContent = `Заказ №${result.orderId} оформлен.`;
       submitButton.textContent = 'Заказ оформлен';
       pickupButton.disabled = true;
-      page.querySelector('#checkout-basket-title').textContent = 'Товары в заказе';
+      requireElement(page, '#checkout-basket-title').textContent = 'Товары в заказе';
       await cart.reloadCart();
     } catch {
       orderStatus.textContent = 'Не удалось оформить заказ. Попробуйте ещё раз.';

@@ -1,36 +1,60 @@
 ﻿import { cartTemplate } from '../../templates/templates.js';
 import { addBasketProduct, getBasket, setBasketProductCount } from './cart-api.js';
+import { mapBasket } from './cart-model.js';
+import type { CartItem, CartModel } from './cart-model.js';
 
 const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const itemCountRules = new Intl.PluralRules('ru-RU');
-const itemCountWords = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
+const itemCountWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
+
+export interface CartController {
+  getProductQuantity(productId: number): number;
+  getItems(): CartItem[];
+  getDisplayCount(): string;
+  getDisplayTotal(): string;
+  isLoading(): boolean;
+  canUseCart(): boolean;
+  canCheckout(): boolean;
+  getErrorMessage(): string;
+  reloadCart(): Promise<void>;
+  changeProductQuantity(productId: number, change: number): void;
+  removeProduct(productId: number): void;
+}
+
+function requireCartElement(page: Element, selector: string): HTMLElement {
+  const element = page.querySelector(selector);
+  if (!(element instanceof HTMLElement)) {
+    throw new Error('Не найдены элементы корзины.');
+  }
+  return element;
+}
 
 /** Подключает корзину к странице и возвращает её данные и действия. */
-export function initCart(page, userId, onCartChange = () => {}) {
-  const cartButton = page.querySelector('.site-header__icon--cart');
-  const cartPanel = page.querySelector('#cart-panel');
+export function initCart(page: Element, userId: string | undefined, onCartChange: (productId: number | null) => void = () => {}): CartController {
+  const cartButton = requireCartElement(page, '.site-header__icon--cart');
+  const cartPanel = requireCartElement(page, '#cart-panel');
   const productGrid = page.querySelector('.catalog-page__grid');
-  let cart = null;
+  let cart: CartModel | null = null;
   let isUpdating = false;
   let errorMessage = '';
 
-  function getItems() {
+  function getItems(): CartItem[] {
     return cart?.items ?? [];
   }
 
-  function getProductQuantity(productId) {
+  function getProductQuantity(productId: number): number {
     return getItems().find((item) => item.id === productId)?.quantity ?? 0;
   }
 
-  function canCheckout() {
+  function canCheckout(): boolean {
     return Boolean(cart?.items.length) && !isUpdating;
   }
 
-  function isLoading() {
+  function isLoading(): boolean {
     return Boolean(userId) && cart === null && !errorMessage;
   }
 
-  function getDisplayCount() {
+  function getDisplayCount(): string {
     if (isLoading()) {
       return 'Загрузка…';
     }
@@ -41,7 +65,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
     return `${count} ${itemCountWords[itemCountRules.select(count)]}`;
   }
 
-  function getDisplayTotal() {
+  function getDisplayTotal(): string {
     if (isLoading()) {
       return 'Загрузка…';
     }
@@ -51,7 +75,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
     return `${priceFormatter.format(cart?.priceSum ?? 0)} ₽`;
   }
 
-  function renderCart() {
+  function renderCart(): void {
     cartPanel.innerHTML = cartTemplate({
       items: getItems(),
       loading: isLoading(),
@@ -62,25 +86,12 @@ export function initCart(page, userId, onCartChange = () => {}) {
     });
   }
 
-  function updatePage(productId) {
+  function updatePage(productId: number | null): void {
     renderCart();
     onCartChange(productId);
   }
 
-  function mapBasket(basket) {
-    return {
-      items: basket.basketProducts.map((product) => ({
-        id: product.id,
-        title: product.name,
-        image: product.pictureUrl,
-        price: `${priceFormatter.format(product.priceResult)} ₽`,
-        quantity: product.count,
-      })),
-      priceSum: basket.basketSumResult,
-    };
-  }
-
-  async function loadCart() {
+  async function loadCart(): Promise<void> {
     if (!userId) {
       return;
     }
@@ -94,13 +105,13 @@ export function initCart(page, userId, onCartChange = () => {}) {
     updatePage(null);
   }
 
-  function setActionButtonsDisabled(disabled) {
+  function setActionButtonsDisabled(disabled: boolean): void {
     page.querySelectorAll('.product-card__cart-actions button, .cart-item button').forEach((button) => {
-      button.disabled = disabled;
+      if (button instanceof HTMLButtonElement) button.disabled = disabled;
     });
   }
 
-  async function saveProductCount(productId, newCount) {
+  async function saveProductCount(productId: number, newCount: number): Promise<void> {
     if (!userId || !cart || isUpdating || !Number.isInteger(productId) || productId <= 0) {
       return;
     }
@@ -133,18 +144,19 @@ export function initCart(page, userId, onCartChange = () => {}) {
     }
   }
 
-  function changeProductQuantity(productId, change) {
+  function changeProductQuantity(productId: number, change: number): void {
     const currentCount = getProductQuantity(productId);
     if (currentCount > 0) {
       saveProductCount(productId, Math.max(0, currentCount + change));
     }
   }
 
-  function removeProduct(productId) {
+  function removeProduct(productId: number): void {
     saveProductCount(productId, 0);
   }
 
-  function handleProductButtonClick(event) {
+  function handleProductButtonClick(event: Event): void {
+    if (!(event.target instanceof Element)) return;
     const addButton = event.target.closest('.product-card__add-to-cart');
     const increaseButton = event.target.closest('.product-card__increase');
     const decreaseButton = event.target.closest('.product-card__decrease');
@@ -154,7 +166,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
 
     event.stopPropagation();
     const card = event.target.closest('[data-product-id]');
-    const productId = Number(card?.dataset.productId);
+    const productId = Number(card?.getAttribute('data-product-id') ?? undefined);
     if (addButton) {
       saveProductCount(productId, 1);
     } else {
@@ -162,7 +174,8 @@ export function initCart(page, userId, onCartChange = () => {}) {
     }
   }
 
-  function handleCartItemClick(event) {
+  function handleCartItemClick(event: Event): void {
+    if (!(event.target instanceof Element)) return;
     const decreaseButton = event.target.closest('.cart-item__decrease');
     const increaseButton = event.target.closest('.cart-item__increase');
     const removeButton = event.target.closest('.cart-item__remove');
@@ -175,7 +188,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
     if (!cartItem) {
       return;
     }
-    const productId = Number(cartItem.dataset.cartItemId);
+    const productId = Number(cartItem.getAttribute('data-cart-item-id') ?? undefined);
     if (removeButton) {
       removeProduct(productId);
     } else {
@@ -183,7 +196,7 @@ export function initCart(page, userId, onCartChange = () => {}) {
     }
   }
 
-  function handleCartButtonClick(event) {
+  function handleCartButtonClick(event: Event): void {
     event.stopPropagation();
     if (!userId && cartPanel.hidden) {
       cartPanel.innerHTML = cartTemplate({ isGuest: true });
@@ -194,16 +207,16 @@ export function initCart(page, userId, onCartChange = () => {}) {
     cartButton.setAttribute('aria-expanded', String(!cartPanel.hidden));
   }
 
-  function handleCloseButtonClick(event) {
-    if (event.target.closest('.cart-header__close')) {
+  function handleCloseButtonClick(event: Event): void {
+    if (event.target instanceof Element && event.target.closest('.cart-header__close')) {
       event.stopPropagation();
       cartPanel.hidden = true;
       cartButton.setAttribute('aria-expanded', 'false');
     }
   }
 
-  function handleOutsideClick(event) {
-    if (!cartPanel.hidden && !cartPanel.contains(event.target)) {
+  function handleOutsideClick(event: Event): void {
+    if (!cartPanel.hidden && (!(event.target instanceof Node) || !cartPanel.contains(event.target))) {
       cartPanel.hidden = true;
       cartButton.setAttribute('aria-expanded', 'false');
     }
