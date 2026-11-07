@@ -6,9 +6,11 @@
     "build": "webpack --mode development",
     "prepare": "node scripts/prepare-assets.js",
     "preview": "node server.js --dist",
-    "start": "node server.js",
+    "prestart": "npm run build",
+    "start": "node server.js --dist",
     "test": "node --test",
     "typecheck": "tsc --noEmit",
+    "watch": "webpack --mode development --watch",
     "lint": "eslint public/js scripts server.js webpack.config.js",
     "spec:check": "openspec validate --all --strict --no-interactive"
   },
