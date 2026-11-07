@@ -32,7 +32,7 @@ const server = createServer((request, response) => {
   }
 
   if (pathname.startsWith('/api/') || pathname.startsWith('/media/')) {
-    const upstreamUrl = new URL(request.url, pathname.startsWith('/media/') ? 'http://localhost:9000' : backendUrl);
+    const upstreamUrl = new URL(request.url, pathname.startsWith('/media/') ? 'http://localhost:8090' : backendUrl);
     const proxyRequest = httpRequest(upstreamUrl, {
       method: request.method,
       headers: {
