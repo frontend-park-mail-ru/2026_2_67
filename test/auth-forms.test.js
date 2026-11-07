@@ -15,7 +15,9 @@ const validationCode = await transformFileAsync(fileURLToPath(validationSource),
 const { validateLogin, validateSignup } = await import(moduleUrl(validationCode.code));
 
 const authUrl = moduleUrl('export const login = (...args) => globalThis.authFormMock.login(...args); export const register = (...args) => globalThis.authFormMock.register(...args);');
-const errorsUrl = new URL('../public/js/shared/forms/render-field-errors.js', import.meta.url).href;
+const errorsSource = new URL('../public/js/shared/forms/render-field-errors.ts', import.meta.url);
+const errorsCode = await transformFileAsync(fileURLToPath(errorsSource), { presets: ['@babel/preset-typescript'] });
+const errorsUrl = moduleUrl(errorsCode.code);
 const formSource = new URL('../public/js/shared/forms/render-auth-page.ts', import.meta.url);
 const formCode = await transformFileAsync(fileURLToPath(formSource), { presets: ['@babel/preset-typescript'] });
 const source = formCode.code
@@ -29,9 +31,10 @@ Handlebars.registerPartial('siteFooter', '');
 test('email forms validate, display API errors and keep password controls', async (t) => {
   const dom = new JSDOM('<div id="app"></div>', { url: 'http://localhost/' });
   const saved = new Map();
-  for (const key of ['document', 'FormData', 'HTMLFormElement', 'HTMLInputElement', 'HTMLButtonElement', 'authFormMock']) saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+  for (const key of ['document', 'FormData', 'Element', 'HTMLFormElement', 'HTMLInputElement', 'HTMLButtonElement', 'authFormMock']) saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
   globalThis.document = dom.window.document;
   globalThis.FormData = dom.window.FormData;
+  globalThis.Element = dom.window.Element;
   globalThis.HTMLFormElement = dom.window.HTMLFormElement;
   globalThis.HTMLInputElement = dom.window.HTMLInputElement;
   globalThis.HTMLButtonElement = dom.window.HTMLButtonElement;
@@ -97,4 +100,15 @@ test('email forms validate, display API errors and keep password controls', asyn
   await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(requests[1], ['register', 'user@example.com', 'Strong1!']);
   assert.equal(form.querySelector('[data-error-for="email"]').textContent, 'Занята');
+
+  let successCount = 0;
+  globalThis.authFormMock.login = async () => ({ ok: true });
+  renderAuthPage(app, Handlebars.compile(loginSource), validateLogin, () => { successCount += 1; });
+  form = app.querySelector('form');
+  form.elements.namedItem('email').value = 'user@example.com';
+  form.elements.namedItem('password').value = 'secret';
+  form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(successCount, 1);
+  assert.equal(form.querySelector('[type="submit"]').disabled, false);
 });

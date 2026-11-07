@@ -7,6 +7,6 @@ import { loginTemplate } from '../../templates/templates.js';
  * @param {HTMLElement} app Main application container.
  * @param {Function} onSuccess Callback after successful login.
  */
-export function renderLoginPage(app, onSuccess) {
+export function renderLoginPage(app: HTMLElement, onSuccess: () => void): void {
   renderAuthPage(app, loginTemplate, validateLogin, onSuccess);
 }
