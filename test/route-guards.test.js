@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { transformFileAsync } from '@babel/core';
 
-import {
+const source = new URL('../public/js/shared/route-guards.ts', import.meta.url);
+const result = await transformFileAsync(fileURLToPath(source), {
+  presets: ['@babel/preset-typescript'],
+});
+const moduleUrl = `data:text/javascript;base64,${Buffer.from(result.code).toString('base64')}`;
+const {
   blockUnavailableNavigation,
   requiresAuthentication,
   shouldLeaveEmptyCheckout,
-} from '../public/js/shared/route-guards.js';
+} = await import(moduleUrl);
 
 test('protected cart routes require an authenticated user', () => {
   assert.equal(requiresAuthentication('/cart', null), true);
