@@ -9,7 +9,7 @@ export default {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.[jt]s$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
@@ -24,11 +24,18 @@ export default {
                 },
                 modules: false,
               }],
+              '@babel/preset-typescript',
             ],
           },
         },
       },
     ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    extensionAlias: {
+      '.js': ['.ts', '.js'],
+    },
   },
   output: {
     path: path.resolve(projectDirectory, 'dist'),
