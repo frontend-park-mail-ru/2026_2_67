@@ -714,6 +714,9 @@ a:focus-visible, button:focus-visible {
   height: 100%;
   object-fit: contain;
 }
+.profile-page__avatar--uploaded img {
+  object-fit: cover;
+}
 .profile-page__details {
   min-width: 0;
 }
@@ -963,6 +966,9 @@ a:focus-visible, button:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+.profile-edit-dialog__photo-avatar--uploaded img {
+  object-fit: cover;
 }
 .profile-edit-dialog__file-actions {
   display: flex;

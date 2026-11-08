@@ -5,6 +5,8 @@ import { getMissingPasswordRequirements } from '../../shared/forms/validation.js
 import { ProfileRequestError, profileFields, updateProfile } from './profile-api.js';
 import type { ProfileFields } from './profile-api.js';
 
+let uploadedAvatar: { userId: string; avatarUrl: string; previewUrl: string } | null = null;
+
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
   if (!(element instanceof HTMLElement)) throw new Error(`Не найден элемент профиля: ${selector}`);
@@ -26,7 +28,11 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
 /** Shows the profile information already loaded for the current session. */
 export function renderProfilePage(app: HTMLElement): void {
   const user = getCurrentUser();
-  app.innerHTML = profileTemplate({ user, isProfile: true });
+  if (uploadedAvatar && (uploadedAvatar.userId !== user?.userId || uploadedAvatar.avatarUrl !== user?.avatarUrl)) {
+    URL.revokeObjectURL(uploadedAvatar.previewUrl);
+    uploadedAvatar = null;
+  }
+  app.innerHTML = profileTemplate({ user, isProfile: true, avatarPreviewUrl: uploadedAvatar?.previewUrl });
 
   const page = requireElement(app, '.profile-page');
   initCart(page, user?.userId);
@@ -173,9 +179,55 @@ export function renderProfilePage(app: HTMLElement): void {
   });
 
   const photoDialog = requireDialog(page, '#profile-photo-dialog');
-  // Открываем окно выбора фото.
+  const photoFile = requireInput(photoDialog, '[data-photo-file]');
+  const photoStatus = requireElement(photoDialog, '[data-photo-status]');
+  const savePhoto = requireElement(photoDialog, '.profile-edit-dialog__apply');
+  if (!(savePhoto instanceof HTMLButtonElement)) throw new Error('Кнопка сохранения фото не найдена.');
+  const currentPhotoStatus = photoStatus.textContent ?? '';
+
+  // При каждом открытии начинаем выбор файла заново.
   requireElement(page, '[data-open-photo-editor]').addEventListener('click', () => {
+    photoFile.value = '';
+    photoStatus.textContent = currentPhotoStatus;
     photoDialog.showModal();
+  });
+  requireElement(photoDialog, '[data-select-photo]').addEventListener('click', () => {
+    photoFile.click();
+  });
+  photoFile.addEventListener('change', () => {
+    const file = photoFile.files?.[0];
+    photoStatus.textContent = file ? `Выбран файл: ${file.name}` : currentPhotoStatus;
+  });
+  savePhoto.addEventListener('click', async () => {
+    if (!user?.userId || savePhoto.disabled) return;
+    const file = photoFile.files?.[0];
+    if (!file) {
+      photoStatus.textContent = 'Сначала выберите файл.';
+      return;
+    }
+    if (!file.type.startsWith('image/') || file.size > 16 * 1024 * 1024) {
+      photoStatus.textContent = 'Выберите изображение размером не более 16 МБ.';
+      return;
+    }
+    if (!saved.name.trim() || !saved.email.trim() || !saved.birthDate.trim()) {
+      photoStatus.textContent = 'Для сохранения фото заполните имя, почту и дату рождения.';
+      return;
+    }
+
+    savePhoto.disabled = true;
+    try {
+      const result = await updateProfile(user.userId, saved, file);
+      setCurrentUserProfile(result, user.userId);
+      if (uploadedAvatar) URL.revokeObjectURL(uploadedAvatar.previewUrl);
+      uploadedAvatar = { userId: user.userId, avatarUrl: result.avatarUrl, previewUrl: URL.createObjectURL(file) };
+      if (page.isConnected) renderProfilePage(app);
+    } catch (error) {
+      photoStatus.textContent = error instanceof ProfileRequestError && error.status === 422
+        ? errorText(error.details, 'avatarErrMessage') || 'Не удалось сохранить фото. Проверьте данные профиля.'
+        : 'Не удалось сохранить фото. Попробуйте ещё раз.';
+    } finally {
+      savePhoto.disabled = false;
+    }
   });
   requireElement(photoDialog, '.profile-edit-dialog__close').addEventListener('click', () => {
     photoDialog.close();
