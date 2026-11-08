@@ -64,7 +64,7 @@
       </section>
     </div>
   </main>
-  <dialog class="profile-edit-dialog" aria-labelledby="profile-edit-title">
+  <dialog class="profile-edit-dialog profile-edit-dialog--personal" aria-labelledby="profile-edit-title">
     <div class="profile-edit-dialog__content">
       <div class="profile-edit-dialog__heading">
         <h2 id="profile-edit-title">Личная информация</h2>
@@ -79,10 +79,12 @@
           <span>Имя</span>
           <input type="text" name="name" value="{{user.name}}" autocomplete="given-name" />
         </label>
+        {{!--
         <label class="profile-edit-dialog__field">
           <span>Отчество</span>
           <input type="text" name="patronymic" autocomplete="additional-name" />
         </label>
+        --}}
         <label class="profile-edit-dialog__field">
           <span>Дата рождения</span>
           <input type="date" name="birthDate" value="{{birthDate}}" />
@@ -182,7 +184,9 @@
       <div class="profile-edit-dialog__file-actions">
         <input type="file" accept="image/*" data-photo-file hidden />
         <button class="profile-edit-dialog__file-button" type="button" data-select-photo>Выбрать файл</button>
+        {{!--
         <button class="profile-edit-dialog__file-button" type="button">Удалить файл</button>
+        --}}
       </div>
       <div class="profile-edit-dialog__footer">
         <button class="profile-edit-dialog__cancel" type="button">Отмена</button>

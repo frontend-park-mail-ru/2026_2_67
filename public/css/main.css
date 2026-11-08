@@ -665,7 +665,7 @@ a:focus-visible, button:focus-visible {
 }
 .profile-page__card {
   min-height: 180px;
-  padding: 28px;
+  padding: 0 28px 28px;
   background: var(--vm-surface);
 }
 .profile-page__card h2 {
@@ -770,8 +770,7 @@ a:focus-visible, button:focus-visible {
   gap: 8px;
 }
 .profile-edit-dialog {
-  width: min(672px, calc(100vw - 32px));
-  height: min(448px, calc(100dvh - 32px));
+  width: min(560px, calc(100vw - 32px));
   max-width: none;
   max-height: none;
   margin: auto;
@@ -910,15 +909,25 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-surface);
 }
 @media (max-width: 560px) {
-  .profile-edit-dialog {
-    height: min(650px, calc(100dvh - 32px));
-  }
   .profile-edit-dialog__content {
     padding: 20px;
   }
   .profile-edit-dialog__fields {
     grid-template-columns: 1fr;
   }
+}
+.profile-edit-dialog--personal .profile-edit-dialog__content {
+  height: auto;
+  max-height: calc(100dvh - 34px);
+  padding-block: 12px;
+}
+.profile-edit-dialog--personal .profile-edit-dialog__fields {
+  gap: 8px 20px;
+  margin-top: 10px;
+}
+.profile-edit-dialog--personal .profile-edit-dialog__footer {
+  margin-top: 10px;
+  padding-top: 0;
 }
 .profile-edit-dialog--contact {
   width: min(480px, calc(100vw - 32px));
