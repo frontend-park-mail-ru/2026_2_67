@@ -23,6 +23,8 @@ let basket = [
 ];
 let profileStatus = 200;
 let pendingPatch = null;
+let pendingBasketPatch = null;
+let nextBasketNetworkFailure = false;
 let previewBody = null;
 let pendingOrder = null;
 const postFailures = new Map([[4, 1]]);
@@ -41,7 +43,10 @@ globalThis.fetch = async (url, options = {}) => {
     }
     return Response.json(profile);
   }
-  if (path.endsWith('/basket')) return Response.json({ basketProducts: basket, basketSum: 40, basketSumResult: 40 });
+  if (path.endsWith('/basket')) {
+    const sum = basket.reduce((total, item) => total + item.priceResult * item.count, 0);
+    return Response.json({ basketProducts: basket, basketSum: sum, basketSumResult: sum });
+  }
   if (path.endsWith('/basket/products') && options.method === 'POST') {
     const { productId } = JSON.parse(options.body);
     if (productId === 3) return new Response(null, { status: 422 });
@@ -60,12 +65,18 @@ globalThis.fetch = async (url, options = {}) => {
   if (path.includes('/basket/products/')) {
     const productId = Number(path.split('/').at(-1));
     const count = JSON.parse(options.body).count;
+    if (pendingBasketPatch) await pendingBasketPatch;
+    if (nextBasketNetworkFailure) {
+      nextBasketNetworkFailure = false;
+      throw new Error('Network unavailable');
+    }
     if (productId === 2 && nonStockPatch422) {
       nonStockPatch422 = false;
       return new Response('validation failure', { status: 422 });
     }
     if (productId === 1 && count > 6) return new Response(null, { status: 422 });
-    basket = basket.map((item) => item.id === productId ? { ...item, count } : item);
+    basket = count === 0 ? basket.filter((item) => item.id !== productId)
+      : basket.map((item) => item.id === productId ? { ...item, count } : item);
     return new Response(null, { status: 200 });
   }
   if (path.endsWith('/basket/preview')) return previewBody
@@ -169,12 +180,17 @@ test('POST 422 does not pretend first addition succeeded', async () => {
   dom.window.history.replaceState({}, '', '/');
   renderCatalogPage(app);
   await tick();
+  const panel = document.querySelector('#cart-panel');
+  assert.equal(panel.hidden, true);
   const third = () => document.querySelector('[data-product-id="3"]');
   third().querySelector('.product-card__add-to-cart').click();
   await tick();
   assert.equal(third().querySelector('.product-card__quantity'), null);
   assert.equal(third().querySelector('.product-card__add-to-cart'), null);
   assert.equal(third().querySelector('[data-cart-controls] button'), null);
+  assert.equal(panel.hidden, true);
+  assert.equal(document.querySelector('.site-header__icon--cart').getAttribute('aria-expanded'), 'false');
+  assert.match(panel.querySelector('.cart-message[role="alert"]').textContent, /Товара сейчас нет в наличии/);
   assert.match(third().textContent, /Нет в наличии/);
   assert.equal(basket.some((item) => item.id === 3), false);
   assert.equal(document.querySelector('[data-product-id="2"] .product-card__increase').disabled, false);
@@ -182,6 +198,9 @@ test('POST 422 does not pretend first addition succeeded', async () => {
   third().querySelector('.product-card__stock-warning').click();
   await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products') && JSON.parse(request.options.body).productId === 3).length, postCount);
+  document.querySelector('.site-header__icon--cart').click();
+  assert.equal(panel.hidden, false);
+  assert.equal(document.querySelector('.site-header__icon--cart').getAttribute('aria-expanded'), 'true');
 });
 
 test('non-stock 422 leaves other products and retry controls available', async () => {
@@ -216,6 +235,213 @@ test('non-stock 422 leaves other products and retry controls available', async (
   basket = basket.map((item) => item.id === 2 ? { ...item, count: 1 } : item);
 });
 
+test('catalog and header quantity changes preserve cards, controls, rows and images', async () => {
+  dom.window.history.replaceState({}, '', '/');
+  renderCatalogPage(app);
+  await tick();
+  const card = (id) => document.querySelector(`.catalog-page__grid [data-product-id="${id}"]`);
+  const first = card(1);
+  const second = card(2);
+  const controls = second.querySelector('[data-cart-controls]');
+  const increase = controls.querySelector('.product-card__increase');
+  const image = second.querySelector('img');
+  const panel = document.querySelector('#cart-panel');
+  const panelItem = (id) => panel.querySelector(`[data-cart-item-id="${id}"]`);
+  const panelFirst = panelItem(1);
+  const panelSecond = panelItem(2);
+  const panelImage = panelSecond.querySelector('img');
+  const patchCount = () => requests.filter((request) => request.path.endsWith('/basket/products/2') && request.options.method === 'PATCH').length;
+  const getCount = () => requests.filter((request) => request.path.endsWith('/basket')).length;
+  const beforePatch = patchCount();
+  const beforeGet = getCount();
+  increase.click();
+  assert.equal(card(2).querySelector('[data-cart-controls]'), controls);
+  assert.equal(controls.getAttribute('aria-busy'), 'true');
+  assert.equal(document.querySelector('.catalog-page').classList.contains('cart-updating'), true);
+  await tick();
+  assert.equal(document.querySelector('.catalog-page').classList.contains('cart-updating'), false);
+  assert.equal(card(1), first);
+  assert.equal(card(2), second);
+  assert.equal(card(2).querySelector('img'), image);
+  assert.equal(card(2).querySelector('[data-cart-controls]'), controls);
+  assert.equal(controls.querySelector('.product-card__increase'), increase);
+  assert.equal(controls.querySelector('.product-card__quantity').textContent, '2');
+  assert.equal(panelItem(1), panelFirst);
+  assert.equal(panelItem(2), panelSecond);
+  assert.equal(panelItem(2).querySelector('img'), panelImage);
+  assert.equal(panelItem(2).querySelector('.cart-item__price').textContent, '40 ₽');
+  assert.equal(panel.querySelector('.cart-header__count').textContent, '8 товаров');
+  assert.equal(panel.querySelector('.cart-total__price').textContent, '100 ₽');
+  assert.equal(patchCount(), beforePatch + 1);
+  assert.equal(getCount(), beforeGet + 1);
+  controls.querySelector('.product-card__decrease').click();
+  await tick();
+  assert.equal(card(2).querySelector('[data-cart-controls]'), controls);
+  assert.equal(panelItem(2), panelSecond);
+  assert.equal(controls.querySelector('.product-card__quantity').textContent, '1');
+  assert.equal(panel.querySelector('.cart-total__price').textContent, '80 ₽');
+  document.querySelector('.site-header__icon--cart').click();
+  assert.equal(panel.hidden, false);
+  panelItem(2).querySelector('.cart-item__increase').click();
+  await tick();
+  assert.equal(panelItem(1), panelFirst);
+  assert.equal(panelItem(2), panelSecond);
+  assert.equal(panelItem(2).querySelector('img'), panelImage);
+  assert.equal(card(2).querySelector('[data-cart-controls]'), controls);
+  assert.equal(controls.querySelector('.product-card__quantity').textContent, '2');
+  assert.equal(panel.querySelector('.cart-total__price').textContent, '100 ₽');
+  assert.equal(patchCount(), beforePatch + 3);
+  assert.equal(getCount(), beforeGet + 3);
+  panelItem(2).querySelector('.cart-item__decrease').click();
+  await tick();
+});
+
+test('quantity updates keep cart rows and totals in sync with the backend', async () => {
+  dom.window.history.replaceState({}, '', '/cart');
+  renderCartPage(app);
+  await tick();
+  const item = (id) => document.querySelector(`.cart-page__items [data-cart-item-id="${id}"]`);
+  const first = item(1);
+  const second = item(2);
+  const image = first.querySelector('img');
+  const beforeGet = requests.filter((request) => request.path.endsWith('/basket')).length;
+  second.querySelector('.cart-item__increase').click();
+  assert.equal(item(1), first);
+  assert.equal(item(2), second);
+  assert.match(document.querySelector('.cart-page__items').textContent, /Обновляем корзину/);
+  assert.equal(document.querySelector('.cart-page__items .cart-list').getAttribute('aria-busy'), 'true');
+  await tick();
+  assert.equal(document.querySelector('.cart-page__items .cart-list').hasAttribute('aria-busy'), false);
+  assert.equal(item(1), first);
+  assert.equal(item(2), second);
+  assert.equal(item(1).querySelector('img'), image);
+  assert.equal(item(2).querySelector('.cart-item__quantity').textContent, '2');
+  assert.equal(item(2).querySelector('.cart-item__price').textContent, '40 ₽');
+  assert.equal(document.querySelector('.cart-page__count').textContent, '8 товаров');
+  assert.equal(document.querySelector('.cart-page__total-price').textContent, '100 ₽');
+  assert.equal(requests.filter((request) => request.path.endsWith('/basket')).length, beforeGet + 1);
+  item(2).querySelector('.cart-item__decrease').click();
+  await tick();
+  assert.equal(item(1), first);
+  assert.equal(item(2), second);
+  assert.equal(item(2).querySelector('.cart-item__quantity').textContent, '1');
+  assert.equal(item(2).querySelector('.cart-item__price').textContent, '20 ₽');
+  assert.equal(document.querySelector('.cart-page__count').textContent, '7 товаров');
+  assert.equal(document.querySelector('.cart-page__total-price').textContent, '80 ₽');
+  assert.equal(requests.filter((request) => request.path.endsWith('/basket')).length, beforeGet + 2);
+});
+
+test('checkout preview remains mounted when header cart changes quantity', async () => {
+  dom.window.history.replaceState({}, '', '/checkout');
+  renderCheckoutPage(app);
+  await tick();
+  const previewItem = (id) => document.querySelector(`.checkout-page__basket-items [data-cart-item-id="${id}"]`);
+  const first = previewItem(1);
+  const second = previewItem(2);
+  const image = second.querySelector('img');
+  const panel = document.querySelector('#cart-panel');
+  const panelSecond = panel.querySelector('[data-cart-item-id="2"]');
+  const patchCount = () => requests.filter((request) => request.path.endsWith('/basket/products/2') && request.options.method === 'PATCH').length;
+  const before = patchCount();
+  document.querySelector('.site-header__icon--cart').click();
+  panelSecond.querySelector('.cart-item__increase').click();
+  await tick();
+  assert.equal(previewItem(1), first);
+  assert.equal(previewItem(2), second);
+  assert.equal(previewItem(2).querySelector('img'), image);
+  assert.equal(panel.querySelector('[data-cart-item-id="2"]'), panelSecond);
+  assert.equal(second.querySelector('.cart-item__count').textContent, 'Количество: 2');
+  assert.equal(second.querySelector('.cart-item__price').textContent, '40 ₽');
+  assert.equal(document.querySelector('.checkout-page__summary-count').textContent, '8 товаров');
+  assert.equal(document.querySelector('.checkout-page__total-price').textContent, '100 ₽');
+  assert.equal(patchCount(), before + 1);
+  panelSecond.querySelector('.cart-item__decrease').click();
+  await tick();
+  assert.equal(previewItem(2), second);
+  assert.equal(document.querySelector('.checkout-page__total-price').textContent, '80 ₽');
+});
+
+test('failed PATCH keeps confirmed quantity and total', async () => {
+  dom.window.history.replaceState({}, '', '/cart');
+  renderCartPage(app);
+  await tick();
+  const item = document.querySelector('.cart-page__items [data-cart-item-id="2"]');
+  const total = document.querySelector('.cart-page__total-price').textContent;
+  const beforeGet = requests.filter((request) => request.path.endsWith('/basket')).length;
+  nonStockPatch422 = true;
+  item.querySelector('.cart-item__increase').click();
+  await tick();
+  assert.equal(document.querySelector('.cart-page__items [data-cart-item-id="2"]'), item);
+  assert.equal(item.querySelector('.cart-item__quantity').textContent, '1');
+  assert.equal(document.querySelector('.cart-page__total-price').textContent, total);
+  assert.equal(requests.filter((request) => request.path.endsWith('/basket')).length, beforeGet);
+});
+
+test('network failure keeps confirmed cart and shows a general error', async () => {
+  dom.window.history.replaceState({}, '', '/cart');
+  renderCartPage(app);
+  await tick();
+  const item = document.querySelector('.cart-page__items [data-cart-item-id="2"]');
+  const total = document.querySelector('.cart-page__total-price').textContent;
+  nextBasketNetworkFailure = true;
+  item.querySelector('.cart-item__increase').click();
+  await tick();
+  assert.equal(item.querySelector('.cart-item__quantity').textContent, '1');
+  assert.equal(document.querySelector('.cart-page__total-price').textContent, total);
+  assert.match(document.querySelector('.cart-page__items .cart-message[role="alert"]').textContent, /Не удалось обновить корзину/);
+  assert.match(document.querySelector('#cart-panel .cart-message[role="alert"]').textContent, /Не удалось обновить корзину/);
+});
+
+test('checkout link stays visually enabled but blocks navigation during PATCH', async () => {
+  dom.window.history.replaceState({}, '', '/cart');
+  renderCartPage(app);
+  await tick();
+  const link = document.querySelector('.cart-page__checkout');
+  const item = document.querySelector('.cart-page__items [data-cart-item-id="2"]');
+  assert.equal(link.dataset.empty, 'false');
+  assert.equal(link.getAttribute('aria-disabled'), 'false');
+  let release;
+  pendingBasketPatch = new Promise((resolve) => { release = resolve; });
+  item.querySelector('.cart-item__increase').click();
+  assert.equal(document.querySelector('.cart-page__checkout'), link);
+  assert.equal(link.dataset.empty, 'false');
+  assert.equal(link.getAttribute('aria-disabled'), 'true');
+  assert.equal(link.tabIndex, 0);
+  const click = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+  link.dispatchEvent(click);
+  assert.equal(click.defaultPrevented, true);
+  assert.equal(dom.window.location.pathname, '/cart');
+  release();
+  pendingBasketPatch = null;
+  await tick();
+  assert.equal(link.dataset.empty, 'false');
+  assert.equal(link.getAttribute('aria-disabled'), 'false');
+  assert.equal(document.querySelector('.cart-page__items [data-cart-item-id="2"]'), item);
+  item.querySelector('.cart-item__decrease').click();
+  await tick();
+});
+
+test('removing the last cart item shows the empty confirmed state', async () => {
+  const savedBasket = basket;
+  basket = [basket[0]];
+  dom.window.history.replaceState({}, '', '/cart');
+  renderCartPage(app);
+  await tick();
+  document.querySelector('.cart-page__items .cart-item__remove').click();
+  await tick();
+  assert.match(document.querySelector('.cart-page__items').textContent, /Корзина пуста/);
+  assert.equal(document.querySelector('.cart-page__count').textContent, '0 товаров');
+  assert.equal(document.querySelector('.cart-page__total-price').textContent, '0 ₽');
+  assert.equal(document.querySelector('.cart-page__checkout').getAttribute('aria-disabled'), 'true');
+  assert.equal(document.querySelector('.cart-page__checkout').dataset.empty, 'true');
+  assert.equal(document.querySelector('.cart-page__checkout').tabIndex, -1);
+  const emptyCheckoutClick = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+  document.querySelector('.cart-page__checkout').dispatchEvent(emptyCheckoutClick);
+  assert.equal(emptyCheckoutClick.defaultPrevented, true);
+  assert.equal(dom.window.location.pathname, '/cart');
+  basket = savedBasket;
+});
+
 test('cart 422 preserves count, blocks one product across views, and decrease clears limit', async () => {
   dom.window.history.replaceState({}, '', '/cart');
   renderCartPage(app);
@@ -228,6 +454,11 @@ test('cart 422 preserves count, blocks one product across views, and decrease cl
   assert.equal(first().querySelector('.cart-item__increase').disabled, true);
   assert.equal(second().querySelector('.cart-item__increase').disabled, false);
   assert.match(first().textContent, /В наличии больше нет/);
+  assert.equal(first().querySelectorAll('.cart-item__stock-warning').length, 1);
+  assert.equal(document.querySelector('.cart-page__items .cart-message[role="alert"]'), null);
+  assert.equal(document.querySelector('#cart-panel .cart-message[role="alert"]'), null);
+  assert.equal(document.querySelector('#cart-panel [data-cart-item-id="1"]')
+    .querySelectorAll('.cart-item__stock-warning').length, 1);
   const countRequests = () => requests.filter((request) => request.path.endsWith('/basket/products/1') && JSON.parse(request.options.body).count === 7).length;
   const before = countRequests();
   first().querySelector('.cart-item__increase').click();
@@ -245,6 +476,8 @@ test('cart 422 preserves count, blocks one product across views, and decrease cl
   renderCheckoutPage(app);
   await tick();
   assert.match(document.querySelector('.checkout-page__basket-items [data-cart-item-id="1"]').textContent, /В наличии больше нет/);
+  assert.equal(document.querySelector('.checkout-page__basket-items [data-cart-item-id="1"]')
+    .querySelectorAll('.cart-item__stock-warning').length, 1);
   dom.window.history.replaceState({}, '', '/cart');
   renderCartPage(app);
   await tick();
@@ -274,8 +507,12 @@ test('checkout preview product errors stay beside item and block ordering', asyn
   dom.window.history.replaceState({}, '', '/checkout');
   renderCheckoutPage(app);
   await tick();
+  const unchanged = document.querySelector('.checkout-page__basket-items [data-cart-item-id="1"]');
+  const unchangedImage = unchanged.querySelector('img');
   document.querySelector('.checkout-page__pickup-button').click();
   await tick();
+  assert.equal(document.querySelector('.checkout-page__basket-items [data-cart-item-id="1"]'), unchanged);
+  assert.equal(unchanged.querySelector('img'), unchangedImage);
   assert.match(document.querySelector('.checkout-page__basket-items [data-cart-item-id="2"]').textContent, /Товар закончился/);
   assert.doesNotMatch(document.querySelector('.checkout-page__basket-items [data-cart-item-id="1"]').textContent, /Товар закончился/);
   assert.equal(document.querySelector('.checkout-page__submit').disabled, true);

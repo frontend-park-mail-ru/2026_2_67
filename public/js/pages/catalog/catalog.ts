@@ -6,6 +6,7 @@ import { catalogTemplate } from '../../templates/templates.js';
 import { mapApiProduct } from '../../data/map-api-product.js';
 import type { ApiProduct, ProductCard } from '../../data/map-api-product.js';
 import { initCart } from '../../components/cart/cart.js';
+import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import {
   authorizedFetch,
   getCurrentUser,
@@ -115,14 +116,15 @@ export function renderCatalogPage(app: HTMLElement): void {
     }
 
     const quantity = cart.getProductQuantity(productId);
-    const container = document.createElement('div');
-    container.innerHTML = createProductCard(product, true, quantity, cart.isIncreaseDisabled(productId));
-    const newControls = container.querySelector('[data-cart-controls]');
+    const template = document.createElement('template');
+    template.innerHTML = createProductCard(product, true, quantity, cart.isIncreaseDisabled(productId));
+    const newControls = template.content.querySelector('[data-cart-controls]');
     if (!newControls) throw new Error('Не найдены элементы управления корзиной.');
     const hadFocus = oldControls.contains(document.activeElement);
-    oldControls.replaceWith(newControls);
-    if (hadFocus) {
-      const focusTarget = newControls.querySelector('.product-card__decrease:not(:disabled), .product-card__increase:not(:disabled), .product-card__add-to-cart:not(:disabled), .product-card__stock-warning');
+    updateCartMarkup(oldControls, newControls.innerHTML);
+    oldControls.setAttribute('aria-busy', String(cart.isUpdating()));
+    if (hadFocus && !oldControls.contains(document.activeElement)) {
+      const focusTarget = oldControls.querySelector('.product-card__decrease:not(:disabled), .product-card__increase:not(:disabled), .product-card__add-to-cart:not(:disabled), .product-card__stock-warning');
       if (!(focusTarget instanceof HTMLElement)) throw new Error('Не найдена кнопка корзины.');
       focusTarget.focus();
     }

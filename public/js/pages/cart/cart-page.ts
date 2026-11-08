@@ -2,6 +2,7 @@ import { getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, cartPageTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
 import type { CartController } from '../../components/cart/cart.js';
+import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { blockUnavailableNavigation } from '../../shared/route-guards.js';
 
 function requireElement(parent: Element, selector: string): Element {
@@ -32,18 +33,20 @@ export function renderCartPage(app: HTMLElement): void {
   const cart: CartController = initCart(page, userId, renderPageCart);
 
   function renderPageCart(): void {
-    itemsContainer.innerHTML = cartItemsTemplate({
+    updateCartMarkup(itemsContainer, cartItemsTemplate({
       items: cart.getDisplayItems(),
       loading: cart.isLoading(),
       updating: cart.isUpdating(),
       errorMessage: cart.getErrorMessage(),
       canUseCart: cart.canUseCart(),
-    });
+    }));
     count.textContent = cart.getDisplayCount();
     totalPrice.textContent = cart.getDisplayTotal();
     const canCheckout = cart.canCheckout();
+    const hasItems = cart.hasItems();
+    checkoutLink.dataset.empty = String(!hasItems);
     checkoutLink.setAttribute('aria-disabled', String(!canCheckout));
-    checkoutLink.tabIndex = canCheckout ? 0 : -1;
+    checkoutLink.tabIndex = hasItems ? 0 : -1;
   }
 
   checkoutLink.addEventListener('click', (event) => {

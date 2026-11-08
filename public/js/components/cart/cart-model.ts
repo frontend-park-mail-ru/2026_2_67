@@ -21,7 +21,7 @@ export function mapBasket(basket: BasketResponse): CartModel {
       id: product.id,
       title: product.name,
       image: product.pictureUrl,
-      price: `${priceFormatter.format(product.priceResult)} ₽`,
+      price: `${priceFormatter.format(product.priceResult * product.count)} ₽`,
       quantity: product.count,
     })),
     priceSum: basket.basketSumResult,

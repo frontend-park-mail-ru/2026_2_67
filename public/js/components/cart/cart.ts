@@ -3,6 +3,7 @@ import { addBasketProduct, BasketRequestError, getBasket, setBasketProductCount 
 import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
 import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isStockRejection, markRejectedCount, reconcileStockState } from './stock-state.js';
+import { updateCartMarkup } from './cart-dom.js';
 
 const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const itemCountRules = new Intl.PluralRules('ru-RU');
@@ -18,6 +19,7 @@ export interface CartController {
   isLoading(): boolean;
   isUpdating(): boolean;
   canUseCart(): boolean;
+  hasItems(): boolean;
   canCheckout(): boolean;
   getErrorMessage(): string;
   reloadCart(): Promise<void>;
@@ -58,8 +60,12 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     return getItems().find((item) => item.id === productId)?.quantity ?? 0;
   }
 
+  function hasItems(): boolean {
+    return Boolean(cart?.items.length);
+  }
+
   function canCheckout(): boolean {
-    return Boolean(cart?.items.length) && !isUpdating;
+    return hasItems() && !isUpdating;
   }
 
   function isLoading(): boolean {
@@ -88,7 +94,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   }
 
   function renderCart(): void {
-    cartPanel.innerHTML = cartTemplate({
+    updateCartMarkup(cartPanel, cartTemplate({
       items: getDisplayItems(),
       loading: isLoading(),
       updating: isUpdating,
@@ -96,7 +102,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       canUseCart: Boolean(cart) && !isUpdating,
       itemCountText: getDisplayCount(),
       totalPrice: getDisplayTotal(),
-    });
+    }));
   }
 
   function updatePage(productId: number | null): void {
@@ -140,6 +146,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (newCount > currentCount && isIncreaseDisabled(productId)) return;
 
     isUpdating = true;
+    page.classList.add('cart-updating');
     errorMessage = '';
     updatePage(productId);
     setActionButtonsDisabled(true);
@@ -158,14 +165,11 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
         && isStockRejection(error.status, error.method, currentCount, newCount, error.responseBody);
       if (stockExceeded) markRejectedCount(userId, productId, newCount);
       errorMessage = stockExceeded
-        ? currentCount === 0 ? 'Товара сейчас нет в наличии.' : 'В наличии больше нет'
+        ? currentCount === 0 ? 'Товара сейчас нет в наличии.' : ''
         : 'Не удалось обновить корзину. Попробуйте снова.';
-      if (stockExceeded && productGrid) {
-        cartPanel.hidden = false;
-        cartButton.setAttribute('aria-expanded', 'true');
-      }
     } finally {
       isUpdating = false;
+      page.classList.remove('cart-updating');
       setActionButtonsDisabled(!cart);
       page.querySelectorAll('[data-product-card]').forEach((card) => {
         const id = Number(card.getAttribute('data-product-id'));
@@ -275,6 +279,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     isLoading,
     isUpdating: () => isUpdating,
     canUseCart: () => Boolean(cart) && !isUpdating,
+    hasItems,
     canCheckout,
     getErrorMessage: () => errorMessage,
     reloadCart: loadCart,

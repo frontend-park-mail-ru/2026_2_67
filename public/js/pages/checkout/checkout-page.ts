@@ -1,4 +1,5 @@
 import { initCart } from '../../components/cart/cart.js';
+import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, checkoutPageTemplate } from '../../templates/templates.js';
 import { showPickupMap } from './pickup-map.js';
@@ -72,7 +73,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       return;
     }
 
-    itemsContainer.innerHTML = cartItemsTemplate({
+    updateCartMarkup(itemsContainer, cartItemsTemplate({
       items: cart.getDisplayItems().map((item) => ({
         ...item,
         stockWarning: checkoutWarning(item.stockWarning, previewErrors.get(item.id) || ''),
@@ -81,7 +82,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       updating: cart.isUpdating(),
       errorMessage: cart.getErrorMessage(),
       readonly: true,
-    });
+    }));
     const itemCountText = cart.getDisplayCount();
     const formattedTotal = cart.getDisplayTotal();
 

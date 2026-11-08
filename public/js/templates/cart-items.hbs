@@ -2,13 +2,13 @@
   <p class="cart-message" role="alert">{{errorMessage}}</p>
 {{/if}}
 {{#if updating}}
-  <p class="cart-message" role="status">Обновляем корзину…</p>
+  <p class="cart-message visually-hidden" role="status">Обновляем корзину…</p>
 {{/if}}
 {{#if loading}}
   <p class="cart-message" role="status">Загрузка корзины…</p>
 {{else}}
 {{#if items}}
-  <ul class="cart-list">
+  <ul class="cart-list"{{#if updating}} aria-busy="true"{{/if}}>
     {{#each items}}
       <li class="cart-item" data-cart-item-id="{{id}}">
         <img class="cart-item__image" src="{{image}}" alt="" />
