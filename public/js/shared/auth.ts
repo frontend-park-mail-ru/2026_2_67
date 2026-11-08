@@ -20,6 +20,12 @@ export interface CurrentUser {
   phoneNumber?: unknown;
 }
 
+export function avatarSource(value: unknown): string {
+  if (typeof value !== 'string' || !value) return '';
+  if (/^https?:\/\//.test(value) || value.startsWith('/media/')) return value;
+  return `/media/media/${value.replace(/^\/+/, '')}`;
+}
+
 export type AuthResult =
   | { ok: true }
   | { ok: false; status?: number; errors: unknown };
@@ -264,7 +270,7 @@ export async function logout(): Promise<void> {
  * @returns {Object|null} User data or null for a guest.
  */
 export function getCurrentUser(): CurrentUser | null {
-  return userId ? { ...currentUser, userId } : null;
+  return userId ? { ...currentUser, userId, avatarSrc: avatarSource(currentUser?.avatarUrl) } : null;
 }
 
 /** Replaces the cached profile only after a confirmed backend update. */

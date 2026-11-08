@@ -1,4 +1,4 @@
-import { getCurrentUser, setCurrentUserProfile } from '../../shared/auth.js';
+import { avatarSource, getCurrentUser, setCurrentUserProfile } from '../../shared/auth.js';
 import { profileTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
 import { getMissingPasswordRequirements } from '../../shared/forms/validation.js';
@@ -36,7 +36,9 @@ export function renderProfilePage(app: HTMLElement): void {
   const savedBirthDate = typeof user?.birthDate === 'string' ? user.birthDate : '';
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
-  app.innerHTML = profileTemplate({ user, isProfile: true, avatarPreviewUrl: uploadedAvatar?.previewUrl, fullName, birthDate });
+  const avatarUrl = uploadedAvatar?.previewUrl || avatarSource(user?.avatarUrl);
+  const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
+  app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, avatarUrl });
 
   const page = requireElement(app, '.profile-page');
   initCart(page, user?.userId);

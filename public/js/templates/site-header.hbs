@@ -17,7 +17,16 @@
       <span class="site-header__icon site-header__icon--inactive"><span class="site-header__icon-image"><img src="/images/notifications-icon.png" alt="" /></span><span class="site-header__icon-label">Уведомления</span></span>
       {{#if user}}
       <div class="site-header__profile-wrap">
-        <a class="site-header__icon site-header__icon--link site-header__icon--logged-in" href="/profile" data-page="profile" aria-label="Личный профиль"{{#if isProfile}} aria-current="page"{{/if}}><span class="site-header__icon-image"><img src="/images/account-icon.png" alt="" /></span><span class="site-header__icon-label">Профиль</span></a>
+        <a class="site-header__icon site-header__icon--link site-header__icon--logged-in" href="/profile" data-page="profile" aria-label="Личный профиль"{{#if isProfile}} aria-current="page"{{/if}}>
+          <span class="site-header__icon-image">
+            {{#if user.avatarSrc}}
+              <img class="site-header__avatar" src="{{user.avatarSrc}}" alt="" />
+            {{else}}
+              <img src="/images/account-icon.png" alt="" />
+            {{/if}}
+          </span>
+          <span class="site-header__icon-label">Профиль</span>
+        </a>
         <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
       </div>
       {{else}}

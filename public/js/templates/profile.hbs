@@ -15,7 +15,7 @@
         <div class="profile-page__card">
           <h2 id="personal-info-title">Личная информация</h2>
           <div class="profile-page__summary">
-            <div class="profile-page__avatar{{#if avatarPreviewUrl}} profile-page__avatar--uploaded{{/if}}" aria-hidden="true"><img src="{{#if avatarPreviewUrl}}{{avatarPreviewUrl}}{{else}}/images/profile-avatar-placeholder.png{{/if}}" alt="" /></div>
+            <div class="profile-page__avatar{{#if avatarUrl}} profile-page__avatar--uploaded{{/if}}" aria-hidden="true"><img src="{{#if avatarUrl}}{{avatarUrl}}{{else}}/images/profile-avatar-placeholder.png{{/if}}" alt="" /></div>
             <div class="profile-page__details">
               <p class="profile-page__name">{{#if fullName}}{{fullName}}{{else}}Заполните информацию о себе{{/if}}</p>
               <dl class="profile-page__facts">
@@ -172,7 +172,7 @@
       </div>
       <p class="profile-edit-dialog__photo-description">Выберите изображение для профиля.</p>
       <div class="profile-edit-dialog__photo-info">
-        <span class="profile-edit-dialog__photo-avatar{{#if avatarPreviewUrl}} profile-edit-dialog__photo-avatar--uploaded{{/if}}" aria-hidden="true"><img src="{{#if avatarPreviewUrl}}{{avatarPreviewUrl}}{{else}}/images/profile-avatar-placeholder.png{{/if}}" alt="" /></span>
+        <span class="profile-edit-dialog__photo-avatar{{#if avatarUrl}} profile-edit-dialog__photo-avatar--uploaded{{/if}}" aria-hidden="true"><img src="{{#if avatarUrl}}{{avatarUrl}}{{else}}/images/profile-avatar-placeholder.png{{/if}}" alt="" /></span>
         <span data-photo-status aria-live="polite">{{#if user.avatarUrl}}Фото профиля загружено{{else}}Сейчас используется аватар по умолчанию{{/if}}</span>
       </div>
       <div class="profile-edit-dialog__file-actions">

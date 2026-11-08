@@ -388,6 +388,12 @@ a:focus-visible, button:focus-visible {
   border-radius: 50%;
   background: var(--vm-subtle);
 }
+.site-header__icon--logged-in .site-header__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 .site-header__icon--logged-in:hover .site-header__icon-image {
   background: var(--vm-warm);
 }
