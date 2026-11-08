@@ -450,6 +450,7 @@ a:focus-visible, button:focus-visible {
   height: 369px;
   overflow: hidden;
   padding: 5px 5px 16px;
+  border: 1px solid var(--vm-border);
   border-radius: var(--corner-radius);
   background: var(--vm-surface);
 }

@@ -2,8 +2,8 @@
   <div class="product-card__image-wrap">
     <img class="product-card__image" data-product-image src="{{currentImage}}" alt="{{title}}" />
     {{#if hasMultipleImages}}
-      <button class="product-card__arrow product-card__arrow--prev" type="button" data-image-prev aria-label="Предыдущая фотография">←</button>
-      <button class="product-card__arrow product-card__arrow--next" type="button" data-image-next aria-label="Следующая фотография">→</button>
+      <button class="product-card__arrow product-card__arrow--prev" type="button" data-image-prev aria-label="Предыдущая фотография">&lt;</button>
+      <button class="product-card__arrow product-card__arrow--next" type="button" data-image-next aria-label="Следующая фотография">&gt;</button>
       <div class="product-card__dots" aria-label="Фотографии товара">
         {{#each dots}}
           <button class="product-card__dot {{#if isActive}}product-card__dot--active{{/if}}" type="button" data-image-dot="{{index}}" aria-label="Показать фотографию {{index}}"></button>
