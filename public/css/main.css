@@ -214,13 +214,9 @@ a:focus-visible, button:focus-visible {
   object-fit: contain;
   transform: translate(-50%, -50%);
 }
-.site-header__category-icon--padded img {
-  width: 44px;
-  height: 44px;
-}
-.site-header__category-icon--extra-padded img {
-  width: 55px;
-  height: 55px;
+.site-header__category-empty {
+  margin: 0;
+  color: var(--vm-muted);
 }
 .site-header__category-arrow {
   margin-left: auto;

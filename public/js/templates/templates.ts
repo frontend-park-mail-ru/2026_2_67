@@ -6,6 +6,7 @@ declare const Handlebars: {
 };
 
 export let catalogTemplate: Template;
+export let categoryButtonsTemplate: Template;
 export let cartTemplate: Template;
 export let cartItemsTemplate: Template;
 export let cartPageTemplate: Template;
@@ -53,7 +54,8 @@ export async function loadTemplates() {
   Handlebars.registerPartial('cartItems', cartItemsSource);
   cartItemsTemplate = Handlebars.compile(cartItemsSource);
 
-  [catalogTemplate, cartTemplate, cartPageTemplate, checkoutPageTemplate, loginTemplate, productCardTemplate, profileTemplate, signupTemplate] = await Promise.all([
+  [categoryButtonsTemplate, catalogTemplate, cartTemplate, cartPageTemplate, checkoutPageTemplate, loginTemplate, productCardTemplate, profileTemplate, signupTemplate] = await Promise.all([
+    loadTemplate('category-buttons'),
     loadTemplate('catalog'),
     loadTemplate('cart'),
     loadTemplate('cart-page'),

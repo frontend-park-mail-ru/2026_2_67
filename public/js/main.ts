@@ -5,6 +5,7 @@ import { renderSignupPage } from './pages/signup/signup.js';
 import { renderProfilePage } from './pages/profile/profile.js';
 import { renderCartPage } from './pages/cart/cart-page.js';
 import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
+import { renderCategories } from './components/categories/categories.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
 
@@ -37,11 +38,13 @@ function renderCurrentRoute(): void {
   const renderPage = routes[window.location.pathname];
   if (renderPage) {
     renderPage();
+    void renderCategories(app);
     return;
   }
 
   window.history.replaceState({}, '', '/');
   routes['/']();
+  void renderCategories(app);
 }
 
 /**
