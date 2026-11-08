@@ -56,3 +56,11 @@ export async function updateProfile(userId: string, fields: ProfileFields, avata
   }
   return result as ProfileResponse;
 }
+
+export function changePassword(newPassword: string): Promise<Response> {
+  return authorizedFetch('/auth/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newPassword }),
+  });
+}

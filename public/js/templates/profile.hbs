@@ -144,10 +144,13 @@
         <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
       </div>
       <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        {{!-- Текущий пароль не требуется ручке смены пароля. --}}
+        {{!--
         <label class="profile-edit-dialog__field">
           <span>Текущий пароль</span>
           <input type="password" name="currentPassword" autocomplete="current-password" />
         </label>
+        --}}
         <label class="profile-edit-dialog__field">
           <span>Новый пароль</span>
           <input type="password" name="newPassword" autocomplete="new-password" aria-describedby="profile-new-password-rules" />
@@ -158,6 +161,7 @@
           <input type="password" name="confirmPassword" autocomplete="new-password" />
         </label>
       </div>
+      <p class="profile-edit-dialog__message" id="profile-password-message" role="alert"></p>
       <div class="profile-edit-dialog__footer">
         <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
         <button class="profile-edit-dialog__apply" type="button">Применить</button>

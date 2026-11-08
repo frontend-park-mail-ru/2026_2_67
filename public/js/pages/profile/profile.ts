@@ -2,7 +2,7 @@ import { avatarSource, getCurrentUser, setCurrentUserProfile } from '../../share
 import { profileTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
 import { getMissingPasswordRequirements } from '../../shared/forms/validation.js';
-import { ProfileRequestError, profileFields, updateProfile } from './profile-api.js';
+import { ProfileRequestError, changePassword, profileFields, updateProfile } from './profile-api.js';
 import type { ProfileFields } from './profile-api.js';
 
 let uploadedAvatar: { userId: string; avatarUrl: string; previewUrl: string } | null = null;
@@ -162,7 +162,11 @@ export function renderProfilePage(app: HTMLElement): void {
 
   const passwordDialog = requireDialog(page, '#profile-password-dialog');
   const newPasswordInput = requireInput(passwordDialog, 'input[name="newPassword"]');
+  const confirmPasswordInput = requireInput(passwordDialog, 'input[name="confirmPassword"]');
   const passwordRules = requireElement(passwordDialog, '#profile-new-password-rules');
+  const passwordMessage = requireElement(passwordDialog, '#profile-password-message');
+  const applyPassword = requireElement(passwordDialog, '.profile-edit-dialog__apply');
+  if (!(applyPassword instanceof HTMLButtonElement)) throw new Error('Кнопка смены пароля не найдена.');
   // Показываем только те правила, которым новый пароль ещё не соответствует.
   function updatePasswordRules(): void {
     const missingRules = getMissingPasswordRequirements(newPasswordInput.value);
@@ -173,9 +177,46 @@ export function renderProfilePage(app: HTMLElement): void {
   requireElement(page, '[data-open-password-editor]').addEventListener('click', () => {
     updatePasswordRules();
     passwordDialog.showModal();
-    requireInput(passwordDialog, 'input').focus();
+    newPasswordInput.focus();
   });
   newPasswordInput.addEventListener('input', updatePasswordRules);
+  applyPassword.addEventListener('click', async () => {
+    if (applyPassword.disabled) return;
+    passwordMessage.textContent = '';
+    if (getMissingPasswordRequirements(newPasswordInput.value)) {
+      passwordMessage.textContent = 'Проверьте требования к новому паролю.';
+      return;
+    }
+    if (newPasswordInput.value !== confirmPasswordInput.value) {
+      passwordMessage.textContent = 'Пароли не совпадают.';
+      return;
+    }
+    applyPassword.disabled = true;
+    try {
+      const response = await changePassword(newPasswordInput.value);
+      if (response.ok) {
+        passwordDialog.close();
+        return;
+      }
+      if (response.status === 422) {
+        const details: unknown = await response.json().catch(() => ({}));
+        passwordMessage.textContent = errorText(details, 'passwordErrMessage') || 'Проверьте новый пароль.';
+      } else if (response.status === 401 || response.status === 403) {
+        passwordMessage.textContent = 'Не удалось подтвердить вход. Войдите в аккаунт снова.';
+      } else {
+        passwordMessage.textContent = 'Не удалось изменить пароль. Попробуйте позже.';
+      }
+    } catch {
+      passwordMessage.textContent = 'Не удалось изменить пароль. Попробуйте позже.';
+    } finally {
+      applyPassword.disabled = false;
+    }
+  });
+  passwordDialog.addEventListener('close', () => {
+    newPasswordInput.value = '';
+    confirmPasswordInput.value = '';
+    passwordMessage.textContent = '';
+  });
   // Закрываем окно смены пароля крестиком.
   requireElement(passwordDialog, '.profile-edit-dialog__close').addEventListener('click', () => {
     passwordDialog.close();
