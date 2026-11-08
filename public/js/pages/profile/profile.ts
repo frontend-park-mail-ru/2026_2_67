@@ -32,7 +32,11 @@ export function renderProfilePage(app: HTMLElement): void {
     URL.revokeObjectURL(uploadedAvatar.previewUrl);
     uploadedAvatar = null;
   }
-  app.innerHTML = profileTemplate({ user, isProfile: true, avatarPreviewUrl: uploadedAvatar?.previewUrl });
+  const fullName = [user?.name, user?.surname].filter(Boolean).join(' ');
+  const savedBirthDate = typeof user?.birthDate === 'string' ? user.birthDate : '';
+  const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
+    ? savedBirthDate.slice(0, 10) : '';
+  app.innerHTML = profileTemplate({ user, isProfile: true, avatarPreviewUrl: uploadedAvatar?.previewUrl, fullName, birthDate });
 
   const page = requireElement(app, '.profile-page');
   initCart(page, user?.userId);
@@ -61,9 +65,6 @@ export function renderProfilePage(app: HTMLElement): void {
   };
   let saved = profileFields(user ?? {});
   const birthDateInput = requireInput(dialog, 'input[name="birthDate"]');
-  if (/^\d{4}-\d{2}-\d{2}/.test(saved.birthDate)) {
-    birthDateInput.value = saved.birthDate.slice(0, 10);
-  }
   function errorText(value: unknown, key: string): string {
     if (typeof value !== 'object' || value === null) return '';
     const text: unknown = Reflect.get(value, key);
