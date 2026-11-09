@@ -174,6 +174,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
 
       orderCompleted = true;
       orderStatus.textContent = `Заказ №${result.orderId} оформлен.`;
+      requireElement(page, '.checkout-page__orders-link').hidden = false;
       submitButton.textContent = 'Заказ оформлен';
       pickupButton.disabled = true;
       requireElement(page, '#checkout-basket-title').textContent = 'Товары в заказе';

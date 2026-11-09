@@ -1,0 +1,11 @@
+{{#each orders}}
+  <article class="orders-page__order">
+    <div class="orders-page__heading">
+      <h2>Заказ №{{orderId}}</h2>
+      <span class="orders-page__status">{{status}}</span>
+    </div>
+    <time datetime="{{createdAt}}">{{date}}</time>
+  </article>
+{{else}}
+  <p class="orders-page__empty">У вас пока нет оформленных заказов.</p>
+{{/each}}

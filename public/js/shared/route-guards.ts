@@ -1,4 +1,4 @@
-const authenticatedRoutes = new Set(['/cart', '/checkout']);
+const authenticatedRoutes = new Set(['/cart', '/checkout', '/orders']);
 
 export interface CheckoutState {
   isPageActive: boolean;

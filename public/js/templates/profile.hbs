@@ -6,7 +6,7 @@
       <aside class="profile-page__sidebar" aria-labelledby="profile-title">
         <nav class="profile-page__menu" aria-label="Разделы личного кабинета">
           <button class="profile-page__menu-item profile-page__menu-item--current" type="button" aria-current="page">Профиль</button>
-          <button class="profile-page__menu-item" type="button" disabled>Заказы</button>
+          <a class="profile-page__menu-item" href="/orders" data-page="orders">Заказы</a>
           <button class="profile-page__menu-item" type="button" disabled>Купленные товары</button>
           <button class="profile-page__menu-item" type="button" {{#if user}}data-action="logout"{{else}}disabled title="Для выхода нужно войти в аккаунт"{{/if}}>Выход</button>
         </nav>

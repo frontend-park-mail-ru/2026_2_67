@@ -5,6 +5,7 @@ import { renderSignupPage } from './pages/signup/signup.js';
 import { renderProfilePage } from './pages/profile/profile.js';
 import { renderCartPage } from './pages/cart/cart-page.js';
 import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
+import { renderOrdersPage } from './pages/orders/orders.js';
 import { renderCategories } from './components/categories/categories.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
@@ -16,7 +17,7 @@ function requireApp(): HTMLElement {
 }
 
 const app = requireApp();
-const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout' };
+const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout', orders: '/orders' };
 const routes: Record<string, () => void> = {
   '/': () => renderCatalogPage(app),
   '/login': () => renderLoginPage(app, () => navigate('/')),
@@ -24,6 +25,7 @@ const routes: Record<string, () => void> = {
   '/profile': () => renderProfilePage(app),
   '/cart': () => renderCartPage(app),
   '/checkout': () => renderCheckoutPage(app, () => navigate('/cart')),
+  '/orders': () => { void renderOrdersPage(app); },
 };
 
 /**

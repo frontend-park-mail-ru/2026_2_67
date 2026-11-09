@@ -656,6 +656,43 @@ a:focus-visible, button:focus-visible {
   background: var(--vm-warm);
   font-weight: 700;
 }
+.profile-page__menu-item:hover {
+  text-decoration: none;
+}
+.orders-page__list {
+  display: grid;
+  gap: 16px;
+}
+.orders-page__order {
+  padding: 20px;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--corner-radius);
+  background: var(--vm-surface);
+}
+.orders-page__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.orders-page__heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.orders-page__status {
+  padding: 6px 12px;
+  border-radius: var(--button-radius);
+  background: var(--vm-warm);
+}
+.orders-page__order time,
+.orders-page__empty {
+  color: var(--vm-muted);
+}
+.orders-page__empty {
+  margin: 0;
+}
 .profile-page__menu-item:hover:not(:disabled):not(.profile-page__menu-item--current) {
   background: var(--vm-hover);
 }

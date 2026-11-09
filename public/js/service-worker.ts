@@ -7,7 +7,7 @@ const worker = globalThis as unknown as ServiceWorkerGlobalScope;
 const cachePrefix = 'vibemarket-static-';
 const cacheName = `${cachePrefix}${OFFLINE_VERSION}`;
 const assets = new Set(OFFLINE_ASSETS);
-const routes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout']);
+const routes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout', '/orders']);
 
 worker.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(OFFLINE_ASSETS)));
