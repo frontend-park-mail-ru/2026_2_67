@@ -7,6 +7,6 @@ import { signupTemplate } from '../../templates/templates.js';
  * @param {HTMLElement} app Main application container.
  * @param {Function} onSuccess Callback after successful registration.
  */
-export function renderSignupPage(app, onSuccess) {
+export function renderSignupPage(app: HTMLElement, onSuccess: () => void): void {
   renderAuthPage(app, signupTemplate, validateSignup, onSuccess);
 }

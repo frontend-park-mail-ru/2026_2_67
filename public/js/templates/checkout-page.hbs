@@ -1,0 +1,43 @@
+<div class="page checkout-page">
+  {{> siteHeader}}
+  <main class="checkout-page__content">
+    <a class="checkout-page__back" href="/cart" data-page="cart">← Вернуться в корзину</a>
+    <h1>Оформление заказа</h1>
+    <div class="checkout-page__layout">
+      <div class="checkout-page__sections">
+        <section class="checkout-page__card" aria-label="Оплата">
+          <p class="checkout-page__payment">Оплата: при получении</p>
+        </section>
+        <section class="checkout-page__card checkout-page__pickup" aria-labelledby="checkout-pickup-title">
+          <div class="checkout-page__pickup-header">
+            <h2 id="checkout-pickup-title">Пункт выдачи</h2>
+            <button class="checkout-page__pickup-button" type="button">Показать пункты выдачи</button>
+          </div>
+          <p class="checkout-page__pickup-status" role="status">Пункт выдачи не выбран</p>
+          <p class="checkout-page__pickup-hint">Выберите метку ПВЗ на карте, чтобы продолжить оформление.</p>
+          <div class="checkout-page__pickup-map" hidden role="region" aria-label="Карта пунктов выдачи"></div>
+          <p class="checkout-page__map-error" role="status" hidden>Не удалось загрузить фон карты. Проверьте подключение к интернету и попробуйте изменить масштаб.</p>
+        </section>
+        <section class="checkout-page__card checkout-page__basket" aria-labelledby="checkout-basket-title">
+          <h2 id="checkout-basket-title">Товары в корзине</h2>
+          <div class="checkout-page__basket-items"></div>
+        </section>
+      </div>
+      <aside class="checkout-page__card checkout-page__summary" aria-labelledby="checkout-summary-title">
+        <h2 id="checkout-summary-title">Ваш заказ</h2>
+        <div class="checkout-page__summary-row">
+          <span class="checkout-page__summary-count"></span>
+          <span class="checkout-page__subtotal"></span>
+        </div>
+        <div class="checkout-page__total">
+          <span>Итого</span>
+          <strong class="checkout-page__total-price"></strong>
+        </div>
+        <button class="checkout-page__submit" type="button" disabled>Оформить заказ</button>
+        <p class="checkout-page__order-status" role="status"></p>
+        <a class="checkout-page__orders-link" href="/orders" data-page="orders" hidden>Посмотреть мои заказы</a>
+      </aside>
+    </div>
+  </main>
+  {{> siteFooter}}
+</div>

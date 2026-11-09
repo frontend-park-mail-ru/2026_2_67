@@ -1,0 +1,20 @@
+{{#if isGuest}}
+<div class="cart-guest">
+  <p class="cart-guest__title">Войдите в аккаунт</p>
+  <a class="cart-guest__login" href="/login" data-page="login">Войти</a>
+  <p class="cart-guest__signup">Нет аккаунта? <a href="/signup" data-page="signup">Зарегистрироваться</a></p>
+</div>
+{{else}}
+<div class="cart-header">
+  <h2 class="cart-header__title">Корзина <span class="cart-header__count">{{itemCountText}}</span></h2>
+  <button class="cart-header__close" type="button" aria-label="Закрыть корзину">×</button>
+</div>
+{{> cartItems}}
+<div class="cart-footer">
+  <div class="cart-total">
+    <span>Итого</span>
+    <strong class="cart-total__price">{{totalPrice}}</strong>
+  </div>
+  <a class="cart-footer__button" href="/cart" data-page="cart">Перейти в корзину</a>
+</div>
+{{/if}}

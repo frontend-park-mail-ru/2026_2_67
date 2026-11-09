@@ -1,0 +1,198 @@
+<div class="page profile-page">
+  {{> siteHeader}}
+  <main class="profile-page__content">
+    <div class="profile-page__layout">
+      <h1 id="profile-title" class="profile-page__title">Профиль</h1>
+      <aside class="profile-page__sidebar" aria-labelledby="profile-title">
+        <nav class="profile-page__menu" aria-label="Разделы личного кабинета">
+          <button class="profile-page__menu-item profile-page__menu-item--current" type="button" aria-current="page">Профиль</button>
+          <a class="profile-page__menu-item" href="/orders" data-page="orders">Заказы</a>
+          <button class="profile-page__menu-item" type="button" disabled>Купленные товары</button>
+          <button class="profile-page__menu-item" type="button" {{#if user}}data-action="logout"{{else}}disabled title="Для выхода нужно войти в аккаунт"{{/if}}>Выход</button>
+        </nav>
+      </aside>
+      <section class="profile-page__information" aria-labelledby="personal-info-title">
+        <div class="profile-page__card">
+          <h2 id="personal-info-title">Личная информация</h2>
+          <div class="profile-page__summary">
+            <div class="profile-page__avatar{{#if avatarUrl}} profile-page__avatar--uploaded{{/if}}" aria-hidden="true"><img src="{{#if avatarUrl}}{{avatarUrl}}{{else}}/images/profile-avatar-placeholder.png{{/if}}" alt="" /></div>
+            <div class="profile-page__details">
+              <p class="profile-page__name">{{#if fullName}}{{fullName}}{{else}}Заполните информацию о себе{{/if}}</p>
+              <dl class="profile-page__facts">
+                <div>
+                  <dt>Дата рождения</dt>
+                  <dd>{{#if birthDateDisplay}}{{birthDateDisplay}}{{else}}Не указано{{/if}}</dd>
+                </div>
+                {{!-- Пол скрыт до подключения данных профиля. --}}
+                {{!--
+                <div>
+                  <dt>Пол</dt>
+                  <dd>Не указано</dd>
+                </div>
+                --}}
+              </dl>
+            </div>
+            <div class="profile-page__actions">
+              <button class="profile-page__text-action profile-page__photo-action" type="button" data-open-photo-editor aria-haspopup="dialog">Изменить фото</button>
+              <button class="profile-page__text-action" type="button" data-open-profile-editor aria-haspopup="dialog">Изменить</button>
+            </div>
+          </div>
+          <section class="profile-page__account" aria-labelledby="account-title">
+            <h3 id="account-title">Учётные данные</h3>
+            <dl class="profile-page__account-facts">
+              <div>
+                <dt>Почта</dt>
+                <dd>
+                  <span>{{#if user.email}}{{user.email}}{{else}}Не указано{{/if}}</span>
+                  <button class="profile-page__text-action" type="button" data-open-email-editor aria-haspopup="dialog" aria-label="Изменить почту">Изменить</button>
+                </dd>
+              </div>
+              <div>
+                <dt>Номер телефона</dt>
+                <dd>
+                  <span>{{#if user.phoneNumber}}{{user.phoneNumber}}{{else}}Не указано{{/if}}</span>
+                  <button class="profile-page__text-action" type="button" data-open-phone-editor aria-haspopup="dialog" aria-label="Изменить номер телефона">Изменить</button>
+                </dd>
+              </div>
+            </dl>
+          </section>
+          <section class="profile-page__security" aria-labelledby="security-title">
+            <h3 id="security-title">Безопасность</h3>
+            <button class="profile-page__text-action" type="button" data-open-password-editor aria-haspopup="dialog">Поменять пароль</button>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+  <dialog class="profile-edit-dialog profile-edit-dialog--personal" aria-labelledby="profile-edit-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-edit-title">Личная информация</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields">
+        <label class="profile-edit-dialog__field">
+          <span>Фамилия</span>
+          <input type="text" name="surname" value="{{user.surname}}" autocomplete="family-name" />
+        </label>
+        <label class="profile-edit-dialog__field">
+          <span>Имя</span>
+          <input type="text" name="name" value="{{user.name}}" autocomplete="given-name" />
+        </label>
+        {{!--
+        <label class="profile-edit-dialog__field">
+          <span>Отчество</span>
+          <input type="text" name="patronymic" autocomplete="additional-name" />
+        </label>
+        --}}
+        <label class="profile-edit-dialog__field">
+          <span>Дата рождения</span>
+          <input type="date" name="birthDate" value="{{birthDate}}" />
+        </label>
+      </div>
+      {{!--
+      <fieldset class="profile-edit-dialog__gender">
+        <legend>Пол</legend>
+        <label><input type="radio" name="gender" value="male" /><span>Мужской</span></label>
+        <label><input type="radio" name="gender" value="female" /><span>Женский</span></label>
+      </fieldset>
+      --}}
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--contact" id="profile-email-dialog" aria-labelledby="profile-email-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-email-title">Изменить почту</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        <label class="profile-edit-dialog__field">
+          <span>Почта</span>
+          <input type="email" name="email" value="{{user.email}}" autocomplete="email" />
+        </label>
+      </div>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--contact" id="profile-phone-dialog" aria-labelledby="profile-phone-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-phone-title">Изменить номер телефона</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        <label class="profile-edit-dialog__field">
+          <span>Номер телефона</span>
+          <input type="tel" name="phoneNumber" value="{{user.phoneNumber}}" autocomplete="tel" />
+        </label>
+      </div>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--password" id="profile-password-dialog" aria-labelledby="profile-password-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-password-title">Поменять пароль</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
+        {{!-- Текущий пароль не требуется ручке смены пароля. --}}
+        {{!--
+        <label class="profile-edit-dialog__field">
+          <span>Текущий пароль</span>
+          <input type="password" name="currentPassword" autocomplete="current-password" />
+        </label>
+        --}}
+        <label class="profile-edit-dialog__field">
+          <span>Новый пароль</span>
+          <input type="password" name="newPassword" autocomplete="new-password" aria-describedby="profile-new-password-rules" />
+        </label>
+        <p class="profile-edit-dialog__password-rules password-requirements" id="profile-new-password-rules" aria-live="polite"></p>
+        <label class="profile-edit-dialog__field">
+          <span>Подтвердите новый пароль</span>
+          <input type="password" name="confirmPassword" autocomplete="new-password" />
+        </label>
+      </div>
+      <p class="profile-edit-dialog__message" id="profile-password-message" role="alert"></p>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Применить</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="profile-edit-dialog profile-edit-dialog--photo" id="profile-photo-dialog" aria-labelledby="profile-photo-title">
+    <div class="profile-edit-dialog__content">
+      <div class="profile-edit-dialog__heading">
+        <h2 id="profile-photo-title">Загрузить фото профиля</h2>
+        <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <p class="profile-edit-dialog__photo-description">Выберите изображение для профиля.</p>
+      <div class="profile-edit-dialog__photo-info">
+        <span class="profile-edit-dialog__photo-avatar{{#if avatarUrl}} profile-edit-dialog__photo-avatar--uploaded{{/if}}" aria-hidden="true"><img src="{{#if avatarUrl}}{{avatarUrl}}{{else}}/images/profile-avatar-placeholder.png{{/if}}" alt="" /></span>
+        <span data-photo-status aria-live="polite">{{#if user.avatarUrl}}Фото профиля загружено{{else}}Сейчас используется аватар по умолчанию{{/if}}</span>
+      </div>
+      <div class="profile-edit-dialog__file-actions">
+        <input type="file" accept="image/*" data-photo-file hidden />
+        <button class="profile-edit-dialog__file-button" type="button" data-select-photo>Выбрать файл</button>
+        {{!--
+        <button class="profile-edit-dialog__file-button" type="button">Удалить файл</button>
+        --}}
+      </div>
+      <div class="profile-edit-dialog__footer">
+        <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
+        <button class="profile-edit-dialog__apply" type="button">Сохранить фото</button>
+      </div>
+    </div>
+  </dialog>
+  {{> siteFooter}}
+</div>

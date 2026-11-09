@@ -1,0 +1,19 @@
+<div class="page cart-page">
+  {{> siteHeader}}
+  <main class="cart-page__content">
+    <h1>Корзина <span class="cart-page__count"></span></h1>
+    <div class="cart-page__layout">
+      <section class="cart-page__products" aria-label="Товары в корзине">
+        <div class="cart-page__items"></div>
+      </section>
+      <aside class="cart-page__summary" aria-label="Сумма заказа">
+        <div class="cart-page__total">
+          <span>Итого</span>
+          <strong class="cart-page__total-price"></strong>
+        </div>
+        <a class="cart-page__checkout" href="/checkout" data-page="checkout">Перейти к оформлению</a>
+      </aside>
+    </div>
+  </main>
+  {{> siteFooter}}
+</div>

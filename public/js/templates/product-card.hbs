@@ -2,8 +2,8 @@
   <div class="product-card__image-wrap">
     <img class="product-card__image" data-product-image src="{{currentImage}}" alt="{{title}}" />
     {{#if hasMultipleImages}}
-      <button class="product-card__arrow product-card__arrow--prev" type="button" data-image-prev aria-label="Предыдущая фотография">←</button>
-      <button class="product-card__arrow product-card__arrow--next" type="button" data-image-next aria-label="Следующая фотография">→</button>
+      <button class="product-card__arrow product-card__arrow--prev" type="button" data-image-prev aria-label="Предыдущая фотография">&lt;</button>
+      <button class="product-card__arrow product-card__arrow--next" type="button" data-image-next aria-label="Следующая фотография">&gt;</button>
       <div class="product-card__dots" aria-label="Фотографии товара">
         {{#each dots}}
           <button class="product-card__dot {{#if isActive}}product-card__dot--active{{/if}}" type="button" data-image-dot="{{index}}" aria-label="Показать фотографию {{index}}"></button>
@@ -13,7 +13,19 @@
   </div>
   <p class="product-card__price">{{price}}</p>
   <h2 class="product-card__title">{{title}}</h2>
-  {{!-- Включить после реализации рейтинга и отзывов.
-  <p class="product-card__rating">★ {{rating}} <span>({{reviewsCount}} отзывов)</span></p>
-  --}}
+  {{#if showAddToCartButton}}
+    <div class="product-card__cart-actions" data-cart-controls>
+      {{#if quantity}}
+        <div class="product-card__quantity-control">
+          <button class="product-card__decrease" type="button" aria-label="Уменьшить количество товара {{title}}">−</button>
+          <span class="product-card__quantity">{{quantity}}</span>
+          <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if stockLimited}} disabled{{/if}}>+</button>
+        </div>
+        <span class="product-card__in-cart">В корзине</span>
+      {{else}}
+        {{#unless stockLimited}}<button class="product-card__add-to-cart" type="button">В корзину</button>{{/unless}}
+      {{/if}}
+      {{#if stockLimited}}<span class="product-card__stock-warning" role="status" tabindex="-1">{{#if quantity}}В наличии больше нет{{else}}Нет в наличии{{/if}}</span>{{/if}}
+    </div>
+  {{/if}}
 </article>

@@ -1,0 +1,20 @@
+<div class="page profile-page orders-page">
+  {{> siteHeader}}
+  <main class="profile-page__content">
+    <div class="profile-page__layout">
+      <h1 id="orders-title" class="profile-page__title">Заказы</h1>
+      <aside class="profile-page__sidebar" aria-labelledby="orders-title">
+        <nav class="profile-page__menu" aria-label="Разделы личного кабинета">
+          <a class="profile-page__menu-item" href="/profile" data-page="profile">Профиль</a>
+          <button class="profile-page__menu-item profile-page__menu-item--current" type="button" aria-current="page">Заказы</button>
+          <button class="profile-page__menu-item" type="button" disabled>Купленные товары</button>
+          <button class="profile-page__menu-item" type="button" data-action="logout">Выход</button>
+        </nav>
+      </aside>
+      <section class="profile-page__information" aria-label="История заказов">
+        <div class="orders-page__list" aria-live="polite" aria-busy="true">Загружаем заказы…</div>
+      </section>
+    </div>
+  </main>
+  {{> siteFooter}}
+</div>

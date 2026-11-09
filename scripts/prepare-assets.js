@@ -3,11 +3,15 @@ import { mkdir, copyFile, writeFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const handlebars = new URL('public/vendor/handlebars/', root);
 const fonts = new URL('public/vendor/inter/', root);
+const nunitoSans = new URL('public/vendor/nunito-sans/', root);
 await mkdir(handlebars, { recursive: true });
 await mkdir(fonts, { recursive: true });
+await mkdir(nunitoSans, { recursive: true });
 await copyFile(new URL('node_modules/handlebars/dist/handlebars.min.js', root), new URL('handlebars.min.js', handlebars));
 await copyFile(new URL('node_modules/handlebars/LICENSE', root), new URL('LICENSE', handlebars));
 await copyFile(new URL('node_modules/@fontsource/inter/LICENSE', root), new URL('LICENSE', fonts));
+await copyFile(new URL('node_modules/@fontsource/nunito-sans/LICENSE', root), new URL('LICENSE', nunitoSans));
+await copyFile(new URL('node_modules/@fontsource/nunito-sans/files/nunito-sans-latin-300-italic.woff2', root), new URL('nunito-sans-latin-300-italic.woff2', nunitoSans));
 
 const rules = [];
 for (const weight of [400, 500, 600, 700, 800]) {

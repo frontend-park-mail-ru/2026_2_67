@@ -1,0 +1,43 @@
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand site-header__logo" href="/" data-page="catalog" aria-label="VIBE — каталог">
+      <span class="brand__wordmark">VIBE</span>
+    </a>
+    <div class="site-header__controls">
+      <button class="site-header__action site-header__section" type="button" data-catalog-toggle aria-controls="catalog-menu" aria-expanded="false">Каталог</button>
+      <form class="site-header__search" role="search" data-catalog-search>
+        <label class="visually-hidden" for="catalog-search">Поиск товаров</label>
+        <span class="site-header__search-ring" aria-hidden="true"></span>
+        <span class="site-header__search-handle" aria-hidden="true"></span>
+        <input id="catalog-search" type="search" name="query" placeholder="Поиск товаров" autocomplete="off" />
+      </form>
+    </div>
+    <nav class="site-header__nav" aria-label="Действия и аккаунт">
+      <button class="site-header__icon site-header__icon--cart" type="button" aria-label="Корзина" aria-expanded="false"><span class="site-header__icon-image"><img src="/images/cart-icon.png" alt="" /></span><span class="site-header__icon-label">Корзина</span></button>
+      <span class="site-header__icon site-header__icon--inactive"><span class="site-header__icon-image"><img src="/images/notifications-icon.png" alt="" /></span><span class="site-header__icon-label">Уведомления</span></span>
+      {{#if user}}
+      <div class="site-header__profile-wrap">
+        <a class="site-header__icon site-header__icon--link site-header__icon--logged-in" href="/profile" data-page="profile" aria-label="Личный профиль"{{#if isProfile}} aria-current="page"{{/if}}>
+          <span class="site-header__icon-image">
+            {{#if user.avatarSrc}}
+              <img class="site-header__avatar" src="{{user.avatarSrc}}" alt="" />
+            {{else}}
+              <img src="/images/account-icon.png" alt="" />
+            {{/if}}
+          </span>
+          <span class="site-header__icon-label">Профиль</span>
+        </a>
+        <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
+      </div>
+      {{else}}
+      <a class="site-header__icon site-header__icon--link" href="/login" data-page="login" aria-label="Войти в аккаунт"><span class="site-header__icon-image"><img src="/images/account-icon.png" alt="" /></span><span class="site-header__icon-label">Войти</span></a>
+      {{/if}}
+    </nav>
+  </div>
+  <div class="site-header__cart-panel" id="cart-panel" hidden></div>
+  <div class="site-header__catalog-menu" id="catalog-menu" hidden>
+    <h2 class="site-header__catalog-title">Все категории</h2>
+    <div class="site-header__categories"></div>
+  </div>
+</header>
+<div class="site-header__category-strip"></div>

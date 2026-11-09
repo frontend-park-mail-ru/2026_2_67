@@ -5,9 +5,10 @@ import { log } from 'node:console';
 import process from 'node:process';
 import { pipeline } from 'node:stream';
 
-const publicDirectory = resolve('public');
+const staticRoot = process.argv.includes('--dist') ? 'dist' : 'public';
+const publicDirectory = resolve(staticRoot);
 const backendUrl = 'http://localhost:8080';
-const frontendRoutes = new Set(['/', '/login', '/signup']);
+const frontendRoutes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout', '/orders']);
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.hbs': 'text/plain; charset=utf-8',
@@ -30,8 +31,8 @@ const server = createServer((request, response) => {
     return;
   }
 
-  if (pathname.startsWith('/api/')) {
-    const upstreamUrl = new URL(request.url, backendUrl);
+  if (pathname.startsWith('/api/') || pathname.startsWith('/media/')) {
+    const upstreamUrl = new URL(request.url, pathname.startsWith('/media/') ? 'http://localhost:8090' : backendUrl);
     const proxyRequest = httpRequest(upstreamUrl, {
       method: request.method,
       headers: {
@@ -82,5 +83,5 @@ const server = createServer((request, response) => {
 
 const port = Number(process.env.PORT || 8081);
 server.listen(port, () => {
-  log(`Frontend: http://localhost:${port}`);
+  log(`Frontend (${staticRoot}): http://localhost:${port}`);
 });
