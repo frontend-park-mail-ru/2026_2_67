@@ -20,7 +20,8 @@ function requireButton(parent: Element, selector: string): HTMLButtonElement {
 }
 
 function isPickupPoint(value: unknown): value is PickupPoint {
-  return typeof value === 'object' && value !== null && 'longitude' in value && 'latitude' in value
+  return typeof value === 'object' && value !== null && 'id' in value && 'longitude' in value && 'latitude' in value
+    && typeof value.id === 'number' && Number.isInteger(value.id)
     && typeof value.longitude === 'number' && typeof value.latitude === 'number'
     && Number.isFinite(value.longitude) && Number.isFinite(value.latitude);
 }
@@ -50,7 +51,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
   const pickupMap = requireElement(page, '.checkout-page__pickup-map');
   const submitButton = requireButton(page, '.checkout-page__submit');
   const orderStatus = requireElement(page, '.checkout-page__order-status');
-  let deliveryCoordinates: PickupPoint | null = null;
+  let selectedPickupPoint: PickupPoint | null = null;
   let orderCompleted = false;
   let isSubmitting = false;
   let previewErrors = new Map<number, string>();
@@ -89,10 +90,10 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     summaryCount.textContent = itemCountText;
     subtotal.textContent = formattedTotal;
     totalPrice.textContent = formattedTotal;
-    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !deliveryCoordinates || cart.isUpdating() || isSubmitting || !availabilityConfirmed || previewErrors.size > 0;
+    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !selectedPickupPoint || cart.isUpdating() || isSubmitting || !availabilityConfirmed || previewErrors.size > 0;
   }
 
-  async function checkPreview(coordinates: PickupPoint): Promise<PickupPoint> {
+  async function checkPreview(coordinates: PickupPoint): Promise<void> {
     if (!user) throw new Error('Пользователь не найден.');
     const response = await authorizedFetch(`/buyers/${encodeURIComponent(user.userId)}/basket/preview`, {
       method: 'POST',
@@ -108,53 +109,51 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       throw new Error('Некоторые товары недоступны. Проверьте корзину.');
     }
     if (!response.ok) throw new Error(`Не удалось проверить наличие: ${response.status}`);
-    const pickupPoint: unknown = typeof result === 'object' && result !== null && 'pickupPoint' in result ? result.pickupPoint : undefined;
-    if (!isPickupPoint(pickupPoint)) throw new Error('Сервер не вернул координаты пункта выдачи.');
     previewErrors.clear();
     availabilityConfirmed = true;
     renderCheckout();
-    return pickupPoint;
   }
 
-  pickupButton.addEventListener('click', () => {
-    deliveryCoordinates = null;
-    availabilityConfirmed = false;
-    submitButton.disabled = true;
-    orderStatus.textContent = '';
-    if (!window.navigator.geolocation) {
-      pickupStatus.textContent = 'Браузер не поддерживает определение местоположения.';
-      return;
-    }
-
+  pickupButton.addEventListener('click', async () => {
     pickupButton.disabled = true;
-    pickupMap.hidden = true;
-    pickupHint.hidden = false;
-    pickupStatus.textContent = 'Определяем ваше местоположение...';
-    window.navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-      try {
-        pickupStatus.textContent = 'Ищем ближайший пункт выдачи...';
-        const pickupPoint = await checkPreview({ longitude: coords.longitude, latitude: coords.latitude });
+    pickupStatus.textContent = 'Загружаем пункты выдачи...';
+    try {
+      const response = await authorizedFetch('/pickup_points');
+      if (!response.ok) throw new Error(`Не удалось загрузить пункты выдачи: ${response.status}`);
+      const result: unknown = await response.json();
+      const points: unknown = typeof result === 'object' && result !== null && 'pickupPoints' in result ? result.pickupPoints : undefined;
+      if (!Array.isArray(points) || !points.every(isPickupPoint)) throw new Error('Сервер вернул неверный список пунктов выдачи.');
+      if (points.length === 0) throw new Error('Пункты выдачи пока не добавлены.');
 
-        pickupStatus.textContent = 'Загружаем карту...';
-        await showPickupMap(pickupMap, pickupPoint);
-        pickupStatus.textContent = 'Ближайший пункт выдачи показан на карте.';
-        pickupHint.hidden = true;
-        deliveryCoordinates = { longitude: coords.longitude, latitude: coords.latitude };
+      pickupStatus.textContent = 'Загружаем карту...';
+      await showPickupMap(pickupMap, points, async (point) => {
+        selectedPickupPoint = null;
+        availabilityConfirmed = false;
+        orderStatus.textContent = '';
         renderCheckout();
-      } catch (error) {
-        pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось показать пункт выдачи. Попробуйте ещё раз.';
-        pickupMap.hidden = true;
-      } finally {
-        pickupButton.disabled = false;
-      }
-    }, () => {
-      pickupStatus.textContent = 'Не удалось получить местоположение. Проверьте разрешение в браузере.';
+        pickupStatus.textContent = 'Проверяем выбранный пункт выдачи...';
+        try {
+          await checkPreview(point);
+          selectedPickupPoint = point;
+          pickupStatus.textContent = `Выбран пункт выдачи №${point.id}`;
+          pickupHint.hidden = true;
+          renderCheckout();
+        } catch (error) {
+          pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось проверить выбранный пункт выдачи.';
+        }
+      });
+      pickupStatus.textContent = 'Выберите пункт выдачи на карте.';
+      pickupButton.hidden = true;
+    } catch (error) {
+      pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось показать пункты выдачи.';
+      pickupMap.hidden = true;
+    } finally {
       pickupButton.disabled = false;
-    }, { timeout: 10000 });
+    }
   });
 
   submitButton.addEventListener('click', async () => {
-    if (submitButton.disabled || isSubmitting || !deliveryCoordinates) {
+    if (submitButton.disabled || isSubmitting || !selectedPickupPoint) {
       return;
     }
 
@@ -163,11 +162,11 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     orderStatus.textContent = 'Оформляем заказ…';
     try {
       availabilityConfirmed = false;
-      await checkPreview(deliveryCoordinates);
+      await checkPreview(selectedPickupPoint);
       const response = await authorizedFetch('/orders/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(deliveryCoordinates),
+        body: JSON.stringify({ pickupPointId: selectedPickupPoint.id }),
       });
       const result: unknown = await response.json().catch(() => ({}));
       if (!response.ok || typeof result !== 'object' || result === null || !('orderId' in result) || !Number.isInteger(result.orderId)) {

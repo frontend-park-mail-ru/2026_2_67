@@ -106,6 +106,11 @@
   border-radius: var(--button-radius);
   background: var(--vm-surface);
   color: var(--vm-dark);
+  cursor: pointer;
+}
+
+.checkout-page__pickup-marker[aria-pressed='true'] {
+  background: var(--vm-warm);
 }
 
 .checkout-page__basket {
