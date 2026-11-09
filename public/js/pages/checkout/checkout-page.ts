@@ -2,8 +2,8 @@ import { initCart } from '../../components/cart/cart.js';
 import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, checkoutPageTemplate } from '../../templates/templates.js';
-import { showPickupList } from './pickup-list.js';
-import type { PickupPoint } from './pickup-list.js';
+import { showPickupMap } from './pickup-map.js';
+import type { PickupPoint } from './pickup-map.js';
 import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
 import { readPreviewProductErrors } from './preview-errors.js';
 
@@ -23,7 +23,9 @@ function isPickupPoint(value: unknown): value is PickupPoint {
   return typeof value === 'object' && value !== null && 'id' in value && 'longitude' in value && 'latitude' in value
     && typeof value.id === 'number' && Number.isInteger(value.id)
     && typeof value.longitude === 'number' && typeof value.latitude === 'number'
-    && Number.isFinite(value.longitude) && Number.isFinite(value.latitude);
+    && Number.isFinite(value.longitude) && Number.isFinite(value.latitude)
+    && value.longitude >= -180 && value.longitude <= 180
+    && value.latitude >= -90 && value.latitude <= 90;
 }
 
 function checkoutWarning(stockWarning: string, previewError: string): string {
@@ -48,7 +50,8 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
   const pickupButton = requireButton(page, '.checkout-page__pickup-button');
   const pickupStatus = requireElement(page, '.checkout-page__pickup-status');
   const pickupHint = requireElement(page, '.checkout-page__pickup-hint');
-  const pickupList = requireElement(page, '.checkout-page__pickup-list');
+  const pickupMap = requireElement(page, '.checkout-page__pickup-map');
+  const tileError = requireElement(page, '.checkout-page__map-error');
   const submitButton = requireButton(page, '.checkout-page__submit');
   const orderStatus = requireElement(page, '.checkout-page__order-status');
   let selectedPickupPoint: PickupPoint | null = null;
@@ -124,28 +127,41 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       const points: unknown = typeof result === 'object' && result !== null && 'pickupPoints' in result ? result.pickupPoints : undefined;
       if (!Array.isArray(points) || !points.every(isPickupPoint)) throw new Error('Сервер вернул неверный список пунктов выдачи.');
       if (points.length === 0) throw new Error('Пункты выдачи пока не добавлены.');
+      if (!page.isConnected) return;
 
-      showPickupList(pickupList, points, async (point, address) => {
+      const map = showPickupMap(pickupMap, tileError, points, async (point) => {
         selectedPickupPoint = null;
         availabilityConfirmed = false;
         orderStatus.textContent = '';
+        pickupHint.hidden = false;
         renderCheckout();
         pickupStatus.textContent = 'Проверяем выбранный пункт выдачи...';
         try {
           await checkPreview(point);
+          if (!page.isConnected) return false;
           selectedPickupPoint = point;
-          pickupStatus.textContent = `Выбран: ${address}`;
+          pickupStatus.textContent = `Выбран ПВЗ №${point.id}`;
           pickupHint.hidden = true;
           renderCheckout();
+          return true;
         } catch (error) {
           pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось проверить выбранный пункт выдачи.';
+          return false;
         }
       });
-      pickupStatus.textContent = 'Выберите пункт выдачи из списка.';
+      // При уходе со страницы освобождаем карту и её обработчики, не меняя роутер.
+      const observer = new MutationObserver(() => {
+        if (!page.isConnected) {
+          map.remove();
+          observer.disconnect();
+        }
+      });
+      observer.observe(app, { childList: true });
+      pickupStatus.textContent = 'Выберите пункт выдачи на карте.';
       pickupButton.hidden = true;
     } catch (error) {
       pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось показать пункты выдачи.';
-      pickupList.hidden = true;
+      pickupMap.hidden = true;
     } finally {
       pickupButton.disabled = false;
     }
@@ -158,6 +174,8 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
 
     isSubmitting = true;
     submitButton.disabled = true;
+    // Пока оформляется заказ, выбранный ПВЗ должен оставаться тем же.
+    pickupMap.inert = true;
     orderStatus.textContent = 'Оформляем заказ…';
     try {
       availabilityConfirmed = false;
@@ -183,6 +201,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       orderStatus.textContent = error instanceof Error ? error.message : 'Не удалось оформить заказ. Попробуйте ещё раз.';
     } finally {
       isSubmitting = false;
+      pickupMap.inert = orderCompleted;
       if (!orderCompleted) {
         renderCheckout();
       }
