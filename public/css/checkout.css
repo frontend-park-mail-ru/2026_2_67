@@ -1,3 +1,7 @@
+.checkout-page > .site-header__category-strip {
+  display: none;
+}
+
 .checkout-page__content {
   flex: 1;
   width: min(100%, 1220px);
