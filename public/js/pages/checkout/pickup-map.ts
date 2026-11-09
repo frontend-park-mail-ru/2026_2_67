@@ -17,9 +17,11 @@ export function showPickupMap(
   // Сначала открываем блок, чтобы Leaflet измерил его настоящие размеры.
   container.hidden = false;
   const pickupMap = map(container, { scrollWheelZoom: false });
+  // Убираем отдельную подпись Leaflet, оставляя короткую ссылку на источник карты.
+  pickupMap.attributionControl.setPrefix(false);
   const tiles = tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   });
 
   // Ошибка фона карты не должна заменять сообщение о проверке товаров.
