@@ -92,24 +92,32 @@
   opacity: 0.6;
 }
 
-.checkout-page__pickup-map {
-  height: 320px;
+.checkout-page__pickup-list {
+  max-height: 320px;
   margin-top: 18px;
-  overflow: hidden;
+  overflow-y: auto;
   border: 1px solid var(--vm-border);
   border-radius: var(--corner-radius);
 }
 
-.checkout-page__pickup-marker {
-  padding: 6px 10px;
-  border: 1px solid var(--vm-dark);
-  border-radius: var(--button-radius);
+.checkout-page__pickup-option {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--vm-border);
   background: var(--vm-surface);
-  color: var(--vm-dark);
+  color: var(--vm-text);
+  text-align: left;
   cursor: pointer;
 }
 
-.checkout-page__pickup-marker[aria-pressed='true'] {
+.checkout-page__pickup-option:last-child {
+  border-bottom: 0;
+}
+
+.checkout-page__pickup-option:hover,
+.checkout-page__pickup-option[aria-pressed='true'] {
   background: var(--vm-warm);
 }
 

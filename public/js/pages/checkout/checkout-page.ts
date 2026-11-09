@@ -2,8 +2,8 @@ import { initCart } from '../../components/cart/cart.js';
 import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { cartItemsTemplate, checkoutPageTemplate } from '../../templates/templates.js';
-import { showPickupMap } from './pickup-map.js';
-import type { PickupPoint } from './pickup-map.js';
+import { showPickupList } from './pickup-list.js';
+import type { PickupPoint } from './pickup-list.js';
 import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
 import { readPreviewProductErrors } from './preview-errors.js';
 
@@ -48,7 +48,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
   const pickupButton = requireButton(page, '.checkout-page__pickup-button');
   const pickupStatus = requireElement(page, '.checkout-page__pickup-status');
   const pickupHint = requireElement(page, '.checkout-page__pickup-hint');
-  const pickupMap = requireElement(page, '.checkout-page__pickup-map');
+  const pickupList = requireElement(page, '.checkout-page__pickup-list');
   const submitButton = requireButton(page, '.checkout-page__submit');
   const orderStatus = requireElement(page, '.checkout-page__order-status');
   let selectedPickupPoint: PickupPoint | null = null;
@@ -125,8 +125,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       if (!Array.isArray(points) || !points.every(isPickupPoint)) throw new Error('Сервер вернул неверный список пунктов выдачи.');
       if (points.length === 0) throw new Error('Пункты выдачи пока не добавлены.');
 
-      pickupStatus.textContent = 'Загружаем карту...';
-      await showPickupMap(pickupMap, points, async (point) => {
+      showPickupList(pickupList, points, async (point, address) => {
         selectedPickupPoint = null;
         availabilityConfirmed = false;
         orderStatus.textContent = '';
@@ -135,18 +134,18 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
         try {
           await checkPreview(point);
           selectedPickupPoint = point;
-          pickupStatus.textContent = `Выбран пункт выдачи №${point.id}`;
+          pickupStatus.textContent = `Выбран: ${address}`;
           pickupHint.hidden = true;
           renderCheckout();
         } catch (error) {
           pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось проверить выбранный пункт выдачи.';
         }
       });
-      pickupStatus.textContent = 'Выберите пункт выдачи на карте.';
+      pickupStatus.textContent = 'Выберите пункт выдачи из списка.';
       pickupButton.hidden = true;
     } catch (error) {
       pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось показать пункты выдачи.';
-      pickupMap.hidden = true;
+      pickupList.hidden = true;
     } finally {
       pickupButton.disabled = false;
     }
