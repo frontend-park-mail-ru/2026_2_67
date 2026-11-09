@@ -36,9 +36,11 @@ export function renderProfilePage(app: HTMLElement): void {
   const savedBirthDate = typeof user?.birthDate === 'string' ? user.birthDate : '';
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
+  const [year, month, day] = birthDate.split('-');
+  const birthDateDisplay = birthDate ? `${day}-${month}-${year}` : '';
   const avatarUrl = uploadedAvatar?.previewUrl || avatarSource(user?.avatarUrl);
   const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
-  app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, avatarUrl });
+  app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl });
 
   const page = requireElement(app, '.profile-page');
   initCart(page, user?.userId);
