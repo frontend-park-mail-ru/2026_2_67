@@ -5,6 +5,18 @@
       <span class="orders-page__status">{{status}}</span>
     </div>
     <time datetime="{{createdAt}}">{{date}}</time>
+    {{#if products}}
+      <ul class="orders-page__products">
+        {{#each products}}
+          <li class="orders-page__product">
+            {{#if pictureUrl}}
+              <img class="orders-page__product-image" src="{{pictureUrl}}" alt="" loading="lazy" />
+            {{/if}}
+            <span class="orders-page__product-name">{{name}}</span>
+          </li>
+        {{/each}}
+      </ul>
+    {{/if}}
   </article>
 {{else}}
   <p class="orders-page__empty">У вас пока нет оформленных заказов.</p>

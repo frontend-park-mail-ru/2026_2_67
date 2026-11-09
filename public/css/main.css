@@ -693,6 +693,30 @@ a:focus-visible, button:focus-visible {
 .orders-page__empty {
   margin: 0;
 }
+.orders-page__products {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.orders-page__product {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.orders-page__product-image {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--button-radius);
+  background: var(--vm-surface);
+}
+.orders-page__product-name {
+  overflow-wrap: anywhere;
+}
 .profile-page__menu-item:hover:not(:disabled):not(.profile-page__menu-item--current) {
   background: var(--vm-hover);
 }

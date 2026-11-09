@@ -2,17 +2,32 @@ import { initCart } from '../../components/cart/cart.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { ordersPageTemplate, ordersListTemplate } from '../../templates/templates.js';
 
+interface OrderProduct {
+  id: number;
+  name: string;
+  pictureUrl: string;
+}
+
 interface OrderSummary {
   orderId: number;
   status: string;
   createdAt: string;
+  products?: OrderProduct[];
+}
+
+function isOrderProduct(value: unknown): value is OrderProduct {
+  return typeof value === 'object' && value !== null
+    && 'id' in value && typeof value.id === 'number' && Number.isInteger(value.id)
+    && 'name' in value && typeof value.name === 'string'
+    && 'pictureUrl' in value && typeof value.pictureUrl === 'string';
 }
 
 function isOrderSummary(value: unknown): value is OrderSummary {
   return typeof value === 'object' && value !== null
     && 'orderId' in value && typeof value.orderId === 'number' && Number.isInteger(value.orderId)
     && 'status' in value && typeof value.status === 'string'
-    && 'createdAt' in value && typeof value.createdAt === 'string' && Number.isFinite(Date.parse(value.createdAt));
+    && 'createdAt' in value && typeof value.createdAt === 'string' && Number.isFinite(Date.parse(value.createdAt))
+    && (!('products' in value) || (Array.isArray(value.products) && value.products.every(isOrderProduct)));
 }
 
 export async function renderOrdersPage(app: HTMLElement): Promise<void> {
