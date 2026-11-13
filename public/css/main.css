@@ -336,7 +336,7 @@ a:focus-visible, button:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: 96px;
+  width: 88px;
   min-height: 64px;
   padding: 5px 6px;
   border-radius: var(--button-radius);
