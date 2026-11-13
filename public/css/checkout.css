@@ -261,6 +261,21 @@
   color: var(--vm-muted);
 }
 
+.checkout-page__order-status--error,
+.checkout-page__basket-items .cart-item__stock-warning {
+  padding: 10px 12px;
+  border: 1px solid var(--vm-sale);
+  border-radius: var(--button-radius);
+  background: var(--vm-subtle);
+  color: var(--vm-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.checkout-page__order-status--error {
+  font-weight: 600;
+}
+
 .checkout-page__order-status:empty {
   display: none;
 }

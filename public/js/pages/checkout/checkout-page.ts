@@ -109,6 +109,9 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       previewErrors = productErrors;
       availabilityConfirmed = false;
       renderCheckout();
+      // Показываем предупреждение и рядом с кнопкой заказа, а не только в списке товаров.
+      orderStatus.textContent = 'Некоторые товары недоступны. Проверьте корзину.';
+      orderStatus.classList.add('checkout-page__order-status--error');
       throw new Error('Некоторые товары недоступны. Проверьте корзину.');
     }
     if (!response.ok) throw new Error(`Не удалось проверить наличие: ${response.status}`);
@@ -133,6 +136,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
         selectedPickupPoint = null;
         availabilityConfirmed = false;
         orderStatus.textContent = '';
+        orderStatus.classList.remove('checkout-page__order-status--error');
         pickupHint.hidden = false;
         renderCheckout();
         pickupStatus.textContent = 'Проверяем выбранный пункт выдачи...';
@@ -177,6 +181,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     // Пока оформляется заказ, выбранный ПВЗ должен оставаться тем же.
     pickupMap.inert = true;
     orderStatus.textContent = 'Оформляем заказ…';
+    orderStatus.classList.remove('checkout-page__order-status--error');
     try {
       availabilityConfirmed = false;
       await checkPreview(selectedPickupPoint);
