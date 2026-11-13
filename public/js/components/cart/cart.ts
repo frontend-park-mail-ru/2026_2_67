@@ -4,8 +4,8 @@ import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
 import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isStockRejection, markRejectedCount, reconcileStockState } from './stock-state.js';
 import { updateCartMarkup } from './cart-dom.js';
+import { formatMoney } from '../../shared/format-money.js';
 
-const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const itemCountRules = new Intl.PluralRules('ru-RU');
 const itemCountWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
 
@@ -38,6 +38,7 @@ function requireCartElement(page: Element, selector: string): HTMLElement {
 /** Подключает корзину к странице и возвращает её данные и действия. */
 export function initCart(page: Element, userId: string | undefined, onCartChange: (productId: number | null) => void = () => {}): CartController {
   const cartButton = requireCartElement(page, '.site-header__icon--cart');
+  const cartCount = requireCartElement(cartButton, '.site-header__cart-count');
   const cartPanel = requireCartElement(page, '#cart-panel');
   const productGrid = page.querySelector('.catalog-page__grid');
   let cart: CartModel | null = null;
@@ -90,10 +91,14 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (errorMessage && !cart) {
       return '—';
     }
-    return `${priceFormatter.format(cart?.priceSum ?? 0)} ₽`;
+    return formatMoney(cart?.priceSum ?? 0);
   }
 
   function renderCart(): void {
+    const count = getItems().reduce((sum, item) => sum + item.quantity, 0);
+    cartCount.hidden = count === 0;
+    cartCount.textContent = count > 99 ? '99+' : String(count);
+    cartButton.setAttribute('aria-label', count ? `Корзина, ${getDisplayCount()}` : 'Корзина');
     updateCartMarkup(cartPanel, cartTemplate({
       items: getDisplayItems(),
       loading: isLoading(),

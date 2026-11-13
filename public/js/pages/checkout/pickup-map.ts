@@ -34,9 +34,18 @@ export function showPickupMap(
   let selectedId: number | null = null;
   let isSelecting = false;
   let dragStart: { x: number; y: number; centerX: number; centerY: number } | null = null;
+  const markers = new Map<number, HTMLButtonElement>();
+  const listeners = new AbortController();
+
+  function updateSelection(): void {
+    for (const [id, marker] of markers) {
+      marker.setAttribute('aria-pressed', String(id === selectedId));
+    }
+  }
 
   function draw(): void {
     container.replaceChildren();
+    markers.clear();
     tileError.hidden = true;
     const left = centerX - container.clientWidth / 2;
     const top = centerY - container.clientHeight / 2;
@@ -72,14 +81,15 @@ export function showPickupMap(
         if (isSelecting || container.inert || !container.isConnected) return;
         isSelecting = true;
         selectedId = null;
-        draw();
+        updateSelection();
         try {
           if (await onSelect(point) && container.isConnected) selectedId = point.id;
         } finally {
           isSelecting = false;
-          if (container.isConnected) draw();
+          if (container.isConnected) updateSelection();
         }
       });
+      markers.set(point.id, button);
       container.append(button);
     }
 
@@ -115,18 +125,18 @@ export function showPickupMap(
     if (event.target instanceof Element && event.target.closest('button, a')) return;
     dragStart = { x: event.clientX, y: event.clientY, centerX, centerY };
     container.setPointerCapture(event.pointerId);
-  });
+  }, { signal: listeners.signal });
   container.addEventListener('pointermove', (event) => {
     if (!dragStart) return;
     centerX = dragStart.centerX - (event.clientX - dragStart.x);
     centerY = dragStart.centerY - (event.clientY - dragStart.y);
     draw();
-  });
-  container.addEventListener('pointerup', () => { dragStart = null; });
-  container.addEventListener('pointercancel', () => { dragStart = null; });
+  }, { signal: listeners.signal });
+  container.addEventListener('pointerup', () => { dragStart = null; }, { signal: listeners.signal });
+  container.addEventListener('pointercancel', () => { dragStart = null; }, { signal: listeners.signal });
 
   const resizeObserver = new ResizeObserver(draw);
   resizeObserver.observe(container);
   draw();
-  return { remove: () => { resizeObserver.disconnect(); } };
+  return { remove: () => { listeners.abort(); resizeObserver.disconnect(); } };
 }

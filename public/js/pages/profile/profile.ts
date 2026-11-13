@@ -21,8 +21,6 @@ function formatPhone(value: string): string {
   return ['+7', ...groups.filter(Boolean)].join(' ');
 }
 
-let uploadedAvatar: { userId: string; avatarUrl: string; previewUrl: string } | null = null;
-
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
   if (!(element instanceof HTMLElement)) throw new Error(`Не найден элемент профиля: ${selector}`);
@@ -41,20 +39,24 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
   return element;
 }
 
+function isAllowedPhoto(file: File): boolean {
+  const allowedTypes: Record<string, string> = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  };
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  return Boolean(extension && allowedTypes[extension] === file.type && file.size <= 16 * 1024 * 1024);
+}
+
 /** Shows the profile information already loaded for the current session. */
 export function renderProfilePage(app: HTMLElement): void {
   const user = getCurrentUser();
-  if (uploadedAvatar && (uploadedAvatar.userId !== user?.userId || uploadedAvatar.avatarUrl !== user?.avatarUrl)) {
-    URL.revokeObjectURL(uploadedAvatar.previewUrl);
-    uploadedAvatar = null;
-  }
   const fullName = [user?.name, user?.surname].filter(Boolean).join(' ');
   const savedBirthDate = typeof user?.birthDate === 'string' ? user.birthDate : '';
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
   const [year, month, day] = birthDate.split('-');
   const birthDateDisplay = birthDate ? `${day}-${month}-${year}` : '';
-  const avatarUrl = uploadedAvatar?.previewUrl || avatarSource(user?.avatarUrl);
+  const avatarUrl = avatarSource(user?.avatarUrl);
   const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
   app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl });
 
@@ -302,13 +304,27 @@ export function renderProfilePage(app: HTMLElement): void {
   const photoDialog = requireDialog(page, '#profile-photo-dialog');
   const photoFile = requireInput(photoDialog, '[data-photo-file]');
   const photoStatus = requireElement(photoDialog, '[data-photo-status]');
+  const photoAvatar = requireElement(photoDialog, '.profile-edit-dialog__photo-avatar');
+  const photoAvatarImageCandidate = photoAvatar.querySelector('img');
+  if (!(photoAvatarImageCandidate instanceof HTMLImageElement)) throw new Error('Photo preview image not found.');
+  const photoAvatarImage: HTMLImageElement = photoAvatarImageCandidate;
   const savePhoto = requireElement(photoDialog, '.profile-edit-dialog__apply');
   if (!(savePhoto instanceof HTMLButtonElement)) throw new Error('Кнопка сохранения фото не найдена.');
   const currentPhotoStatus = photoStatus.textContent ?? '';
+  const savedPhotoSrc = avatarUrl || '/images/profile-avatar-placeholder.png';
+  let pendingPhotoPreviewUrl: string | null = null;
+
+  function restorePhotoPreview(): void {
+    if (pendingPhotoPreviewUrl) URL.revokeObjectURL(pendingPhotoPreviewUrl);
+    pendingPhotoPreviewUrl = null;
+    photoFile.value = '';
+    photoAvatarImage.src = savedPhotoSrc;
+    photoAvatar.classList.toggle('profile-edit-dialog__photo-avatar--uploaded', Boolean(avatarUrl));
+  }
 
   // При каждом открытии начинаем выбор файла заново.
   requireElement(page, '[data-open-photo-editor]').addEventListener('click', () => {
-    photoFile.value = '';
+    restorePhotoPreview();
     photoStatus.textContent = currentPhotoStatus;
     photoDialog.showModal();
   });
@@ -317,7 +333,22 @@ export function renderProfilePage(app: HTMLElement): void {
   });
   photoFile.addEventListener('change', () => {
     const file = photoFile.files?.[0];
-    photoStatus.textContent = file ? `Выбран файл: ${file.name}` : currentPhotoStatus;
+    if (!file) {
+      restorePhotoPreview();
+      photoStatus.textContent = currentPhotoStatus;
+      return;
+    }
+    if (!isAllowedPhoto(file)) {
+      restorePhotoPreview();
+      photoStatus.textContent = 'Выберите JPG, JPEG, PNG или GIF размером не более 16 МБ.';
+      return;
+    }
+    const previousPreviewUrl = pendingPhotoPreviewUrl;
+    pendingPhotoPreviewUrl = URL.createObjectURL(file);
+    photoAvatarImage.src = pendingPhotoPreviewUrl;
+    if (previousPreviewUrl) URL.revokeObjectURL(previousPreviewUrl);
+    photoAvatar.classList.add('profile-edit-dialog__photo-avatar--uploaded');
+    photoStatus.textContent = 'Выбран файл: ' + file.name;
   });
   savePhoto.addEventListener('click', async () => {
     if (!user?.userId || savePhoto.disabled) return;
@@ -343,10 +374,11 @@ export function renderProfilePage(app: HTMLElement): void {
     try {
       const result = await updateProfile(user.userId, saved, file);
       setCurrentUserProfile(result, user.userId);
-      if (uploadedAvatar) URL.revokeObjectURL(uploadedAvatar.previewUrl);
-      uploadedAvatar = { userId: user.userId, avatarUrl: result.avatarUrl, previewUrl: URL.createObjectURL(file) };
       if (page.isConnected) renderProfilePage(app);
+      if (pendingPhotoPreviewUrl) URL.revokeObjectURL(pendingPhotoPreviewUrl);
+      pendingPhotoPreviewUrl = null;
     } catch (error) {
+      restorePhotoPreview();
       photoStatus.textContent = error instanceof ProfileRequestError && error.status === 422
         ? errorText(error.details, 'avatarErrMessage') || 'Не удалось сохранить фото. Проверьте данные профиля.'
         : 'Не удалось сохранить фото. Попробуйте ещё раз.';
@@ -356,6 +388,10 @@ export function renderProfilePage(app: HTMLElement): void {
   });
   requireElement(photoDialog, '.profile-edit-dialog__close').addEventListener('click', () => {
     photoDialog.close();
+  });
+  photoDialog.addEventListener('close', () => {
+    restorePhotoPreview();
+    photoStatus.textContent = currentPhotoStatus;
   });
 
   // Кнопка «Отмена» закрывает то окно профиля, в котором находится.

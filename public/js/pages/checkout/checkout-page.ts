@@ -7,6 +7,8 @@ import type { PickupPoint } from './pickup-map.js';
 import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
 import { readPreviewProductErrors } from './preview-errors.js';
 
+class ProductsUnavailableError extends Error {}
+
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
   if (!(element instanceof HTMLElement)) throw new Error(`Не найден элемент оформления заказа: ${selector}`);
@@ -26,15 +28,6 @@ function isPickupPoint(value: unknown): value is PickupPoint {
     && Number.isFinite(value.longitude) && Number.isFinite(value.latitude)
     && value.longitude >= -180 && value.longitude <= 180
     && value.latitude >= -90 && value.latitude <= 90;
-}
-
-function checkoutWarning(stockWarning: string, previewError: string): string {
-  const stock = stockWarning.trim();
-  const preview = previewError.trim();
-  if (!stock) return preview;
-  if (!preview || stock.includes(preview)) return stock;
-  if (preview.includes(stock)) return preview;
-  return `${stock}. ${preview}`;
 }
 
 /** Показывает товары корзины и итоговую сумму перед оформлением заказа. */
@@ -80,7 +73,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     updateCartMarkup(itemsContainer, cartItemsTemplate({
       items: cart.getDisplayItems().map((item) => ({
         ...item,
-        stockWarning: checkoutWarning(item.stockWarning, previewErrors.get(item.id) || ''),
+        stockWarning: '',
       })),
       loading: cart.isLoading(),
       updating: cart.isUpdating(),
@@ -109,10 +102,10 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       previewErrors = productErrors;
       availabilityConfirmed = false;
       renderCheckout();
-      // Показываем предупреждение и рядом с кнопкой заказа, а не только в списке товаров.
+      // Предупреждение об остатках показываем возле кнопки заказа.
       orderStatus.textContent = 'Некоторые товары недоступны. Проверьте корзину.';
       orderStatus.classList.add('checkout-page__order-status--error');
-      throw new Error('Некоторые товары недоступны. Проверьте корзину.');
+      throw new ProductsUnavailableError('Некоторые товары недоступны. Проверьте корзину.');
     }
     if (!response.ok) throw new Error(`Не удалось проверить наличие: ${response.status}`);
     previewErrors.clear();
@@ -149,7 +142,9 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
           renderCheckout();
           return true;
         } catch (error) {
-          pickupStatus.textContent = error instanceof Error ? error.message : 'Не удалось проверить выбранный пункт выдачи.';
+          pickupStatus.textContent = error instanceof ProductsUnavailableError
+            ? 'Пункт выдачи не выбран'
+            : error instanceof Error ? error.message : 'Не удалось проверить выбранный пункт выдачи.';
           return false;
         }
       });

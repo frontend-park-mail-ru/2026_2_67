@@ -26,8 +26,8 @@
                 <span class="cart-item__quantity">{{quantity}}</span>
                 <button class="cart-item__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if increaseDisabled}} disabled{{else}}{{#unless ../canUseCart}} disabled{{/unless}}{{/if}}>+</button>
               </div>
-              {{#if stockWarning}}<span class="cart-item__stock-warning" role="status">{{stockWarning}}</span>{{/if}}
               <button class="cart-item__remove" type="button" aria-label="Удалить товар {{title}} из корзины"{{#unless ../canUseCart}} disabled{{/unless}}>Удалить</button>
+              {{#if stockWarning}}<span class="cart-item__stock-warning" role="status">{{stockWarning}}</span>{{/if}}
             </div>
           {{/if}}
         </div>

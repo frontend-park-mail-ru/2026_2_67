@@ -10,7 +10,8 @@ const assets = new Set(OFFLINE_ASSETS);
 const routes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout', '/orders']);
 
 worker.addEventListener('install', (event: ExtendableEvent) => {
-  event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(OFFLINE_ASSETS)));
+  event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(OFFLINE_ASSETS))
+    .then(() => worker.skipWaiting()));
 });
 
 worker.addEventListener('activate', (event: ExtendableEvent) => {

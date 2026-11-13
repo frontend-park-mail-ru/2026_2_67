@@ -1,3 +1,5 @@
+import { formatMoney } from '../shared/format-money.js';
+
 export interface ApiProduct {
   id: number;
   name: string;
@@ -25,7 +27,7 @@ export function mapApiProduct(product: ApiProduct): ProductCard {
     title: product.name,
     sellerName: typeof product.sellerName === 'string' ? product.sellerName : '',
     images: product.pictureUrls,
-    price: `${product.priceResult} ₽`,
+    price: formatMoney(product.priceResult),
     rating: product.rating,
     reviewsCount: product.reviewsCount,
   };

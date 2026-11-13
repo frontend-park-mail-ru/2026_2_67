@@ -1,6 +1,7 @@
 import { initCart } from '../../components/cart/cart.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { ordersPageTemplate, ordersListTemplate } from '../../templates/templates.js';
+import { formatMoney } from '../../shared/format-money.js';
 
 interface NamedEntity {
   id: number;
@@ -48,6 +49,10 @@ function isInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
+function isMoney(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
 function isDate(value: unknown): value is string {
   return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }
@@ -61,7 +66,7 @@ function isProduct(value: unknown): value is OrderProduct {
     && typeof value.name === 'string' && (value.description === null || typeof value.description === 'string')
     && isNamedEntity(value.category) && isNamedEntity(value.seller)
     && Array.isArray(value.pictureUrls) && value.pictureUrls.every((url: unknown) => typeof url === 'string')
-    && isInteger(value.count) && isInteger(value.unitPrice) && isInteger(value.totalPrice);
+    && isInteger(value.count) && isMoney(value.unitPrice) && isMoney(value.totalPrice);
 }
 
 function isOrder(value: unknown): value is Order {
@@ -81,10 +86,9 @@ function isOrder(value: unknown): value is Order {
     && Array.isArray(notifications) && notifications.every((notification: unknown) => isRecord(notification)
       && isInteger(notification.id) && isNamedEntity(notification.status)
       && typeof notification.isRead === 'boolean' && isDate(notification.createdAt))
-    && isInteger(value.totalCount) && isInteger(value.totalPrice);
+    && isInteger(value.totalCount) && isMoney(value.totalPrice);
 }
 
-const priceFormatter = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 });
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' });
 
 // В изображениях допускаем только HTTP(S) и относительные пути, но не произвольные схемы URL.
@@ -102,7 +106,7 @@ function orderView(order: Order) {
     ...order,
     createdDate: dateFormatter.format(new Date(order.createdAt)),
     updatedDate: dateFormatter.format(new Date(order.updatedAt)),
-    formattedTotal: priceFormatter.format(order.totalPrice),
+    formattedTotal: formatMoney(order.totalPrice),
     pickupPoint: {
       ...order.pickupPoint,
       workingHours: `${order.pickupPoint.startTime.slice(0, 5)}–${order.pickupPoint.endTime.slice(0, 5)}`,
@@ -116,8 +120,8 @@ function orderView(order: Order) {
     } : null,
     products: order.products.map((product) => ({
       ...product,
-      formattedUnitPrice: priceFormatter.format(product.unitPrice),
-      formattedTotal: priceFormatter.format(product.totalPrice),
+      formattedUnitPrice: formatMoney(product.unitPrice),
+      formattedTotal: formatMoney(product.totalPrice),
       pictures: product.pictureUrls.map(safeImageUrl).filter((url) => url !== null),
     })),
     notifications: [...order.notifications]
