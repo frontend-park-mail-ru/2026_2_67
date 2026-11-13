@@ -1,6 +1,8 @@
+/* Отдельная строка категорий отключена в общем шаблоне.
 .checkout-page > .site-header__category-strip {
   display: none;
 }
+*/
 
 .checkout-page__content {
   flex: 1;

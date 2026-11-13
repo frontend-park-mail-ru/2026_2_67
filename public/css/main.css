@@ -223,6 +223,7 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-muted);
   font-size: 20px;
 }
+/* Отдельная строка категорий отключена.
 .site-header__category-strip {
   display: flex;
   justify-content: safe center;
@@ -260,6 +261,7 @@ a:focus-visible, button:focus-visible {
   border-radius: 0;
   background: transparent;
 }
+*/
 @media (max-width: 700px) {
   .site-header__categories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
