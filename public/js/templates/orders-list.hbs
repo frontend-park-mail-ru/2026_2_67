@@ -5,10 +5,10 @@
   <article class="orders-page__order" aria-labelledby="order-{{id}}">
     <header class="orders-page__heading">
       <div>
-        <h2 id="order-{{id}}">Заказ №{{id}}</h2>
+        <h2 id="order-{{id}}">Заказ №{{number}}</h2>
         <p class="orders-page__date">Оформлен <time datetime="{{createdAt}}">{{createdDate}}</time></p>
       </div>
-      <span class="orders-page__status">{{status.name}}</span>
+      <span class="orders-page__status">{{status}}</span>
     </header>
 
     <div class="orders-page__summary">
@@ -30,7 +30,8 @@
             </div>
             <div class="orders-page__product-info">
               <h4>{{name}}</h4>
-              <p class="orders-page__muted">{{category.name}} · Продавец: {{seller.name}}</p>
+              <p class="orders-page__muted">{{category}} · Продавец: {{sellerName}}</p>
+              {{#if sellerAvatar}}<img class="orders-page__seller-avatar" src="{{sellerAvatar}}" alt="Аватар продавца {{sellerName}}" loading="lazy" width="32" height="32" />{{/if}}
               {{#if description}}
                 <details class="orders-page__description">
                   <summary>Описание товара</summary>
@@ -57,48 +58,16 @@
       <section class="orders-page__section" aria-label="Промокод заказа">
         <h3>Промокод</h3>
         {{#if promocode}}
-          <p><strong>{{promocode.code}}</strong> · Скидка {{promocode.discount}}%</p>
-          <p class="orders-page__muted">{{promocode.categoryRestriction}}</p>
-          <p class="orders-page__muted">Действует с <time datetime="{{promocode.startDatetime}}">{{promocode.startDate}}</time> по <time datetime="{{promocode.endDatetime}}">{{promocode.endDate}}</time></p>
+          <p><strong>{{promocode}}</strong></p>
         {{else}}
           <p class="orders-page__muted">Не использовался</p>
         {{/if}}
       </section>
     </div>
 
-    <section class="orders-page__section" aria-label="История статусов заказа">
-      <h3>История статусов</h3>
-      <ol class="orders-page__timeline">
-        {{#each notifications}}
-          <li>
-            <div class="orders-page__heading">
-              <strong>{{status.name}}</strong>
-              {{#unless isRead}}<span class="orders-page__unread">Новое уведомление</span>{{/unless}}
-            </div>
-            <time datetime="{{createdAt}}">{{date}}</time>
-            <span class="orders-page__muted"> · {{#if isRead}}Прочитано{{else}}Не прочитано{{/if}}</span>
-          </li>
-        {{else}}
-          <li class="orders-page__muted">Уведомлений пока нет.</li>
-        {{/each}}
-      </ol>
-    </section>
-
     <details class="orders-page__details">
       <summary>Дополнительная информация о заказе</summary>
-      <p>Последнее обновление: <time datetime="{{updatedAt}}">{{updatedDate}}</time></p>
-      <p>Код статуса: {{status.id}}</p>
-      <p>Точное время работы ПВЗ: {{pickupPoint.startTime}}–{{pickupPoint.endTime}}</p>
-      {{#if promocode}}<p>Идентификатор промокода: {{promocode.id}}</p>{{/if}}
-      <ul>
-        {{#each products}}
-          <li>{{name}}: позиция №{{id}}, товар №{{productId}}, категория №{{category.id}}, продавец №{{seller.id}}</li>
-        {{/each}}
-        {{#each notifications}}
-          <li>Уведомление №{{id}}: код статуса {{status.id}}</li>
-        {{/each}}
-      </ul>
-      <p class="orders-page__muted">Цены и количество сохранены при оформлении. Описания и фотографии товаров, данные продавцов, категорий, пункта выдачи и промокода показаны в текущем виде.</p>
+      <p>Идентификатор заказа: {{id}}</p>
     </details>
   </article>
 {{else}}

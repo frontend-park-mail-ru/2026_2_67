@@ -2,18 +2,13 @@ import { initCart } from '../../components/cart/cart.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { ordersPageTemplate, ordersListTemplate } from '../../templates/templates.js';
 
-interface NamedEntity {
-  id: number;
-  name: string;
-}
-
 interface OrderProduct {
-  id: number;
   productId: number;
   name: string;
-  description: string | null;
-  category: NamedEntity;
-  seller: NamedEntity;
+  description: string;
+  category: string;
+  sellerName: string;
+  sellerAvatarUrl: string;
   pictureUrls: string[];
   count: number;
   unitPrice: number;
@@ -22,20 +17,13 @@ interface OrderProduct {
 
 interface Order {
   id: number;
-  status: NamedEntity;
+  number: number;
+  status: string;
   createdAt: string;
   updatedAt: string;
   pickupPoint: { id: number; longitude: number; latitude: number; startTime: string; endTime: string };
-  promocode: {
-    id: number;
-    code: string;
-    discount: number;
-    availableCategoryId: number | null;
-    startDatetime: string;
-    endDatetime: string;
-  } | null;
+  promocode: string | null;
   products: OrderProduct[];
-  notifications: { id: number; status: NamedEntity; isRead: boolean; createdAt: string }[];
   totalCount: number;
   totalPrice: number;
 }
@@ -52,43 +40,39 @@ function isDate(value: unknown): value is string {
   return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }
 
-function isNamedEntity(value: unknown): value is NamedEntity {
-  return isRecord(value) && isInteger(value.id) && typeof value.name === 'string';
+function isPrice(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
 function isProduct(value: unknown): value is OrderProduct {
-  return isRecord(value) && isInteger(value.id) && isInteger(value.productId)
-    && typeof value.name === 'string' && (value.description === null || typeof value.description === 'string')
-    && isNamedEntity(value.category) && isNamedEntity(value.seller)
+  return isRecord(value) && isInteger(value.productId)
+    && typeof value.name === 'string' && typeof value.description === 'string'
+    && typeof value.category === 'string' && typeof value.sellerName === 'string'
+    && typeof value.sellerAvatarUrl === 'string'
     && Array.isArray(value.pictureUrls) && value.pictureUrls.every((url: unknown) => typeof url === 'string')
-    && isInteger(value.count) && isInteger(value.unitPrice) && isInteger(value.totalPrice);
+    && isInteger(value.count) && isPrice(value.unitPrice) && isPrice(value.totalPrice);
 }
 
 function isOrder(value: unknown): value is Order {
   if (!isRecord(value)) return false;
-  const { pickupPoint, promocode, notifications } = value;
-  return isInteger(value.id) && isNamedEntity(value.status) && isDate(value.createdAt) && isDate(value.updatedAt)
+  const { pickupPoint, promocode } = value;
+  return isInteger(value.id) && isInteger(value.number) && typeof value.status === 'string'
+    && isDate(value.createdAt) && isDate(value.updatedAt)
     && isRecord(pickupPoint) && isInteger(pickupPoint.id)
     && typeof pickupPoint.longitude === 'number' && Number.isFinite(pickupPoint.longitude)
     && typeof pickupPoint.latitude === 'number' && Number.isFinite(pickupPoint.latitude)
-    && typeof pickupPoint.startTime === 'string' && /^\d{2}:\d{2}:\d{2}$/.test(pickupPoint.startTime)
-    && typeof pickupPoint.endTime === 'string' && /^\d{2}:\d{2}:\d{2}$/.test(pickupPoint.endTime)
-    && (promocode === null || (isRecord(promocode) && isInteger(promocode.id)
-      && typeof promocode.code === 'string' && isInteger(promocode.discount)
-      && (promocode.availableCategoryId === null || isInteger(promocode.availableCategoryId))
-      && isDate(promocode.startDatetime) && isDate(promocode.endDatetime)))
+    && typeof pickupPoint.startTime === 'string' && typeof pickupPoint.endTime === 'string'
+    && (promocode === null || typeof promocode === 'string')
     && Array.isArray(value.products) && value.products.every(isProduct)
-    && Array.isArray(notifications) && notifications.every((notification: unknown) => isRecord(notification)
-      && isInteger(notification.id) && isNamedEntity(notification.status)
-      && typeof notification.isRead === 'boolean' && isDate(notification.createdAt))
-    && isInteger(value.totalCount) && isInteger(value.totalPrice);
+    && isInteger(value.totalCount) && isPrice(value.totalPrice);
 }
 
-const priceFormatter = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 });
+const priceFormatter = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' });
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' });
 
 // В изображениях допускаем только HTTP(S) и относительные пути, но не произвольные схемы URL.
 function safeImageUrl(value: string): string | null {
+  if (!value.trim()) return null;
   try {
     const url = new URL(value, window.location.origin);
     return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
@@ -107,25 +91,13 @@ function orderView(order: Order) {
       ...order.pickupPoint,
       workingHours: `${order.pickupPoint.startTime.slice(0, 5)}–${order.pickupPoint.endTime.slice(0, 5)}`,
     },
-    promocode: order.promocode ? {
-      ...order.promocode,
-      categoryRestriction: order.promocode.availableCategoryId === null
-        ? 'Все категории' : `Категория №${order.promocode.availableCategoryId}`,
-      startDate: dateFormatter.format(new Date(order.promocode.startDatetime)),
-      endDate: dateFormatter.format(new Date(order.promocode.endDatetime)),
-    } : null,
     products: order.products.map((product) => ({
       ...product,
       formattedUnitPrice: priceFormatter.format(product.unitPrice),
       formattedTotal: priceFormatter.format(product.totalPrice),
       pictures: product.pictureUrls.map(safeImageUrl).filter((url) => url !== null),
+      sellerAvatar: safeImageUrl(product.sellerAvatarUrl),
     })),
-    notifications: [...order.notifications]
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-      .map((notification) => ({
-        ...notification,
-        date: dateFormatter.format(new Date(notification.createdAt)),
-      })),
   };
 }
 
