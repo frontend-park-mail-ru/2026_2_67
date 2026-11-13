@@ -1234,6 +1234,14 @@ a:focus-visible, button:focus-visible {
   background: var(--vm-subtle);
   color: var(--vm-text);
 }
+.auth-card input:not(:placeholder-shown) {
+  background: var(--vm-warm);
+}
+.auth-card input:autofill,
+.auth-card input:-webkit-autofill {
+  box-shadow: 0 0 0 1000px var(--vm-warm) inset;
+  -webkit-text-fill-color: var(--vm-text);
+}
 .auth-card input::placeholder {
   color: var(--vm-muted);
   opacity: 1;
