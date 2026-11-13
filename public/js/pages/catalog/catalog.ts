@@ -34,7 +34,7 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
 }
 
 function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, isIncreaseDisabled: (productId: number) => boolean, canUseCart: boolean): void {
-  const showAddToCartButton = Boolean(getCurrentUser()) && canUseCart;
+  const showAddToCartButton = !getCurrentUser() || canUseCart;
   grid.innerHTML = products.map((product) =>
     createProductCard(product, showAddToCartButton && Number.isInteger(product.id), getCartQuantity(product.id), isIncreaseDisabled(product.id))).join('');
   grid.querySelectorAll('[data-product-card]').forEach((card, index) => {

@@ -202,6 +202,10 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
 
     event.stopPropagation();
+    if (!userId && addButton) {
+      openGuestCartPanel();
+      return;
+    }
     const card = event.target.closest('[data-product-id]');
     const productId = Number(card?.getAttribute('data-product-id') ?? undefined);
     if (addButton) {
@@ -233,12 +237,19 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
   }
 
+  function openGuestCartPanel(): void {
+    cartPanel.innerHTML = cartTemplate({ isGuest: true });
+    cartPanel.style.width = 'min(348px, calc(100vw - 32px))';
+    cartPanel.style.height = '222px';
+    cartPanel.hidden = false;
+    cartButton.setAttribute('aria-expanded', 'true');
+  }
+
   function handleCartButtonClick(event: Event): void {
     event.stopPropagation();
     if (!userId && cartPanel.hidden) {
-      cartPanel.innerHTML = cartTemplate({ isGuest: true });
-      cartPanel.style.width = 'min(348px, calc(100vw - 32px))';
-      cartPanel.style.height = '222px';
+      openGuestCartPanel();
+      return;
     }
     cartPanel.hidden = !cartPanel.hidden;
     cartButton.setAttribute('aria-expanded', String(!cartPanel.hidden));
