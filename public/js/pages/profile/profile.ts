@@ -1,9 +1,25 @@
 import { avatarSource, getCurrentUser, setCurrentUserProfile } from '../../shared/auth.js';
 import { profileTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
-import { getMissingPasswordRequirements } from '../../shared/forms/validation.js';
+import { getEmailError, getMissingPasswordRequirements } from '../../shared/forms/validation.js';
 import { ProfileRequestError, changePassword, profileFields, updateProfile } from './profile-api.js';
 import type { ProfileFields } from './profile-api.js';
+
+const PERSON_NAME_PATTERN = /^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u;
+
+function phoneDigits(value: string): string {
+  // Берём только цифры номера; +7 или начальную 8 из сохранённого номера пропускаем.
+  const digits = value.replace(/\D/g, '');
+  return value.startsWith('+7') || (digits.length === 11 && /^[78]/.test(digits))
+    ? digits.slice(1, 11) : digits.slice(0, 10);
+}
+
+function formatPhone(value: string): string {
+  // Отделяем +7 пробелом от цифр и делим цифры на группы 3, 3, 2 и 2.
+  const digits = phoneDigits(value);
+  const groups = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 8), digits.slice(8, 10)];
+  return ['+7', ...groups.filter(Boolean)].join(' ');
+}
 
 let uploadedAvatar: { userId: string; avatarUrl: string; previewUrl: string } | null = null;
 
@@ -49,8 +65,15 @@ export function renderProfilePage(app: HTMLElement): void {
   const dialog = requireDialog(page, '.profile-edit-dialog');
   const closeButton = requireElement(dialog, '.profile-edit-dialog__close');
   const surnameInput = requireInput(dialog, 'input[name="surname"]');
+  const birthDateInput = requireInput(dialog, 'input[name="birthDate"]');
 
   editButton.addEventListener('click', () => {
+    const today = new Date();
+    birthDateInput.max = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
     dialog.showModal();
     surnameInput.focus();
   });
@@ -62,13 +85,20 @@ export function renderProfilePage(app: HTMLElement): void {
   const emailDialog = requireDialog(page, '#profile-email-dialog');
   const phoneDialog = requireDialog(page, '#profile-phone-dialog');
 
+  const phoneInput = requireInput(phoneDialog, 'input[name="phoneNumber"]');
+  function showPhoneMask(): void {
+    // После ввода оставляем курсор в конце уже заполненной части номера.
+    phoneInput.value = formatPhone(phoneInput.value);
+    phoneInput.setSelectionRange(phoneInput.value.length, phoneInput.value.length);
+  }
+  phoneInput.addEventListener('input', showPhoneMask);
+
   const editableDialogs = [dialog, emailDialog, phoneDialog];
   const errorNames: Record<keyof ProfileFields, string> = {
     name: 'nameErrMessage', surname: 'surnameErrMessage', telephone: 'telephoneErrMessage',
     email: 'emailErrMessage', birthDate: 'birthDateErrMessage', description: 'descriptionErrMessage',
   };
   let saved = profileFields(user ?? {});
-  const birthDateInput = requireInput(dialog, 'input[name="birthDate"]');
   function errorText(value: unknown, key: string): string {
     if (typeof value !== 'object' || value === null) return '';
     const text: unknown = Reflect.get(value, key);
@@ -109,6 +139,50 @@ export function renderProfilePage(app: HTMLElement): void {
           fields[key] = input.value;
         }
       });
+      if (editor === dialog) {
+        const invalidName = fields.name !== '' && !PERSON_NAME_PATTERN.test(fields.name.trim());
+        const invalidSurname = fields.surname !== '' && !PERSON_NAME_PATTERN.test(fields.surname.trim());
+        if (invalidName) {
+          requireElement(editor, '[data-profile-error="name"]').textContent = 'Имя может содержать только буквы, пробелы, дефисы и апострофы.';
+          requireInput(editor, 'input[name="name"]').setAttribute('aria-invalid', 'true');
+        }
+        if (invalidSurname) {
+          requireElement(editor, '[data-profile-error="surname"]').textContent = 'Фамилия может содержать только буквы, пробелы, дефисы и апострофы.';
+          requireInput(editor, 'input[name="surname"]').setAttribute('aria-invalid', 'true');
+        }
+        if (invalidName || invalidSurname) return;
+
+        let dateError = '';
+        if (birthDateInput.validity.badInput) {
+          dateError = 'Введите корректную дату рождения.';
+        } else if (birthDateInput.validity.rangeUnderflow) {
+          dateError = 'Дата рождения не может быть раньше 01.01.1909.';
+        } else if (birthDateInput.validity.rangeOverflow) {
+          dateError = 'Дата рождения не может быть позже сегодняшнего дня.';
+        }
+        if (dateError) {
+          requireElement(editor, '[data-profile-error="birthDate"]').textContent = dateError;
+          birthDateInput.setAttribute('aria-invalid', 'true');
+          return;
+        }
+      }
+      if (editor === emailDialog) {
+        const emailError = getEmailError(fields.email);
+        if (emailError) {
+          requireElement(editor, '[data-profile-error="email"]').textContent = emailError;
+          requireInput(editor, 'input[name="email"]').setAttribute('aria-invalid', 'true');
+          return;
+        }
+      }
+      if (editor === phoneDialog) {
+        const digits = phoneDigits(phoneInput.value);
+        if (digits.length > 0 && digits.length < 10) {
+          requireElement(editor, '[data-profile-error="telephone"]').textContent = 'Введите 10 цифр после +7.';
+          phoneInput.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        fields.telephone = digits ? `+7${digits}` : '';
+      }
       apply.disabled = true;
       try {
         const result = await updateProfile(user.userId, fields);
@@ -156,7 +230,8 @@ export function renderProfilePage(app: HTMLElement): void {
 
   requireElement(page, '[data-open-phone-editor]').addEventListener('click', () => {
     phoneDialog.showModal();
-    requireInput(phoneDialog, 'input').focus();
+    phoneInput.focus();
+    showPhoneMask();
   });
   requireElement(phoneDialog, '.profile-edit-dialog__close').addEventListener('click', () => {
     phoneDialog.close();

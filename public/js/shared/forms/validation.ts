@@ -1,4 +1,9 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function getEmailError(email: string): string {
+  return EMAIL_PATTERN.test(email.trim()) ? '' : 'Введите корректный email';
+}
+
 export interface LoginFormValues {
   email: string;
   password: string;
@@ -29,11 +34,12 @@ export function getMissingPasswordRequirements(password: string): string {
  */
 export function validateLogin(values: LoginFormValues): LoginErrors {
   const errors: LoginErrors = {};
+  const emailError = getEmailError(values.email);
 
   if (!values.email.trim()) {
     errors.email = 'Введите почту.';
-  } else if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = 'Введите корректный email';
+  } else if (emailError) {
+    errors.email = emailError;
   }
   if (!values.password) {
     errors.password = 'Введите пароль.';
@@ -50,9 +56,8 @@ export function validateLogin(values: LoginFormValues): LoginErrors {
 export function validateSignup(values: SignupFormValues): SignupErrors {
   const errors: SignupErrors = {};
 
-  if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = 'Введите корректный email';
-  }
+  const emailError = getEmailError(values.email);
+  if (emailError) errors.email = emailError;
   const passwordError = getMissingPasswordRequirements(values.password);
   if (passwordError) {
     errors.password = passwordError;
