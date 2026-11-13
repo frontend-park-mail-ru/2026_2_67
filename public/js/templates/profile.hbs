@@ -182,7 +182,7 @@
         <span data-photo-status aria-live="polite">{{#if user.avatarUrl}}Фото профиля загружено{{else}}Сейчас используется аватар по умолчанию{{/if}}</span>
       </div>
       <div class="profile-edit-dialog__file-actions">
-        <input type="file" accept="image/*" data-photo-file hidden />
+        <input type="file" accept=".jpg,.jpeg,.png,.gif" data-photo-file hidden />
         <button class="profile-edit-dialog__file-button" type="button" data-select-photo>Выбрать файл</button>
         {{!--
         <button class="profile-edit-dialog__file-button" type="button">Удалить файл</button>

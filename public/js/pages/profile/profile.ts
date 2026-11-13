@@ -326,15 +326,19 @@ export function renderProfilePage(app: HTMLElement): void {
       photoStatus.textContent = 'Сначала выберите файл.';
       return;
     }
-    if (!file.type.startsWith('image/') || file.size > 16 * 1024 * 1024) {
+    // Расширение и тип файла должны совпадать с форматами, которые принимает сервер.
+    const allowedTypes: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+    };
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!extension || allowedTypes[extension] !== file.type) {
+      photoStatus.textContent = 'Выберите изображение JPG, JPEG, PNG или GIF.';
+      return;
+    }
+    if (file.size > 16 * 1024 * 1024) {
       photoStatus.textContent = 'Выберите изображение размером не более 16 МБ.';
       return;
     }
-    if (!saved.name.trim() || !saved.email.trim() || !saved.birthDate.trim()) {
-      photoStatus.textContent = 'Для сохранения фото заполните имя, почту и дату рождения.';
-      return;
-    }
-
     savePhoto.disabled = true;
     try {
       const result = await updateProfile(user.userId, saved, file);
