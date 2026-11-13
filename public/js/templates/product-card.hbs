@@ -12,7 +12,8 @@
     {{/if}}
   </div>
   <p class="product-card__price">{{price}}</p>
-  <h2 class="product-card__title">{{title}}</h2>
+  <h2 class="product-card__title{{#if sellerName}} product-card__title--with-seller{{/if}}">{{title}}</h2>
+  {{#if sellerName}}<p class="product-card__seller">Продавец: {{sellerName}}</p>{{/if}}
   {{#if showAddToCartButton}}
     <div class="product-card__cart-actions" data-cart-controls>
       {{#if quantity}}

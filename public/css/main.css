@@ -542,6 +542,18 @@ a:focus-visible, button:focus-visible {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+.product-card__title--with-seller {
+  margin-bottom: 6px;
+}
+.product-card__seller {
+  margin: 0 2px 12px;
+  overflow: hidden;
+  color: var(--vm-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .product-card__cart-actions {
   display: flex;
   flex-wrap: wrap;

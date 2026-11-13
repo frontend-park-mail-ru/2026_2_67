@@ -12,6 +12,7 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
   return productCardTemplate({
     id: product.id,
     title: product.title,
+    sellerName: product.sellerName,
     price: product.price,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
