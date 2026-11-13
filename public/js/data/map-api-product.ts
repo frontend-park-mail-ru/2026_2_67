@@ -18,10 +18,6 @@ export interface ProductCard {
   reviewsCount: number;
 }
 
-const priceFormatter = new Intl.NumberFormat('ru-RU', {
-  maximumFractionDigits: 0,
-});
-
 /** Maps a backend product to the product-card view model. */
 export function mapApiProduct(product: ApiProduct): ProductCard {
   return {
@@ -29,7 +25,7 @@ export function mapApiProduct(product: ApiProduct): ProductCard {
     title: product.name,
     sellerName: typeof product.sellerName === 'string' ? product.sellerName : '',
     images: product.pictureUrls,
-    price: `${priceFormatter.format(product.priceResult)} ₽`,
+    price: `${product.priceResult} ₽`,
     rating: product.rating,
     reviewsCount: product.reviewsCount,
   };
