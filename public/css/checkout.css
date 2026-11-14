@@ -130,6 +130,10 @@
   pointer-events: none;
 }
 
+:root[data-theme='dark'] .checkout-page__map-tile {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 .checkout-page__pickup-marker-button {
   position: absolute;
   z-index: 1;

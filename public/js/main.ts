@@ -19,7 +19,27 @@ function requireApp(): HTMLElement {
 }
 
 const app = requireApp();
-amplitude.initAll('7166680b4e29e7e65ce1808dc80fd076', { analytics: { autocapture: true }, sessionReplay: { sampleRate: 1 } });
+if (typeof window !== 'undefined') {
+  amplitude.initAll('7166680b4e29e7e65ce1808dc80fd076', { analytics: { autocapture: true }, sessionReplay: { sampleRate: 1 } });
+}
+
+const themeStorageKey = 'vibemarket-theme';
+
+/** Применяет тему ко всем страницам и обновляет подпись кнопки после отрисовки. */
+function applyTheme(theme: 'light' | 'dark'): void {
+  document.documentElement.dataset.theme = theme;
+  const button = app.querySelector('[data-theme-toggle]');
+  if (!(button instanceof HTMLButtonElement)) return;
+  button.textContent = theme === 'dark' ? '☀' : '☾';
+  button.setAttribute('aria-label', theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему');
+}
+
+try {
+  applyTheme(window.localStorage.getItem(themeStorageKey) === 'dark' ? 'dark' : 'light');
+} catch {
+  applyTheme('light');
+}
+
 const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout', orders: '/orders' };
 const routes: Record<string, () => void> = {
   '/': () => renderCatalogPage(app),
@@ -50,12 +70,14 @@ function renderCurrentRoute(): void {
   const renderPage = routes[window.location.pathname];
   if (renderPage) {
     renderPage();
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     void renderCategories(app);
     return;
   }
 
   window.history.replaceState({}, '', '/');
   routes['/']();
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   void renderCategories(app);
 }
 
@@ -109,6 +131,18 @@ async function startApplication(): Promise<void> {
         return;
       }
       if (!(event.target instanceof Element)) return;
+
+      const themeButton = event.target.closest('[data-theme-toggle]');
+      if (themeButton) {
+        const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(theme);
+        try {
+          window.localStorage.setItem(themeStorageKey, theme);
+        } catch {
+          // Если браузер запретил хранилище, тема всё равно меняется до обновления страницы.
+        }
+        return;
+      }
 
       const catalogButton = event.target.closest('[data-catalog-toggle]');
       if (catalogButton) {
