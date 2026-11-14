@@ -1,8 +1,11 @@
+import { productUrl } from '../shared/product-url.js';
+
 export type Template = (context?: unknown) => string;
 
 declare const Handlebars: {
   compile(source: string): Template;
   registerPartial(name: string, source: string): void;
+  registerHelper(name: string, helper: (id: number, name: string) => string): void;
 };
 
 export let catalogTemplate: Template;
@@ -38,6 +41,7 @@ async function loadTemplate(name: string): Promise<Template> {
  * @returns {Promise<void>}
  */
 export async function loadTemplates() {
+  Handlebars.registerHelper('productUrl', productUrl);
   const headerResponse = await fetch(new URL('./site-header.hbs', import.meta.url));
   if (!headerResponse.ok) {
     throw new Error(`Не удалось загрузить шаблон шапки: ${headerResponse.status}`);

@@ -11,6 +11,7 @@ import { renderProductPage } from './pages/product/product-page.js';
 import { renderCategories } from './components/categories/categories.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
+import { productIdFromPath } from './shared/product-url.js';
 
 function requireApp(): HTMLElement {
   const element = document.getElementById('app');
@@ -60,9 +61,9 @@ function renderCurrentRoute(): void {
     window.history.replaceState({}, '', '/login');
   }
 
-  const productMatch = /^\/products\/([1-9]\d*)$/.exec(window.location.pathname);
-  if (productMatch) {
-    void renderProductPage(app, Number(productMatch[1]), navigate);
+  const productId = productIdFromPath(window.location.pathname);
+  if (productId !== null) {
+    void renderProductPage(app, productId, navigate);
     void renderCategories(app);
     return;
   }

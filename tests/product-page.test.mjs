@@ -54,6 +54,8 @@ globalThis.fetch = async (url, options = {}) => {
   throw new Error(`Unexpected request: ${path}`);
 };
 
+const { productUrl } = await import('../public/js/shared/product-url.ts');
+Handlebars.registerHelper('productUrl', productUrl);
 const { loadTemplates } = await import('../public/js/templates/templates.ts');
 const { rememberProducts } = await import('../public/js/data/product-session.ts');
 const { renderProductPage } = await import('../public/js/pages/product/product-page.ts');
@@ -70,7 +72,7 @@ test('catalog link opens a product route without wrapping the cart button', asyn
   renderCatalogPage(app);
   await tick();
   const link = document.querySelector('[data-product-link]');
-  assert.equal(link?.getAttribute('href'), '/products/9');
+  assert.equal(link?.getAttribute('href'), '/products/9/speaker');
   assert.equal(link?.contains(document.querySelector('.product-card__add-to-cart')), false);
 });
 
@@ -215,11 +217,11 @@ test('pending PATCH cannot duplicate and badge waits for confirmed basket', asyn
 test('cart and order product links keep controls separate', () => {
   const cart = document.createElement('div');
   cart.innerHTML = cartItemsTemplate({ items: [{ id: 9, title: 'Speaker', image: '/one.jpg', price: '85,49 ₽', quantity: 2 }], canUseCart: true });
-  assert.equal(cart.querySelectorAll('a[href="/products/9"][data-product-link]').length, 2);
+  assert.equal(cart.querySelectorAll('a[href="/products/9/speaker"][data-product-link]').length, 2);
   assert.equal(cart.querySelector('a button'), null);
   const orders = document.createElement('div');
   orders.innerHTML = ordersListTemplate({ orders: [{ id: 1, products: [{ productId: 9, name: 'Speaker', pictures: ['/one.jpg'] }] }] });
-  assert.equal(orders.querySelectorAll('a[href="/products/9"][data-product-link]').length, 2);
+  assert.equal(orders.querySelectorAll('a[href="/products/9/speaker"][data-product-link]').length, 2);
 });
 
 test('profile email distinguishes Cyrillic in both parts', () => {

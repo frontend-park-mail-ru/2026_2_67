@@ -21,7 +21,7 @@
       <ul class="orders-page__products">
         {{#each products}}
           <li class="orders-page__product">
-            <a class="orders-page__pictures" href="/products/{{productId}}" data-product-link aria-label="Открыть товар {{name}}">
+            <a class="orders-page__pictures" href="{{productUrl productId name}}" data-product-link aria-label="Открыть товар {{name}}">
               {{#each pictures}}
                 <img src="{{this}}" alt="{{../name}}" loading="lazy" width="80" height="96" />
               {{else}}
@@ -29,7 +29,7 @@
               {{/each}}
             </a>
             <div class="orders-page__product-info">
-              <h4><a href="/products/{{productId}}" data-product-link>{{name}}</a></h4>
+              <h4><a href="{{productUrl productId name}}" data-product-link>{{name}}</a></h4>
               <p class="orders-page__muted">{{category}} · Продавец: {{sellerName}}</p>
               {{#if sellerAvatar}}<img class="orders-page__seller-avatar" src="{{sellerAvatar}}" alt="Аватар продавца {{sellerName}}" loading="lazy" width="32" height="32" />{{/if}}
               {{#if description}}

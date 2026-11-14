@@ -22,7 +22,7 @@
   background: var(--vm-subtle);
 }
 .site-header__icon--cart[aria-expanded="true"]:hover {
-  background: var(--vm-warm);
+  background: var(--vm-hover);
 }
 
 .cart-guest {

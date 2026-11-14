@@ -13,9 +13,9 @@
   <ul class="cart-list"{{#if updating}} aria-busy="true"{{/if}}>
     {{#each items}}
       <li class="cart-item" data-cart-item-id="{{id}}">
-        <a class="cart-item__image-link" href="/products/{{id}}" data-product-link aria-label="Открыть товар {{title}}"><img class="cart-item__image" src="{{image}}" alt="" /></a>
+        <a class="cart-item__image-link" href="{{productUrl id title}}" data-product-link aria-label="Открыть товар {{title}}"><img class="cart-item__image" src="{{image}}" alt="" /></a>
         <div class="cart-item__details">
-          <p class="cart-item__title"><a href="/products/{{id}}" data-product-link>{{title}}</a></p>
+          <p class="cart-item__title"><a href="{{productUrl id title}}" data-product-link>{{title}}</a></p>
           <p class="cart-item__price">{{price}}</p>
           {{#if ../readonly}}
             <p class="cart-item__count">Количество: {{quantity}}</p>

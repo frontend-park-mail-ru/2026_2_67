@@ -87,10 +87,11 @@ export function renderAuthPage(app: HTMLElement, template: () => string, validat
     const submitButton = form.querySelector('[type="submit"]');
     if (!(submitButton instanceof HTMLButtonElement)) throw new Error('Кнопка отправки не найдена.');
     submitButton.disabled = true;
+    const normalizedEmail = values.email.trim().toLowerCase();
     const isLogin = form.dataset.authForm === 'login';
     const request = isLogin
-      ? login(values.email, values.password)
-      : register(values.email, values.password);
+      ? login(normalizedEmail, values.password)
+      : register(normalizedEmail, values.password);
 
     request
       .then((result) => {

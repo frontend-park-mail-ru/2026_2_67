@@ -1,6 +1,6 @@
 <article class="product-card" data-product-card data-product-id="{{id}}">
   <div class="product-card__image-wrap">
-    <a class="product-card__image-link" href="/products/{{id}}" data-product-link aria-label="Открыть товар {{title}}"><img class="product-card__image" data-product-image src="{{currentImage}}" alt="{{title}}" /></a>
+    <a class="product-card__image-link" href="{{productUrl id title}}" data-product-link aria-label="Открыть товар {{title}}"><img class="product-card__image" data-product-image src="{{currentImage}}" alt="{{title}}" /></a>
     {{#if hasMultipleImages}}
       <button class="product-card__arrow product-card__arrow--prev" type="button" data-image-prev aria-label="Предыдущая фотография">&lt;</button>
       <button class="product-card__arrow product-card__arrow--next" type="button" data-image-next aria-label="Следующая фотография">&gt;</button>
@@ -12,7 +12,7 @@
     {{/if}}
   </div>
   <p class="product-card__price">{{price}}</p>
-  <h2 class="product-card__title{{#if sellerName}} product-card__title--with-seller{{/if}}"><a href="/products/{{id}}" data-product-link>{{title}}</a></h2>
+  <h2 class="product-card__title{{#if sellerName}} product-card__title--with-seller{{/if}}"><a href="{{productUrl id title}}" data-product-link>{{title}}</a></h2>
   {{#if sellerName}}<p class="product-card__seller">Продавец: {{sellerName}}</p>{{/if}}
   {{#if showAddToCartButton}}
     <div class="product-card__cart-actions" data-cart-controls>
