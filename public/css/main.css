@@ -7,6 +7,7 @@
 }
 
 :root {
+  color-scheme: light;
   --vm-bg: #FFFFFF;
   --vm-surface: #FFFFFF;
   --vm-subtle: #F7F4EF;
@@ -18,8 +19,25 @@
   --vm-dark: #252525;
   --vm-sale: #BB4B42;
   --vm-success: #7A9B65;
+  --vm-shadow: #252525;
   --corner-radius: 18px;
   --button-radius: 13px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --vm-bg: #171615;
+  --vm-surface: #242220;
+  --vm-subtle: #302D2A;
+  --vm-warm: #41382F;
+  --vm-hover: #594638;
+  --vm-text: #F7F4EF;
+  --vm-muted: #C8BFB5;
+  --vm-border: #5A514A;
+  --vm-dark: #F1EAE1;
+  --vm-sale: #FF968C;
+  --vm-success: #A8C792;
+  --vm-shadow: #000000;
 }
 
 * {
@@ -86,6 +104,10 @@ a:focus-visible, button:focus-visible {
   background: var(--vm-surface);
   box-shadow: 0 3px 10px color-mix(in srgb, var(--vm-dark) 6%, transparent);
 }
+:root[data-theme='dark'] .site-header {
+  border-bottom-color: var(--vm-border);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--vm-shadow) 20%, transparent);
+}
 .site-header__inner {
   display: flex;
   align-items: center;
@@ -130,6 +152,24 @@ a:focus-visible, button:focus-visible {
 }
 .site-header__action--logout {
   padding-inline: 18px;
+}
+.theme-toggle {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--button-radius);
+  background: var(--vm-subtle);
+  color: var(--vm-text);
+  font-size: 22px;
+  line-height: 1;
+}
+.theme-toggle:hover {
+  background: var(--vm-hover);
+}
+:root[data-theme='dark'] .site-header__icon-image img:not(.site-header__avatar) {
+  filter: brightness(0) invert(1);
 }
 .site-header__controls {
   display: grid;
@@ -433,7 +473,7 @@ a:focus-visible, button:focus-visible {
 .site-header__icon--logged-in:hover .site-header__icon-image {
   background: var(--vm-warm);
 }
-@media (max-width: 740px) {
+@media (max-width: 850px) {
   .site-header__inner {
     flex-wrap: wrap;
     gap: 4px 8px;
@@ -475,7 +515,7 @@ a:focus-visible, button:focus-visible {
     font-size: 13px;
   }
 }
-@media (min-width: 741px) and (max-width: 850px) {
+@media (min-width: 851px) and (max-width: 950px) {
   .site-header__inner {
     gap: 8px;
     padding-inline: 28px;
@@ -569,7 +609,7 @@ a:focus-visible, button:focus-visible {
   border-radius: var(--button-radius);
   background: var(--vm-surface);
   color: var(--vm-text);
-  box-shadow: 0 1px 5px color-mix(in srgb, var(--vm-dark) 15%, transparent);
+  box-shadow: 0 1px 5px color-mix(in srgb, var(--vm-shadow) 15%, transparent);
   transform: translateY(-50%);
 }
 .product-card__arrow--prev {
@@ -1082,10 +1122,13 @@ a:focus-visible, button:focus-visible {
   border-radius: var(--corner-radius);
   background: var(--vm-surface);
   color: var(--vm-text);
-  box-shadow: 0 20px 60px color-mix(in srgb, var(--vm-dark) 16%, transparent);
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--vm-shadow) 16%, transparent);
 }
 .profile-edit-dialog::backdrop {
-  background: color-mix(in srgb, var(--vm-dark) 30%, transparent);
+  background: color-mix(in srgb, var(--vm-shadow) 30%, transparent);
+}
+:root[data-theme='dark'] .profile-edit-dialog::backdrop {
+  background: color-mix(in srgb, var(--vm-shadow) 65%, transparent);
 }
 .profile-edit-dialog__content {
   display: flex;
@@ -1303,12 +1346,18 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-text);
 }
 .auth-card {
+  position: relative;
   width: min(100%, 340px);
   padding: 30px 26px 28px;
   border: 1px solid var(--vm-border);
   border-radius: var(--corner-radius);
   background: var(--vm-surface);
-  box-shadow: 0 20px 44px color-mix(in srgb, var(--vm-dark) 23%, transparent);
+  box-shadow: 0 20px 44px color-mix(in srgb, var(--vm-shadow) 23%, transparent);
+}
+.auth-card__theme {
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 .auth-card__brand {
   display: flex;
