@@ -35,10 +35,10 @@ class OfflineManifestPlugin {
 
 export default {
   entry: { main: [
-    'leaflet/dist/leaflet.css',
     './public/css/main.css',
     './public/css/cart.css',
     './public/css/checkout.css',
+    './public/css/product.css',
     './public/js/main.js',
   ], 'service-worker': './public/js/service-worker.ts' },
   module: {
@@ -103,8 +103,6 @@ export default {
           },
         },
         { from: 'public/images', to: 'images' },
-        // В leaflet.css изображения указаны относительно папки css.
-        { from: 'node_modules/leaflet/dist/images', to: 'css/images' },
         { from: 'public/vendor', to: 'vendor' },
         { from: 'public/js/templates', to: 'templates', globOptions: { ignore: ['**/templates.ts'] } },
       ],

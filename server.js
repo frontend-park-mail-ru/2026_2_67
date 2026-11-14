@@ -57,7 +57,7 @@ const server = createServer((request, response) => {
     return;
   }
 
-  const requestedPath = frontendRoutes.has(pathname) ? 'index.html' : pathname.replace(/^\/+/, '');
+  const requestedPath = frontendRoutes.has(pathname) || /^\/products\/[1-9]\d*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)?$/.test(pathname) ? 'index.html' : pathname.replace(/^\/+/, '');
   let filePath = resolve(publicDirectory, requestedPath);
   if (filePath !== publicDirectory && !filePath.startsWith(`${publicDirectory}${sep}`)) {
     response.writeHead(403).end('Forbidden');

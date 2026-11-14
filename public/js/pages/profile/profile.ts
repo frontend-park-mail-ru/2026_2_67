@@ -1,11 +1,26 @@
 import { avatarSource, getCurrentUser, setCurrentUserProfile } from '../../shared/auth.js';
 import { profileTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
-import { getMissingPasswordRequirements } from '../../shared/forms/validation.js';
+import { getMissingPasswordRequirements, getProfileEmailError } from '../../shared/forms/validation.js';
+import { getAvatarFileError } from './avatar-file-validation.js';
 import { ProfileRequestError, changePassword, profileFields, updateProfile } from './profile-api.js';
 import type { ProfileFields } from './profile-api.js';
 
-let uploadedAvatar: { userId: string; avatarUrl: string; previewUrl: string } | null = null;
+const PERSON_NAME_PATTERN = /^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u;
+
+function phoneDigits(value: string): string {
+  // Берём только цифры номера; +7 или начальную 8 из сохранённого номера пропускаем.
+  const digits = value.replace(/\D/g, '');
+  return value.startsWith('+7') || (digits.length === 11 && /^[78]/.test(digits))
+    ? digits.slice(1, 11) : digits.slice(0, 10);
+}
+
+function formatPhone(value: string): string {
+  // Отделяем +7 пробелом от цифр и делим цифры на группы 3, 3, 2 и 2.
+  const digits = phoneDigits(value);
+  const groups = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 8), digits.slice(8, 10)];
+  return ['+7', ...groups.filter(Boolean)].join(' ');
+}
 
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
@@ -28,17 +43,13 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
 /** Shows the profile information already loaded for the current session. */
 export function renderProfilePage(app: HTMLElement): void {
   const user = getCurrentUser();
-  if (uploadedAvatar && (uploadedAvatar.userId !== user?.userId || uploadedAvatar.avatarUrl !== user?.avatarUrl)) {
-    URL.revokeObjectURL(uploadedAvatar.previewUrl);
-    uploadedAvatar = null;
-  }
   const fullName = [user?.name, user?.surname].filter(Boolean).join(' ');
   const savedBirthDate = typeof user?.birthDate === 'string' ? user.birthDate : '';
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
   const [year, month, day] = birthDate.split('-');
   const birthDateDisplay = birthDate ? `${day}-${month}-${year}` : '';
-  const avatarUrl = uploadedAvatar?.previewUrl || avatarSource(user?.avatarUrl);
+  const avatarUrl = typeof user?.avatarSrc === 'string' ? user.avatarSrc : avatarSource(user?.avatarUrl);
   const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
   app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl });
 
@@ -49,8 +60,15 @@ export function renderProfilePage(app: HTMLElement): void {
   const dialog = requireDialog(page, '.profile-edit-dialog');
   const closeButton = requireElement(dialog, '.profile-edit-dialog__close');
   const surnameInput = requireInput(dialog, 'input[name="surname"]');
+  const birthDateInput = requireInput(dialog, 'input[name="birthDate"]');
 
   editButton.addEventListener('click', () => {
+    const today = new Date();
+    birthDateInput.max = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
     dialog.showModal();
     surnameInput.focus();
   });
@@ -62,13 +80,20 @@ export function renderProfilePage(app: HTMLElement): void {
   const emailDialog = requireDialog(page, '#profile-email-dialog');
   const phoneDialog = requireDialog(page, '#profile-phone-dialog');
 
+  const phoneInput = requireInput(phoneDialog, 'input[name="phoneNumber"]');
+  function showPhoneMask(): void {
+    // После ввода оставляем курсор в конце уже заполненной части номера.
+    phoneInput.value = formatPhone(phoneInput.value);
+    phoneInput.setSelectionRange(phoneInput.value.length, phoneInput.value.length);
+  }
+  phoneInput.addEventListener('input', showPhoneMask);
+
   const editableDialogs = [dialog, emailDialog, phoneDialog];
   const errorNames: Record<keyof ProfileFields, string> = {
     name: 'nameErrMessage', surname: 'surnameErrMessage', telephone: 'telephoneErrMessage',
     email: 'emailErrMessage', birthDate: 'birthDateErrMessage', description: 'descriptionErrMessage',
   };
   let saved = profileFields(user ?? {});
-  const birthDateInput = requireInput(dialog, 'input[name="birthDate"]');
   function errorText(value: unknown, key: string): string {
     if (typeof value !== 'object' || value === null) return '';
     const text: unknown = Reflect.get(value, key);
@@ -109,6 +134,51 @@ export function renderProfilePage(app: HTMLElement): void {
           fields[key] = input.value;
         }
       });
+      if (editor === dialog) {
+        const invalidName = fields.name !== '' && !PERSON_NAME_PATTERN.test(fields.name.trim());
+        const invalidSurname = fields.surname !== '' && !PERSON_NAME_PATTERN.test(fields.surname.trim());
+        if (invalidName) {
+          requireElement(editor, '[data-profile-error="name"]').textContent = 'Имя может содержать только буквы, пробелы, дефисы и апострофы.';
+          requireInput(editor, 'input[name="name"]').setAttribute('aria-invalid', 'true');
+        }
+        if (invalidSurname) {
+          requireElement(editor, '[data-profile-error="surname"]').textContent = 'Фамилия может содержать только буквы, пробелы, дефисы и апострофы.';
+          requireInput(editor, 'input[name="surname"]').setAttribute('aria-invalid', 'true');
+        }
+        if (invalidName || invalidSurname) return;
+
+        let dateError = '';
+        if (birthDateInput.validity.badInput) {
+          dateError = 'Введите корректную дату рождения.';
+        } else if (birthDateInput.validity.rangeUnderflow) {
+          dateError = 'Дата рождения не может быть раньше 01.01.1909.';
+        } else if (birthDateInput.validity.rangeOverflow) {
+          dateError = 'Дата рождения не может быть позже сегодняшнего дня.';
+        }
+        if (dateError) {
+          requireElement(editor, '[data-profile-error="birthDate"]').textContent = dateError;
+          birthDateInput.setAttribute('aria-invalid', 'true');
+          return;
+        }
+      }
+      if (editor === emailDialog) {
+        const emailInput = requireInput(editor, 'input[name="email"]');
+        const emailError = getProfileEmailError(fields.email, emailInput.validity.typeMismatch);
+        if (emailError) {
+          requireElement(editor, '[data-profile-error="email"]').textContent = emailError;
+          emailInput.setAttribute('aria-invalid', 'true');
+          return;
+        }
+      }
+      if (editor === phoneDialog) {
+        const digits = phoneDigits(phoneInput.value);
+        if (digits.length > 0 && digits.length < 10) {
+          requireElement(editor, '[data-profile-error="telephone"]').textContent = 'Введите 10 цифр после +7.';
+          phoneInput.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        fields.telephone = digits ? `+7${digits}` : '';
+      }
       apply.disabled = true;
       try {
         const result = await updateProfile(user.userId, fields);
@@ -116,7 +186,7 @@ export function renderProfilePage(app: HTMLElement): void {
         setCurrentUserProfile(result, user.userId);
         if (page.isConnected) renderProfilePage(app);
       } catch (error) {
-        if (error instanceof ProfileRequestError && error.status === 422) {
+        if (error instanceof ProfileRequestError && [400, 409, 422].includes(error.status)) {
           let shown = false;
           (Object.keys(errorNames) as (keyof ProfileFields)[]).forEach((key) => {
             const text = errorText(error.details, errorNames[key]);
@@ -129,7 +199,8 @@ export function renderProfilePage(app: HTMLElement): void {
               shown = true;
             }
           });
-          message.textContent = shown ? '' : errorText(error.details, 'errMessage') || 'Проверьте данные профиля.';
+          message.textContent = shown ? '' : errorText(error.details, 'errMessage')
+            || errorText(error.details, 'message') || 'Проверьте данные профиля.';
         } else if (error instanceof ProfileRequestError) {
           message.textContent = ({ 400: 'Некорректный запрос.', 403: 'Нет доступа к изменению профиля.',
             404: 'Профиль не найден.', 405: 'Сохранение профиля пока не поддерживается сервером.' } as Record<number, string>)[error.status]
@@ -156,7 +227,8 @@ export function renderProfilePage(app: HTMLElement): void {
 
   requireElement(page, '[data-open-phone-editor]').addEventListener('click', () => {
     phoneDialog.showModal();
-    requireInput(phoneDialog, 'input').focus();
+    phoneInput.focus();
+    showPhoneMask();
   });
   requireElement(phoneDialog, '.profile-edit-dialog__close').addEventListener('click', () => {
     phoneDialog.close();
@@ -227,22 +299,68 @@ export function renderProfilePage(app: HTMLElement): void {
   const photoDialog = requireDialog(page, '#profile-photo-dialog');
   const photoFile = requireInput(photoDialog, '[data-photo-file]');
   const photoStatus = requireElement(photoDialog, '[data-photo-status]');
-  const savePhoto = requireElement(photoDialog, '.profile-edit-dialog__apply');
-  if (!(savePhoto instanceof HTMLButtonElement)) throw new Error('Кнопка сохранения фото не найдена.');
+  const photoAvatar = requireElement(photoDialog, '.profile-edit-dialog__photo-avatar');
+  const photoAvatarImageCandidate = photoAvatar.querySelector('img');
+  if (!(photoAvatarImageCandidate instanceof HTMLImageElement)) throw new Error('Photo preview image not found.');
+  const photoAvatarImage: HTMLImageElement = photoAvatarImageCandidate;
+  const savePhotoCandidate = requireElement(photoDialog, '.profile-edit-dialog__apply');
+  if (!(savePhotoCandidate instanceof HTMLButtonElement)) throw new Error('Кнопка сохранения фото не найдена.');
+  const savePhoto: HTMLButtonElement = savePhotoCandidate;
   const currentPhotoStatus = photoStatus.textContent ?? '';
+  const savedPhotoSrc = avatarUrl || '/images/profile-avatar-placeholder.png';
+  let pendingPhotoPreviewUrl: string | null = null;
+  let photoSelectionId = 0;
+
+  function restorePhotoPreview(): void {
+    photoSelectionId += 1;
+    if (pendingPhotoPreviewUrl) URL.revokeObjectURL(pendingPhotoPreviewUrl);
+    pendingPhotoPreviewUrl = null;
+    photoFile.value = '';
+    savePhoto.disabled = false;
+    photoAvatarImage.src = savedPhotoSrc;
+    photoAvatar.classList.toggle('profile-edit-dialog__photo-avatar--uploaded', Boolean(avatarUrl));
+  }
 
   // При каждом открытии начинаем выбор файла заново.
   requireElement(page, '[data-open-photo-editor]').addEventListener('click', () => {
-    photoFile.value = '';
+    restorePhotoPreview();
     photoStatus.textContent = currentPhotoStatus;
     photoDialog.showModal();
   });
   requireElement(photoDialog, '[data-select-photo]').addEventListener('click', () => {
     photoFile.click();
   });
-  photoFile.addEventListener('change', () => {
+  photoFile.addEventListener('change', async () => {
+    const selectionId = ++photoSelectionId;
     const file = photoFile.files?.[0];
-    photoStatus.textContent = file ? `Выбран файл: ${file.name}` : currentPhotoStatus;
+    if (!file) {
+      restorePhotoPreview();
+      photoStatus.textContent = currentPhotoStatus;
+      return;
+    }
+    const fileError = await getAvatarFileError(file);
+    if (selectionId !== photoSelectionId) return;
+    if (fileError) {
+      restorePhotoPreview();
+      photoStatus.textContent = fileError;
+      return;
+    }
+    const previousPreviewUrl = pendingPhotoPreviewUrl;
+    pendingPhotoPreviewUrl = URL.createObjectURL(file);
+    const previewUrl = pendingPhotoPreviewUrl;
+    savePhoto.disabled = true;
+    photoAvatarImage.onload = () => {
+      if (pendingPhotoPreviewUrl === previewUrl) savePhoto.disabled = false;
+    };
+    photoAvatarImage.onerror = () => {
+      if (pendingPhotoPreviewUrl !== previewUrl) return;
+      restorePhotoPreview();
+      photoStatus.textContent = 'Не удалось открыть выбранный файл как изображение.';
+    };
+    photoAvatarImage.src = pendingPhotoPreviewUrl;
+    if (previousPreviewUrl) URL.revokeObjectURL(previousPreviewUrl);
+    photoAvatar.classList.add('profile-edit-dialog__photo-avatar--uploaded');
+    photoStatus.textContent = 'Выбран файл: ' + file.name;
   });
   savePhoto.addEventListener('click', async () => {
     if (!user?.userId || savePhoto.disabled) return;
@@ -251,32 +369,44 @@ export function renderProfilePage(app: HTMLElement): void {
       photoStatus.textContent = 'Сначала выберите файл.';
       return;
     }
-    if (!file.type.startsWith('image/') || file.size > 16 * 1024 * 1024) {
-      photoStatus.textContent = 'Выберите изображение размером не более 16 МБ.';
-      return;
-    }
-    if (!saved.name.trim() || !saved.email.trim() || !saved.birthDate.trim()) {
-      photoStatus.textContent = 'Для сохранения фото заполните имя, почту и дату рождения.';
-      return;
-    }
-
+    const selectionId = photoSelectionId;
     savePhoto.disabled = true;
+    photoFile.disabled = true;
+    const fileError = await getAvatarFileError(file);
+    if (selectionId !== photoSelectionId) {
+      savePhoto.disabled = false;
+      photoFile.disabled = false;
+      return;
+    }
+    if (fileError) {
+      restorePhotoPreview();
+      photoFile.disabled = false;
+      photoStatus.textContent = fileError;
+      return;
+    }
     try {
       const result = await updateProfile(user.userId, saved, file);
       setCurrentUserProfile(result, user.userId);
-      if (uploadedAvatar) URL.revokeObjectURL(uploadedAvatar.previewUrl);
-      uploadedAvatar = { userId: user.userId, avatarUrl: result.avatarUrl, previewUrl: URL.createObjectURL(file) };
       if (page.isConnected) renderProfilePage(app);
+      if (pendingPhotoPreviewUrl) URL.revokeObjectURL(pendingPhotoPreviewUrl);
+      pendingPhotoPreviewUrl = null;
     } catch (error) {
+      restorePhotoPreview();
       photoStatus.textContent = error instanceof ProfileRequestError && error.status === 422
         ? errorText(error.details, 'avatarErrMessage') || 'Не удалось сохранить фото. Проверьте данные профиля.'
         : 'Не удалось сохранить фото. Попробуйте ещё раз.';
     } finally {
+      photoFile.disabled = false;
       savePhoto.disabled = false;
     }
   });
   requireElement(photoDialog, '.profile-edit-dialog__close').addEventListener('click', () => {
     photoDialog.close();
+  });
+  photoDialog.addEventListener('close', () => {
+    restorePhotoPreview();
+    photoFile.disabled = false;
+    photoStatus.textContent = currentPhotoStatus;
   });
 
   // Кнопка «Отмена» закрывает то окно профиля, в котором находится.

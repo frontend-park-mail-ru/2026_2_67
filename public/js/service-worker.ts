@@ -10,7 +10,8 @@ const assets = new Set(OFFLINE_ASSETS);
 const routes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout', '/orders']);
 
 worker.addEventListener('install', (event: ExtendableEvent) => {
-  event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(OFFLINE_ASSETS)));
+  event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(OFFLINE_ASSETS))
+    .then(() => worker.skipWaiting()));
 });
 
 worker.addEventListener('activate', (event: ExtendableEvent) => {
@@ -25,7 +26,7 @@ worker.addEventListener('fetch', (event: FetchEvent) => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== worker.location.origin || url.pathname.startsWith('/api/')) return;
 
-  if (request.mode === 'navigate' && routes.has(url.pathname)) {
+  if (request.mode === 'navigate' && (routes.has(url.pathname) || /^\/products\/[1-9]\d*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)?$/.test(url.pathname))) {
     event.respondWith(fetch(request).catch(async () => {
       const cached = await (await caches.open(cacheName)).match('/index.html');
       return cached ?? Response.error();

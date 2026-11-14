@@ -1,10 +1,10 @@
 {{#each categories}}
-  <button class="{{#if ../isMenu}}site-header__category{{else}}site-header__strip-category{{/if}}" type="button" data-category="{{category}}">
+  <button class="site-header__category" type="button" data-category="{{category}}">
     {{#if pictureUrl}}
       <span class="site-header__category-icon"><img src="{{pictureUrl}}" alt="" /></span>
     {{/if}}
     <span>{{category}}</span>
-    {{#if ../isMenu}}<span class="site-header__category-arrow" aria-hidden="true">&gt;</span>{{/if}}
+    <span class="site-header__category-arrow" aria-hidden="true">&gt;</span>
   </button>
 {{else}}
   <p class="site-header__category-empty">Категорий пока нет.</p>

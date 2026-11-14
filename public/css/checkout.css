@@ -1,6 +1,8 @@
+/* Отдельная строка категорий отключена в общем шаблоне.
 .checkout-page > .site-header__category-strip {
   display: none;
 }
+*/
 
 .checkout-page__content {
   flex: 1;
@@ -80,6 +82,17 @@
   margin-top: 8px;
 }
 
+.checkout-page__pickup-hint[hidden] {
+  display: block;
+  visibility: hidden;
+}
+
+@media (max-width: 360px) {
+  .checkout-page__pickup-status {
+    min-height: 3em;
+  }
+}
+
 .checkout-page__pickup-button {
   max-width: 100%;
   min-height: 44px;
@@ -97,7 +110,9 @@
 }
 
 .checkout-page__pickup-map {
+  position: relative;
   z-index: 0;
+  overflow: hidden;
   width: 100%;
   height: 400px;
   margin-top: 18px;
@@ -105,12 +120,25 @@
   border-radius: var(--corner-radius);
   background: var(--vm-subtle);
   font: inherit;
+  touch-action: none;
+}
+
+.checkout-page__map-tile {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  pointer-events: none;
+}
+
+:root[data-theme='dark'] .checkout-page__map-tile {
+  filter: invert(1) hue-rotate(180deg);
 }
 
 .checkout-page__pickup-marker-button {
-  display: block;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid var(--vm-border);
   border-radius: var(--button-radius);
@@ -118,6 +146,7 @@
   color: var(--vm-text);
   font-weight: 600;
   cursor: pointer;
+  transform: translate(-50%, -50%);
 }
 
 .checkout-page__pickup-marker-button:hover {
@@ -130,35 +159,43 @@
   color: var(--vm-surface);
 }
 
-.checkout-page__pickup-map .leaflet-bar {
-  overflow: hidden;
+.checkout-page__map-controls {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  display: grid;
+}
+
+.checkout-page__map-controls button {
+  width: 36px;
+  height: 36px;
   border: 1px solid var(--vm-border);
   border-radius: var(--button-radius);
-  box-shadow: none;
-}
-
-.checkout-page__pickup-map .leaflet-bar a {
-  border-bottom-color: var(--vm-border);
   background: var(--vm-surface);
   color: var(--vm-text);
+  cursor: pointer;
 }
 
-.checkout-page__pickup-map .leaflet-bar a:hover {
+.checkout-page__map-controls button:hover {
   background: var(--vm-hover);
 }
 
-.checkout-page__pickup-map .leaflet-bar a.leaflet-disabled {
+.checkout-page__map-controls button:disabled {
   background: var(--vm-subtle);
   color: var(--vm-muted);
+  cursor: default;
 }
 
-.checkout-page__pickup-map .leaflet-control-attribution {
+.checkout-page__map-attribution {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  padding: 2px 5px;
   background: var(--vm-surface);
-  color: var(--vm-muted);
-}
-
-.checkout-page__pickup-map .leaflet-control-attribution a {
   color: var(--vm-text);
+  font-size: 11px;
 }
 
 .checkout-page__map-error {
@@ -239,6 +276,21 @@
 .checkout-page__order-status {
   margin: 12px 0 0;
   color: var(--vm-muted);
+}
+
+.checkout-page__order-status--error,
+.checkout-page__basket-items .cart-item__stock-warning {
+  padding: 10px 12px;
+  border: 1px solid var(--vm-sale);
+  border-radius: var(--button-radius);
+  background: var(--vm-subtle);
+  color: var(--vm-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.checkout-page__order-status--error {
+  font-weight: 600;
 }
 
 .checkout-page__order-status:empty {

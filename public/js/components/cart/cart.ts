@@ -2,10 +2,10 @@
 import { addBasketProduct, BasketRequestError, getBasket, setBasketProductCount } from './cart-api.js';
 import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
-import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isStockRejection, markRejectedCount, reconcileStockState } from './stock-state.js';
+import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isRequestedCountRejected, isStockRejection, markRejectedCount, reconcileStockState } from './stock-state.js';
 import { updateCartMarkup } from './cart-dom.js';
+import { formatMoney } from '../../shared/format-money.js';
 
-const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const itemCountRules = new Intl.PluralRules('ru-RU');
 const itemCountWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
 
@@ -14,6 +14,7 @@ export interface CartController {
   getItems(): CartItem[];
   getDisplayItems(): (CartItem & { stockWarning: string; increaseDisabled: boolean })[];
   isIncreaseDisabled(productId: number): boolean;
+  isRequestedCountRejected(productId: number, count: number): boolean;
   getDisplayCount(): string;
   getDisplayTotal(): string;
   isLoading(): boolean;
@@ -24,6 +25,8 @@ export interface CartController {
   getErrorMessage(): string;
   reloadCart(): Promise<void>;
   changeProductQuantity(productId: number, change: number): void;
+  addProductQuantity(productId: number, count: number): Promise<boolean>;
+  setProductQuantity(productId: number, count: number): Promise<boolean>;
   removeProduct(productId: number): void;
 }
 
@@ -38,6 +41,7 @@ function requireCartElement(page: Element, selector: string): HTMLElement {
 /** Подключает корзину к странице и возвращает её данные и действия. */
 export function initCart(page: Element, userId: string | undefined, onCartChange: (productId: number | null) => void = () => {}): CartController {
   const cartButton = requireCartElement(page, '.site-header__icon--cart');
+  const cartCount = requireCartElement(cartButton, '.site-header__cart-count');
   const cartPanel = requireCartElement(page, '#cart-panel');
   const productGrid = page.querySelector('.catalog-page__grid');
   let cart: CartModel | null = null;
@@ -90,10 +94,14 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (errorMessage && !cart) {
       return '—';
     }
-    return `${priceFormatter.format(cart?.priceSum ?? 0)} ₽`;
+    return formatMoney(cart?.priceSum ?? 0);
   }
 
   function renderCart(): void {
+    const count = getItems().reduce((sum, item) => sum + item.quantity, 0);
+    cartCount.hidden = count === 0;
+    cartCount.textContent = count > 99 ? '99+' : String(count);
+    cartButton.setAttribute('aria-label', count ? `Корзина, ${getDisplayCount()}` : 'Корзина');
     updateCartMarkup(cartPanel, cartTemplate({
       items: getDisplayItems(),
       loading: isLoading(),
@@ -131,19 +139,19 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     });
   }
 
-  async function saveProductCount(productId: number, newCount: number): Promise<void> {
+  async function saveProductCount(productId: number, newCount: number): Promise<boolean> {
     if (!userId || !cart || isUpdating || !Number.isInteger(productId) || productId <= 0) {
-      return;
+      return false;
     }
 
     const currentCount = getProductQuantity(productId);
     if (!Number.isInteger(newCount) || newCount < 0) {
-      return;
+      return false;
     }
-    if (newCount === currentCount || (currentCount === 0 && newCount !== 1)) {
-      return;
+    if (newCount === currentCount) {
+      return false;
     }
-    if (newCount > currentCount && isIncreaseDisabled(productId)) return;
+    if (newCount > currentCount && isRequestedCountRejected(userId, productId, newCount)) return false;
 
     isUpdating = true;
     page.classList.add('cart-updating');
@@ -152,7 +160,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     setActionButtonsDisabled(true);
     try {
       if (currentCount === 0) {
-        await addBasketProduct(userId, productId);
+        await addBasketProduct(userId, productId, newCount);
       } else {
         await setBasketProductCount(userId, productId, newCount);
       }
@@ -160,13 +168,15 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       reconcileStockState(userId, cart.items);
       confirmAvailableCount(userId, productId, newCount);
       errorMessage = '';
+      return true;
     } catch (error) {
       const stockExceeded = error instanceof BasketRequestError
         && isStockRejection(error.status, error.method, currentCount, newCount, error.responseBody);
       if (stockExceeded) markRejectedCount(userId, productId, newCount);
       errorMessage = stockExceeded
-        ? currentCount === 0 ? 'Товара сейчас нет в наличии.' : ''
+        ? newCount === 1 ? 'Товара сейчас нет в наличии.' : 'Выбранного количества нет в наличии.'
         : 'Не удалось обновить корзину. Попробуйте снова.';
+      return false;
     } finally {
       isUpdating = false;
       page.classList.remove('cart-updating');
@@ -179,6 +189,17 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       });
       updatePage(cart ? productId : null);
     }
+  }
+
+  function addProductQuantity(productId: number, count: number): Promise<boolean> {
+    if (!Number.isInteger(count) || count < 1) return Promise.resolve(false);
+    return saveProductCount(productId, getProductQuantity(productId) + count);
+  }
+
+  function setProductQuantity(productId: number, count: number): Promise<boolean> {
+    if (!cart || isUpdating || !Number.isInteger(count) || count < 1 || count > 99) return Promise.resolve(false);
+    if (count === getProductQuantity(productId)) return Promise.resolve(true);
+    return saveProductCount(productId, count);
   }
 
   function changeProductQuantity(productId: number, change: number): void {
@@ -202,6 +223,10 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
 
     event.stopPropagation();
+    if (!userId && addButton) {
+      openGuestCartPanel();
+      return;
+    }
     const card = event.target.closest('[data-product-id]');
     const productId = Number(card?.getAttribute('data-product-id') ?? undefined);
     if (addButton) {
@@ -233,12 +258,19 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
   }
 
+  function openGuestCartPanel(): void {
+    cartPanel.innerHTML = cartTemplate({ isGuest: true });
+    cartPanel.style.width = 'min(348px, calc(100vw - 32px))';
+    cartPanel.style.height = '222px';
+    cartPanel.hidden = false;
+    cartButton.setAttribute('aria-expanded', 'true');
+  }
+
   function handleCartButtonClick(event: Event): void {
     event.stopPropagation();
     if (!userId && cartPanel.hidden) {
-      cartPanel.innerHTML = cartTemplate({ isGuest: true });
-      cartPanel.style.width = 'min(348px, calc(100vw - 32px))';
-      cartPanel.style.height = '222px';
+      openGuestCartPanel();
+      return;
     }
     cartPanel.hidden = !cartPanel.hidden;
     cartButton.setAttribute('aria-expanded', String(!cartPanel.hidden));
@@ -274,6 +306,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     getItems,
     getDisplayItems,
     isIncreaseDisabled,
+    isRequestedCountRejected: (productId, count) => Boolean(userId && isRequestedCountRejected(userId, productId, count)),
     getDisplayCount,
     getDisplayTotal,
     isLoading,
@@ -284,6 +317,8 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     getErrorMessage: () => errorMessage,
     reloadCart: loadCart,
     changeProductQuantity,
+    addProductQuantity,
+    setProductQuantity,
     removeProduct,
   };
 }

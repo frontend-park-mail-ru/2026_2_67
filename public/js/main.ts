@@ -1,3 +1,4 @@
+import * as amplitude from '@amplitude/unified';
 import { loadTemplates } from './templates/templates.js';
 import { renderCatalogPage } from './pages/catalog/catalog.js';
 import { renderLoginPage } from './pages/login/login.js';
@@ -6,9 +7,11 @@ import { renderProfilePage } from './pages/profile/profile.js';
 import { renderCartPage } from './pages/cart/cart-page.js';
 import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
 import { renderOrdersPage } from './pages/orders/orders.js';
+import { renderProductPage } from './pages/product/product-page.js';
 import { renderCategories } from './components/categories/categories.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
+import { productIdFromPath } from './shared/product-url.js';
 
 function requireApp(): HTMLElement {
   const element = document.getElementById('app');
@@ -17,6 +20,27 @@ function requireApp(): HTMLElement {
 }
 
 const app = requireApp();
+if (typeof window !== 'undefined') {
+  amplitude.initAll('7166680b4e29e7e65ce1808dc80fd076', { analytics: { autocapture: true }, sessionReplay: { sampleRate: 1 } });
+}
+
+const themeStorageKey = 'vibemarket-theme';
+
+/** Применяет тему ко всем страницам и обновляет подпись кнопки после отрисовки. */
+function applyTheme(theme: 'light' | 'dark'): void {
+  document.documentElement.dataset.theme = theme;
+  const button = app.querySelector('[data-theme-toggle]');
+  if (!(button instanceof HTMLButtonElement)) return;
+  button.textContent = theme === 'dark' ? '☀' : '☾';
+  button.setAttribute('aria-label', theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему');
+}
+
+try {
+  applyTheme(window.localStorage.getItem(themeStorageKey) === 'dark' ? 'dark' : 'light');
+} catch {
+  applyTheme('light');
+}
+
 const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout', orders: '/orders' };
 const routes: Record<string, () => void> = {
   '/': () => renderCatalogPage(app),
@@ -37,15 +61,24 @@ function renderCurrentRoute(): void {
     window.history.replaceState({}, '', '/login');
   }
 
+  const productId = productIdFromPath(window.location.pathname);
+  if (productId !== null) {
+    void renderProductPage(app, productId, navigate);
+    void renderCategories(app);
+    return;
+  }
+
   const renderPage = routes[window.location.pathname];
   if (renderPage) {
     renderPage();
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     void renderCategories(app);
     return;
   }
 
   window.history.replaceState({}, '', '/');
   routes['/']();
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   void renderCategories(app);
 }
 
@@ -54,10 +87,10 @@ function renderCurrentRoute(): void {
  * @param {string} path Frontend route.
  * @returns {void}
  */
-function navigate(path: string): void {
+function navigate(path: string, fromProductLink = false): void {
   closeCatalogMenu();
   if (window.location.pathname + window.location.search !== path) {
-    window.history.pushState({}, '', path);
+    window.history.pushState(fromProductLink ? { productFrom: window.location.pathname + window.location.search } : {}, '', path);
   }
   renderCurrentRoute();
 }
@@ -100,6 +133,18 @@ async function startApplication(): Promise<void> {
       }
       if (!(event.target instanceof Element)) return;
 
+      const themeButton = event.target.closest('[data-theme-toggle]');
+      if (themeButton) {
+        const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(theme);
+        try {
+          window.localStorage.setItem(themeStorageKey, theme);
+        } catch {
+          // Если браузер запретил хранилище, тема всё равно меняется до обновления страницы.
+        }
+        return;
+      }
+
       const catalogButton = event.target.closest('[data-catalog-toggle]');
       if (catalogButton) {
         toggleCatalogMenu();
@@ -116,6 +161,15 @@ async function startApplication(): Promise<void> {
       const logoutButton = event.target.closest('[data-action="logout"]');
       if (logoutButton) {
         logout().finally(() => navigate('/'));
+        return;
+      }
+
+      const productLink = event.target.closest('a[data-product-link]');
+      if (productLink instanceof HTMLAnchorElement) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+          || productLink.target === '_blank' || productLink.origin !== window.location.origin) return;
+        event.preventDefault();
+        navigate(productLink.pathname, true);
         return;
       }
 

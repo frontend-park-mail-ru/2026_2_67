@@ -1,0 +1,45 @@
+<div class="product-page__layout">
+  <section class="product-page__gallery" aria-label="Фотографии товара">
+    {{#if hasPhotos}}
+      <div class="product-page__main-image">
+        <img data-detail-image src="{{firstPhoto}}" alt="{{title}}, фото 1 из {{photoCount}}" />
+        {{#if hasMultiplePhotos}}
+          <button type="button" class="product-page__gallery-prev" data-detail-prev aria-label="Предыдущая фотография">←</button>
+          <button type="button" class="product-page__gallery-next" data-detail-next aria-label="Следующая фотография">→</button>
+        {{/if}}
+      </div>
+      {{#if hasMultiplePhotos}}
+        <div class="product-page__thumbnails">
+          {{#each photos}}
+            <button type="button" data-detail-thumbnail="{{index}}" aria-label="Показать фото {{number}}" aria-pressed="{{active}}"><img src="{{url}}" alt="" /></button>
+          {{/each}}
+        </div>
+      {{/if}}
+    {{else}}
+      <div class="product-page__no-photo" role="img" aria-label="Фото товара отсутствует">Фото отсутствует</div>
+    {{/if}}
+  </section>
+  <section class="product-page__information" aria-labelledby="product-title">
+    <h1 id="product-title">{{title}}</h1>
+    {{#if sellerName}}<p class="product-page__seller">Продавец: <strong>{{sellerName}}</strong></p>{{/if}}
+    {{#if category}}<p class="product-page__category">Категория: {{category}}</p>{{/if}}
+    <div class="product-page__description"><h2>Описание товара</h2><p>{{#if description}}{{description}}{{else}}Описание пока не добавлено{{/if}}</p></div>
+  </section>
+  <aside class="product-page__purchase" aria-label="Покупка товара">
+    <p class="product-page__price" aria-live="polite">{{price}}</p>
+    {{#if isGuest}}
+      <p>Войдите, чтобы добавить товар в корзину.</p>
+      <a class="product-page__primary" href="/login" data-page="login">Войти</a>
+    {{else}}
+      <label for="product-quantity">Количество</label>
+      <div class="product-page__quantity">
+        <button type="button" data-quantity-minus aria-label="Уменьшить количество">−</button>
+        <input id="product-quantity" data-quantity type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Количество товара" />
+        <button type="button" data-quantity-plus aria-label="Увеличить количество">+</button>
+      </div>
+      <button type="button" class="product-page__primary" data-detail-add disabled>В корзину</button>
+      <p class="product-page__message" data-detail-message role="status"></p>
+      <button type="button" class="product-page__retry" data-detail-retry hidden>Повторить загрузку корзины</button>
+    {{/if}}
+  </aside>
+</div>

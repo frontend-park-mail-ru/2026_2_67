@@ -35,6 +35,11 @@ type Credentials = { email: string; password: string };
 let accessToken: string | null = localStorage.getItem(ACCESS_TOKEN_KEY);
 let userId = localStorage.getItem(USER_ID_KEY);
 let currentUser: UserProfile | null = null;
+let avatarCacheVersion = Date.now();
+
+function refreshAvatarCacheVersion(): void {
+  avatarCacheVersion = Math.max(Date.now(), avatarCacheVersion + 1);
+}
 let refreshPromise: Promise<boolean> | null = null;
 let sessionGeneration = 0;
 
@@ -74,6 +79,7 @@ function clearSession(): void {
   accessToken = null;
   userId = null;
   currentUser = null;
+  refreshAvatarCacheVersion();
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(USER_ID_KEY);
 }
@@ -181,6 +187,7 @@ export async function loadCurrentUser(): Promise<UserProfile | null> {
 
   const profile = await readResponse(response);
   currentUser = { ...Object(profile), phoneNumber: readField(profile, 'telephone') };
+  refreshAvatarCacheVersion();
   return currentUser;
 }
 
@@ -270,11 +277,25 @@ export async function logout(): Promise<void> {
  * @returns {Object|null} User data or null for a guest.
  */
 export function getCurrentUser(): CurrentUser | null {
-  return userId ? { ...currentUser, userId, avatarSrc: avatarSource(currentUser?.avatarUrl) } : null;
+  if (!userId) return null;
+  const fullName = typeof currentUser?.name === 'string' ? currentUser.name.trim() : '';
+  const nameSegments = Array.from(new Intl.Segmenter('ru', { granularity: 'grapheme' }).segment(fullName),
+    ({ segment }) => segment);
+  const headerLabel = nameSegments.length > 6 ? `${nameSegments.slice(0, 6).join('')}...` : fullName || 'Профиль';
+  const source = avatarSource(currentUser?.avatarUrl);
+  const hashIndex = source.indexOf('#');
+  const sourceWithoutHash = hashIndex === -1 ? source : source.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : source.slice(hashIndex);
+  const avatarSrc = source
+    ? `${sourceWithoutHash}${sourceWithoutHash.includes('?') ? '&' : '?'}v=${avatarCacheVersion}${hash}`
+    : '';
+  return { ...currentUser, userId, avatarSrc,
+    headerName: fullName || 'Профиль', headerLabel };
 }
 
 /** Replaces the cached profile only after a confirmed backend update. */
 export function setCurrentUserProfile(profile: object, expectedUserId: string): void {
   if (userId !== expectedUserId || !accessToken) return;
   currentUser = { ...profile, phoneNumber: Reflect.get(profile, 'telephone') };
+  refreshAvatarCacheVersion();
 }

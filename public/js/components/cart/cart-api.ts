@@ -45,11 +45,11 @@ export async function getBasket(userId: string): Promise<BasketResponse> {
   return basket;
 }
 
-export async function addBasketProduct(userId: string, productId: number): Promise<void> {
+export async function addBasketProduct(userId: string, productId: number, count = 1): Promise<void> {
   await requestBasket(`${basketPath(userId)}/products`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, count: 1 }),
+    body: JSON.stringify({ productId, count }),
   });
 }
 

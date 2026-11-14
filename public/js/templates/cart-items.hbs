@@ -1,6 +1,8 @@
+{{#unless hideError}}
 {{#if errorMessage}}
   <p class="cart-message" role="alert">{{errorMessage}}</p>
 {{/if}}
+{{/unless}}
 {{#if updating}}
   <p class="cart-message visually-hidden" role="status">Обновляем корзину…</p>
 {{/if}}
@@ -11,9 +13,9 @@
   <ul class="cart-list"{{#if updating}} aria-busy="true"{{/if}}>
     {{#each items}}
       <li class="cart-item" data-cart-item-id="{{id}}">
-        <img class="cart-item__image" src="{{image}}" alt="" />
+        <a class="cart-item__image-link" href="{{productUrl id title}}" data-product-link aria-label="Открыть товар {{title}}"><img class="cart-item__image" src="{{image}}" alt="" /></a>
         <div class="cart-item__details">
-          <p class="cart-item__title">{{title}}</p>
+          <p class="cart-item__title"><a href="{{productUrl id title}}" data-product-link>{{title}}</a></p>
           <p class="cart-item__price">{{price}}</p>
           {{#if ../readonly}}
             <p class="cart-item__count">Количество: {{quantity}}</p>
@@ -26,8 +28,8 @@
                 <span class="cart-item__quantity">{{quantity}}</span>
                 <button class="cart-item__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if increaseDisabled}} disabled{{else}}{{#unless ../canUseCart}} disabled{{/unless}}{{/if}}>+</button>
               </div>
-              {{#if stockWarning}}<span class="cart-item__stock-warning" role="status">{{stockWarning}}</span>{{/if}}
               <button class="cart-item__remove" type="button" aria-label="Удалить товар {{title}} из корзины"{{#unless ../canUseCart}} disabled{{/unless}}>Удалить</button>
+              {{#if stockWarning}}<span class="cart-item__stock-warning" role="status">{{stockWarning}}</span>{{/if}}
             </div>
           {{/if}}
         </div>
