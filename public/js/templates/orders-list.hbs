@@ -21,15 +21,15 @@
       <ul class="orders-page__products">
         {{#each products}}
           <li class="orders-page__product">
-            <div class="orders-page__pictures" aria-label="Фотографии товара {{name}}">
+            <a class="orders-page__pictures" href="/products/{{productId}}" data-product-link aria-label="Открыть товар {{name}}">
               {{#each pictures}}
                 <img src="{{this}}" alt="{{../name}}" loading="lazy" width="80" height="96" />
               {{else}}
                 <span class="orders-page__no-image">Нет фото</span>
               {{/each}}
-            </div>
+            </a>
             <div class="orders-page__product-info">
-              <h4>{{name}}</h4>
+              <h4><a href="/products/{{productId}}" data-product-link>{{name}}</a></h4>
               <p class="orders-page__muted">{{category.name}} · Продавец: {{seller.name}}</p>
               {{#if description}}
                 <details class="orders-page__description">

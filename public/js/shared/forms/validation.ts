@@ -4,6 +4,11 @@ export function getEmailError(email: string): string {
   return EMAIL_PATTERN.test(email.trim()) ? '' : 'Введите корректный email';
 }
 
+export function getProfileEmailError(email: string, typeMismatch: boolean): string {
+  if (/\p{Script=Cyrillic}/u.test(email)) return 'Используйте латинские буквы в адресе почты';
+  return typeMismatch ? 'Введите корректный email' : getEmailError(email);
+}
+
 export interface LoginFormValues {
   email: string;
   password: string;

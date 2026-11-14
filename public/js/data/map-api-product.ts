@@ -6,6 +6,7 @@ export interface ApiProduct {
   sellerName?: string;
   pictureUrls: string[];
   priceResult: number;
+  description?: string | null;
   rating: number;
   reviewsCount: number;
 }

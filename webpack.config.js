@@ -38,6 +38,7 @@ export default {
     './public/css/main.css',
     './public/css/cart.css',
     './public/css/checkout.css',
+    './public/css/product.css',
     './public/js/main.js',
   ], 'service-worker': './public/js/service-worker.ts' },
   module: {

@@ -135,7 +135,7 @@ function orderView(order: Order) {
 
 export async function renderOrdersPage(app: HTMLElement): Promise<void> {
   const user = getCurrentUser();
-  app.innerHTML = ordersPageTemplate({ user });
+  app.innerHTML = ordersPageTemplate({ user, isOrders: true });
   initCart(app, user?.userId);
   const list = app.querySelector('.orders-page__list');
   if (!(list instanceof HTMLElement)) throw new Error('Не найден список заказов.');

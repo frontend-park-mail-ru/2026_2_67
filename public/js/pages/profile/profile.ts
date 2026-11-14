@@ -1,7 +1,7 @@
 import { avatarSource, getCurrentUser, setCurrentUserProfile } from '../../shared/auth.js';
 import { profileTemplate } from '../../templates/templates.js';
 import { initCart } from '../../components/cart/cart.js';
-import { getEmailError, getMissingPasswordRequirements } from '../../shared/forms/validation.js';
+import { getMissingPasswordRequirements, getProfileEmailError } from '../../shared/forms/validation.js';
 import { ProfileRequestError, changePassword, profileFields, updateProfile } from './profile-api.js';
 import type { ProfileFields } from './profile-api.js';
 
@@ -169,10 +169,11 @@ export function renderProfilePage(app: HTMLElement): void {
         }
       }
       if (editor === emailDialog) {
-        const emailError = getEmailError(fields.email);
+        const emailInput = requireInput(editor, 'input[name="email"]');
+        const emailError = getProfileEmailError(fields.email, emailInput.validity.typeMismatch);
         if (emailError) {
           requireElement(editor, '[data-profile-error="email"]').textContent = emailError;
-          requireInput(editor, 'input[name="email"]').setAttribute('aria-invalid', 'true');
+          emailInput.setAttribute('aria-invalid', 'true');
           return;
         }
       }
@@ -192,7 +193,7 @@ export function renderProfilePage(app: HTMLElement): void {
         setCurrentUserProfile(result, user.userId);
         if (page.isConnected) renderProfilePage(app);
       } catch (error) {
-        if (error instanceof ProfileRequestError && error.status === 422) {
+        if (error instanceof ProfileRequestError && [400, 409, 422].includes(error.status)) {
           let shown = false;
           (Object.keys(errorNames) as (keyof ProfileFields)[]).forEach((key) => {
             const text = errorText(error.details, errorNames[key]);
@@ -205,7 +206,8 @@ export function renderProfilePage(app: HTMLElement): void {
               shown = true;
             }
           });
-          message.textContent = shown ? '' : errorText(error.details, 'errMessage') || 'Проверьте данные профиля.';
+          message.textContent = shown ? '' : errorText(error.details, 'errMessage')
+            || errorText(error.details, 'message') || 'Проверьте данные профиля.';
         } else if (error instanceof ProfileRequestError) {
           message.textContent = ({ 400: 'Некорректный запрос.', 403: 'Нет доступа к изменению профиля.',
             404: 'Профиль не найден.', 405: 'Сохранение профиля пока не поддерживается сервером.' } as Record<number, string>)[error.status]

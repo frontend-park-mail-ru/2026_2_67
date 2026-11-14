@@ -26,7 +26,7 @@ worker.addEventListener('fetch', (event: FetchEvent) => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== worker.location.origin || url.pathname.startsWith('/api/')) return;
 
-  if (request.mode === 'navigate' && routes.has(url.pathname)) {
+  if (request.mode === 'navigate' && (routes.has(url.pathname) || /^\/products\/[1-9]\d*$/.test(url.pathname))) {
     event.respondWith(fetch(request).catch(async () => {
       const cached = await (await caches.open(cacheName)).match('/index.html');
       return cached ?? Response.error();

@@ -4,6 +4,7 @@ import {
 } from '../../components/product-card/product-card.js';
 import { catalogTemplate } from '../../templates/templates.js';
 import { mapApiProduct } from '../../data/map-api-product.js';
+import { rememberProducts } from '../../data/product-session.js';
 import type { ApiProduct, ProductCard } from '../../data/map-api-product.js';
 import { initCart } from '../../components/cart/cart.js';
 import { updateCartMarkup } from '../../components/cart/cart-dom.js';
@@ -65,6 +66,7 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
 
     // The existing API check covers the array only, not the item fields or cursor.
     const apiProducts: unknown[] = result.products;
+    rememberProducts(apiProducts as ApiProduct[]);
     const next = 'nextCursor' in result ? result.nextCursor : undefined;
     onProducts(apiProducts.map((product) => mapApiProduct(product as ApiProduct)), (next || '') as string);
     return true;

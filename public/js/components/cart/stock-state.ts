@@ -20,8 +20,8 @@ export function isStockRejection(status: number, method: string, currentCount: n
   // Current backend sends an empty 422 for invalid counts and exceeded stock.
   // These client-generated counts are valid, so only the latter remains.
   if (status !== 422 || responseBody !== '' || !Number.isInteger(currentCount) || !Number.isInteger(newCount)) return false;
-  return (method === 'PATCH' && currentCount > 0 && newCount === currentCount + 1)
-    || (method === 'POST' && currentCount === 0 && newCount === 1);
+  return (method === 'PATCH' && currentCount > 0 && newCount > currentCount)
+    || (method === 'POST' && currentCount === 0 && newCount >= 1);
 }
 
 export function confirmAvailableCount(userId: string, productId: number, count: number): void {
@@ -36,6 +36,12 @@ export function clearStockState(): void {
 export function isQuantityRejected(userId: string, productId: number, quantity: number): boolean {
   const rejected = state(userId).get(productId);
   return rejected !== undefined && quantity >= rejected - 1;
+}
+
+/** A rejected request proves only this count and larger counts are unavailable. */
+export function isRequestedCountRejected(userId: string, productId: number, count: number): boolean {
+  const rejected = state(userId).get(productId);
+  return rejected !== undefined && count >= rejected;
 }
 
 export function decorateStockItems(userId: string, items: CartItem[]): (CartItem & { stockWarning: string; increaseDisabled: boolean })[] {

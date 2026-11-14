@@ -270,7 +270,13 @@ export async function logout(): Promise<void> {
  * @returns {Object|null} User data or null for a guest.
  */
 export function getCurrentUser(): CurrentUser | null {
-  return userId ? { ...currentUser, userId, avatarSrc: avatarSource(currentUser?.avatarUrl) } : null;
+  if (!userId) return null;
+  const fullName = typeof currentUser?.name === 'string' ? currentUser.name.trim() : '';
+  const nameSegments = Array.from(new Intl.Segmenter('ru', { granularity: 'grapheme' }).segment(fullName),
+    ({ segment }) => segment);
+  const headerLabel = nameSegments.length > 6 ? `${nameSegments.slice(0, 6).join('')}...` : fullName || 'Профиль';
+  return { ...currentUser, userId, avatarSrc: avatarSource(currentUser?.avatarUrl),
+    headerName: fullName || 'Профиль', headerLabel };
 }
 
 /** Replaces the cached profile only after a confirmed backend update. */

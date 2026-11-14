@@ -1,3 +1,4 @@
+import * as amplitude from '@amplitude/unified';
 import { loadTemplates } from './templates/templates.js';
 import { renderCatalogPage } from './pages/catalog/catalog.js';
 import { renderLoginPage } from './pages/login/login.js';
@@ -6,6 +7,7 @@ import { renderProfilePage } from './pages/profile/profile.js';
 import { renderCartPage } from './pages/cart/cart-page.js';
 import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
 import { renderOrdersPage } from './pages/orders/orders.js';
+import { renderProductPage } from './pages/product/product-page.js';
 import { renderCategories } from './components/categories/categories.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
@@ -17,6 +19,7 @@ function requireApp(): HTMLElement {
 }
 
 const app = requireApp();
+amplitude.initAll('7166680b4e29e7e65ce1808dc80fd076', { analytics: { autocapture: true }, sessionReplay: { sampleRate: 1 } });
 const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout', orders: '/orders' };
 const routes: Record<string, () => void> = {
   '/': () => renderCatalogPage(app),
@@ -37,6 +40,13 @@ function renderCurrentRoute(): void {
     window.history.replaceState({}, '', '/login');
   }
 
+  const productMatch = /^\/products\/([1-9]\d*)$/.exec(window.location.pathname);
+  if (productMatch) {
+    void renderProductPage(app, Number(productMatch[1]), navigate);
+    void renderCategories(app);
+    return;
+  }
+
   const renderPage = routes[window.location.pathname];
   if (renderPage) {
     renderPage();
@@ -54,10 +64,10 @@ function renderCurrentRoute(): void {
  * @param {string} path Frontend route.
  * @returns {void}
  */
-function navigate(path: string): void {
+function navigate(path: string, fromProductLink = false): void {
   closeCatalogMenu();
   if (window.location.pathname + window.location.search !== path) {
-    window.history.pushState({}, '', path);
+    window.history.pushState(fromProductLink ? { productFrom: window.location.pathname + window.location.search } : {}, '', path);
   }
   renderCurrentRoute();
 }
@@ -116,6 +126,15 @@ async function startApplication(): Promise<void> {
       const logoutButton = event.target.closest('[data-action="logout"]');
       if (logoutButton) {
         logout().finally(() => navigate('/'));
+        return;
+      }
+
+      const productLink = event.target.closest('a[data-product-link]');
+      if (productLink instanceof HTMLAnchorElement) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+          || productLink.target === '_blank' || productLink.origin !== window.location.origin) return;
+        event.preventDefault();
+        navigate(productLink.pathname, true);
         return;
       }
 

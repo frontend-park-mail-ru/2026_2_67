@@ -82,6 +82,17 @@
   margin-top: 8px;
 }
 
+.checkout-page__pickup-hint[hidden] {
+  display: block;
+  visibility: hidden;
+}
+
+@media (max-width: 360px) {
+  .checkout-page__pickup-status {
+    min-height: 3em;
+  }
+}
+
 .checkout-page__pickup-button {
   max-width: 100%;
   min-height: 44px;
