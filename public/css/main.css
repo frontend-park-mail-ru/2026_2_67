@@ -486,6 +486,9 @@ a:focus-visible, button:focus-visible {
   border-radius: 50%;
 }
 .site-header__icon--logged-in .site-header__icon-image {
+  align-self: center;
+  width: 32px;
+  height: 32px;
   background: var(--vm-subtle);
 }
 .site-header__icon--logged-in .site-header__avatar {
