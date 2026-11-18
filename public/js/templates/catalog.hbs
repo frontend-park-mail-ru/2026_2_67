@@ -3,6 +3,18 @@
   <main class="catalog-page__content">
     <div class="catalog-page__content-inner">
       <h1>{{heading}}</h1>
+      {{#if category}}
+      <details class="catalog-page__sort">
+        <summary class="catalog-page__sort-toggle" aria-label="Сортировка: По умолчанию">По умолчанию</summary>
+        <div class="catalog-page__sort-options" role="group" aria-label="Варианты сортировки">
+          <button type="button" aria-pressed="true">По умолчанию</button>
+          <button type="button" aria-pressed="false">Цена: по возрастанию</button>
+          <button type="button" aria-pressed="false">Цена: по убыванию</button>
+          <button type="button" aria-pressed="false">Рейтинг: по возрастанию</button>
+          <button type="button" aria-pressed="false">Рейтинг: по убыванию</button>
+        </div>
+      </details>
+      {{/if}}
       <div class="catalog-page__grid">{{{productsHtml}}}</div>
       <div class="catalog-page__load-more-wrap" hidden>
         <button class="catalog-page__load-more" type="button">Показать ещё</button>

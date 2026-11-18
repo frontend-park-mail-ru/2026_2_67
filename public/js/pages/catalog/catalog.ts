@@ -84,8 +84,36 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
  */
 export function renderCatalogPage(app: HTMLElement): void {
   const category = new window.URLSearchParams(window.location.search).get('category');
-  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, heading: category || 'Каталог товаров' });
+  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, category, heading: category || 'Каталог товаров' });
   const page = requireHTMLElement(app, '.catalog-page');
+  const sort = page.querySelector<HTMLDetailsElement>('.catalog-page__sort');
+  if (sort) {
+    const toggle = requireHTMLElement(sort, '.catalog-page__sort-toggle');
+    const options = sort.querySelectorAll<HTMLButtonElement>('button');
+    options.forEach((option) => {
+      option.addEventListener('click', () => {
+        options.forEach((item) => item.setAttribute('aria-pressed', String(item === option)));
+        toggle.textContent = option.textContent;
+        toggle.setAttribute('aria-label', `Сортировка: ${option.textContent}`);
+        sort.open = false;
+        toggle.focus();
+      });
+    });
+    sort.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        sort.open = false;
+        toggle.focus();
+      }
+    });
+    sort.addEventListener('focusout', (event) => {
+      if (!(event.relatedTarget instanceof Node) || !sort.contains(event.relatedTarget)) {
+        sort.open = false;
+      }
+    });
+    page.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !sort.contains(event.target)) sort.open = false;
+    });
+  }
   const grid = requireHTMLElement(page, '.catalog-page__grid');
   const loadMoreWrap = requireHTMLElement(page, '.catalog-page__load-more-wrap');
   const loadMoreButton = requireButton(loadMoreWrap, 'button');
