@@ -7,6 +7,7 @@ import { pipeline } from 'node:stream';
 
 const staticRoot = process.argv.includes('--dist') ? 'dist' : 'public';
 const publicDirectory = resolve(staticRoot);
+const faviconPath = resolve(publicDirectory, staticRoot === 'dist' ? 'favicon.ico' : 'images/favicon.ico');
 const backendUrl = 'http://localhost:8080';
 const frontendRoutes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout', '/orders']);
 const contentTypes = {
@@ -54,6 +55,16 @@ const server = createServer((request, response) => {
     });
 
     request.pipe(proxyRequest);
+    return;
+  }
+
+  if (pathname === '/favicon.ico') {
+    response.writeHead(200, { 'Content-Type': 'image/x-icon' });
+    pipeline(createReadStream(faviconPath), response, (error) => {
+      if (error && !response.headersSent) {
+        response.writeHead(404).end('Not found');
+      }
+    });
     return;
   }
 

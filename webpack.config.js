@@ -103,6 +103,7 @@ export default {
           },
         },
         { from: 'public/images', to: 'images' },
+        { from: 'public/images/favicon.ico', to: 'favicon.ico' },
         { from: 'public/vendor', to: 'vendor' },
         { from: 'public/js/templates', to: 'templates', globOptions: { ignore: ['**/templates.ts'] } },
       ],
