@@ -31,6 +31,9 @@ function compatible(current: Node, next: Node): boolean {
 function syncNode(current: Node, next: Node): void {
   if (current instanceof Element && next instanceof Element) {
     syncAttributes(current, next);
+    if (current instanceof HTMLInputElement && next instanceof HTMLInputElement && current !== document.activeElement) {
+      current.value = next.value;
+    }
     syncChildren(current, next);
   } else if (current.nodeValue !== next.nodeValue) {
     current.nodeValue = next.nodeValue;

@@ -2,6 +2,7 @@ import type { CartItem } from './cart-model.js';
 
 // The API exposes no stock count. A rejected requested quantity is only a session hint.
 const rejectedCounts = new Map<string, Map<number, number>>();
+const unavailableProducts = new Map<string, Set<number>>();
 
 function state(userId: string): Map<number, number> {
   let current = rejectedCounts.get(userId);
@@ -31,6 +32,15 @@ export function confirmAvailableCount(userId: string, productId: number, count: 
 
 export function clearStockState(): void {
   rejectedCounts.clear();
+  unavailableProducts.clear();
+}
+
+export function setUnavailableProducts(userId: string, productIds: number[]): void {
+  unavailableProducts.set(userId, new Set(productIds));
+}
+
+export function isProductUnavailable(userId: string, productId: number): boolean {
+  return unavailableProducts.get(userId)?.has(productId) ?? false;
 }
 
 export function isQuantityRejected(userId: string, productId: number, quantity: number): boolean {
@@ -46,8 +56,9 @@ export function isRequestedCountRejected(userId: string, productId: number, coun
 
 export function decorateStockItems(userId: string, items: CartItem[]): (CartItem & { stockWarning: string; increaseDisabled: boolean })[] {
   return items.map((item) => ({ ...item,
-    stockWarning: isQuantityRejected(userId, item.id, item.quantity) ? 'В наличии больше нет' : '',
-    increaseDisabled: isQuantityRejected(userId, item.id, item.quantity),
+    stockWarning: isProductUnavailable(userId, item.id) || isQuantityRejected(userId, item.id, item.quantity)
+      ? 'Товар недоступен' : '',
+    increaseDisabled: isProductUnavailable(userId, item.id) || isQuantityRejected(userId, item.id, item.quantity),
   }));
 }
 

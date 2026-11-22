@@ -20,7 +20,7 @@
       {{#if quantity}}
         <div class="product-card__quantity-control">
           <button class="product-card__decrease" type="button" aria-label="Уменьшить количество товара {{title}}">−</button>
-          <span class="product-card__quantity">{{quantity}}</span>
+          <input class="product-card__quantity" type="number" min="1" max="99" value="{{quantity}}" aria-label="Количество товара {{title}}" />
           <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if stockLimited}} disabled{{/if}}>+</button>
         </div>
         <span class="product-card__in-cart">В корзине</span>

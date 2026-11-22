@@ -905,6 +905,10 @@ a:focus-visible, button:focus-visible {
   line-height: 1;
 }
 .product-card__quantity {
+  border: 0;
+  background: transparent;
+  text-align: center;
+  appearance: textfield;
   min-width: 2ch;
   font-weight: 700;
   text-align: center;

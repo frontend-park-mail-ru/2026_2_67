@@ -17,6 +17,10 @@ export interface BasketResponse {
   basketSumResult: number;
 }
 
+export interface BasketValidityResponse {
+  products?: Array<{ id: number }>;
+}
+
 export class BasketRequestError extends Error {
   constructor(readonly status: number, readonly method: string, readonly responseBody: string | null) {
     super(`Запрос корзины не выполнен: ${status}`);
@@ -43,6 +47,20 @@ export async function getBasket(userId: string): Promise<BasketResponse> {
     throw new Error('Сервер вернул корзину в неожиданном формате.');
   }
   return basket;
+}
+
+export async function getBasketValidity(userId: string): Promise<number[]> {
+  try {
+    await requestBasket(`${basketPath(userId)}/is_valid`);
+    return [];
+  } catch (error) {
+    if (!(error instanceof BasketRequestError) || error.status !== 422) throw error;
+    const result = JSON.parse(error.responseBody ?? '') as BasketValidityResponse;
+    if (!Array.isArray(result.products)) throw new Error('Сервер вернул доступность корзины в неожиданном формате.');
+    return result.products
+      .map((product) => product.id)
+      .filter((id) => Number.isInteger(id) && id > 0);
+  }
 }
 
 export async function addBasketProduct(userId: string, productId: number, count = 1): Promise<void> {
