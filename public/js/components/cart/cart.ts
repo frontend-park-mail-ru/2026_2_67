@@ -208,7 +208,6 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     try {
        const validity = await getBasketValidity(userId);
        if (requestVersion !== validityRequestVersion) return;
-       if (!validity.isInvalid) updatedAvailableCounts.clear();
        for (const { id, newAvailableCount } of validity.products) updatedAvailableCounts.set(id, newAvailableCount);
        setUnavailableProducts(userId, validity.products);
        validityError = false;

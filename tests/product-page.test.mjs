@@ -330,7 +330,7 @@ test('is_valid refreshes every 5 seconds and stops when the page is removed', as
   await tick();
   assert.equal(validityRequests().length, 3);
   assert.equal(document.querySelector('.site-header__cart-count').textContent, '1');
-  assert.equal(document.querySelector('[data-detail-add]').disabled, false);
+  assert.equal(document.querySelector('[data-detail-add]').disabled, true);
 
   app.replaceChildren();
   const before = validityRequests().length;
@@ -438,9 +438,13 @@ test('updated availability becomes the limit after reducing the basket quantity'
     validityUnavailable = [];
     t.mock.timers.tick(5000);
     await tick();
+    const patchesBefore = requests.filter(({ options }) => options.method === 'PATCH').length;
     document.querySelector('.product-card__increase').click();
-    assert.equal(document.querySelector('.product-card__quantity').value, '3');
-    assert.equal(document.querySelector('.product-card__stock-warning').textContent, '');
+    assert.equal(document.querySelector('.product-card__quantity').value, '2');
+    assert.equal(document.querySelector('.product-card__stock-warning').textContent, 'В наличии больше нет');
+    t.mock.timers.tick(500);
+    await tick();
+    assert.equal(requests.filter(({ options }) => options.method === 'PATCH').length, patchesBefore);
   } finally {
     catalogPages = null;
   }
