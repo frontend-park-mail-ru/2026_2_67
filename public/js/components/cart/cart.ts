@@ -214,7 +214,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     timers.set(productId, setTimeout(() => {
       timers.delete(productId);
       void drainMutations();
-    }, 300));
+    }, 500));
   }
 
   function settleMutation(productId: number, version: number, success: boolean): void {
@@ -428,7 +428,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
         return;
       }
       void checkValidity();
-    }, 10000);
+    }, 12000);
   }
   productGrid?.addEventListener('click', handleProductButtonClick);
   page.addEventListener('change', (event) => {

@@ -172,11 +172,11 @@ test('add to cart applies optimistically and debounces the request', async (t) =
   document.querySelector('[data-detail-add]').click();
   document.querySelector('[data-detail-add]').click();
   assert.equal(document.querySelector('.site-header__cart-count').textContent, '2');
-  t.mock.timers.tick(299);
+  t.mock.timers.tick(499);
   await tick();
   assert.deepEqual(destinations, []);
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products') && request.options.method === 'POST').length, before);
-  t.mock.timers.tick(1);
+  t.mock.timers.tick(201);
   await tick();
   await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products') && request.options.method === 'POST').length, before + 1);
@@ -201,13 +201,13 @@ test('PATCH 422 rolls back the optimistic quantity; retry recovers basket loadin
   const before = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length;
   document.querySelector('[data-detail-add]').click();
   assert.equal(quantity.value, '13');
-  t.mock.timers.tick(300);
+  t.mock.timers.tick(501);
   await tick();
   assert.equal(basket[0].count, 2);
   assert.match(document.querySelector('[data-detail-message]').textContent, /наличии/);
   assert.equal(document.querySelector('[data-detail-add]').disabled, true);
   document.querySelector('[data-detail-add]').click();
-  t.mock.timers.tick(300);
+  t.mock.timers.tick(500);
   await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before + 1);
   document.querySelector('[data-quantity-minus]').click();
@@ -242,7 +242,7 @@ test('pending PATCH cannot duplicate and badge waits for confirmed basket', asyn
   document.querySelector('[data-detail-add]').click();
   document.querySelector('[data-detail-add]').click();
   assert.equal(document.querySelector('[data-quantity]').value, '3');
-  t.mock.timers.tick(300);
+  t.mock.timers.tick(500);
   await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before + 1);
   assert.equal(document.querySelector('.site-header__cart-count').textContent, '3');
@@ -254,7 +254,7 @@ test('pending PATCH cannot duplicate and badge waits for confirmed basket', asyn
   assert.deepEqual(destinations, []);
 });
 
-test('debounce resets when quantity changes before 300ms', async (t) => {
+test('debounce resets when quantity changes before 500ms', async (t) => {
   basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
     price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 2 }];
   await renderProductPage(app, 9, () => {});
@@ -271,7 +271,7 @@ test('debounce resets when quantity changes before 300ms', async (t) => {
   t.mock.timers.tick(1);
   await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before);
-  t.mock.timers.tick(300);
+  t.mock.timers.tick(500);
   await tick();
   await tick();
   await tick();
@@ -280,7 +280,7 @@ test('debounce resets when quantity changes before 300ms', async (t) => {
   assert.deepEqual(JSON.parse(patches.at(-1).options.body), { count: 4 });
 });
 
-test('is_valid marks unavailable products and refreshes every 10 seconds', async (t) => {
+test('is_valid marks unavailable products and refreshes every 12 seconds', async (t) => {
   validityUnavailable = [9];
   await renderProductPage(app, 9, () => {});
   await tick();
@@ -290,7 +290,7 @@ test('is_valid marks unavailable products and refreshes every 10 seconds', async
   assert.match(document.querySelector('[data-detail-message]').textContent, /наличии/);
 
   validityUnavailable = [];
-  t.mock.timers.tick(9999);
+  t.mock.timers.tick(11999);
   await tick();
   assert.equal(validityRequests().length, 1);
   t.mock.timers.tick(1);
@@ -300,7 +300,7 @@ test('is_valid marks unavailable products and refreshes every 10 seconds', async
 
   app.replaceChildren();
   const before = validityRequests().length;
-  t.mock.timers.tick(10000);
+  t.mock.timers.tick(12000);
   await tick();
   assert.equal(validityRequests().length, before);
 });
