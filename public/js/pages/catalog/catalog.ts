@@ -34,10 +34,10 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
   return element;
 }
 
-function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, isIncreaseDisabled: (productId: number) => boolean, canUseCart: boolean): void {
+function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, isIncreaseDisabled: (productId: number) => boolean, getStockWarning: (productId: number) => string, canUseCart: boolean): void {
   const showAddToCartButton = !getCurrentUser() || canUseCart;
   grid.innerHTML = products.map((product) =>
-    createProductCard(product, showAddToCartButton && Number.isInteger(product.id), getCartQuantity(product.id), isIncreaseDisabled(product.id))).join('');
+    createProductCard(product, showAddToCartButton && Number.isInteger(product.id), getCartQuantity(product.id), isIncreaseDisabled(product.id), getStockWarning(product.id))).join('');
   grid.querySelectorAll('[data-product-card]').forEach((card, index) => {
     if (card instanceof HTMLElement) initProductCard(card, products[index]);
   });
@@ -143,6 +143,10 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     updateVisibleProductCard,
   );
 
+  function getStockWarning(productId: number): string {
+    return cart.getDisplayItems().find((item) => item.id === productId)?.stockWarning ?? '';
+  }
+
   function updateVisibleProductCard(productId: number | null): void {
     if (productId === null) {
       showProducts();
@@ -161,7 +165,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
 
     const quantity = cart.getProductQuantity(productId);
     const template = document.createElement('template');
-    template.innerHTML = createProductCard(product, true, quantity, cart.isIncreaseDisabled(productId));
+    template.innerHTML = createProductCard(product, true, quantity, cart.isIncreaseDisabled(productId), getStockWarning(productId));
     const newControls = template.content.querySelector('[data-cart-controls]');
     if (!newControls) throw new Error('Не найдены элементы управления корзиной.');
     const hadFocus = oldControls.contains(document.activeElement);
@@ -184,7 +188,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
       return;
     }
 
-    renderProducts(grid, products, cart.getProductQuantity, cart.isIncreaseDisabled, cart.canUseCart());
+    renderProducts(grid, products, cart.getProductQuantity, cart.isIncreaseDisabled, getStockWarning, cart.canUseCart());
   }
 
   function acceptProducts(loadedProducts: ProductCard[], cursor: string): void {

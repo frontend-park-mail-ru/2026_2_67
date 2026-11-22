@@ -2,13 +2,14 @@
 import { addBasketProduct, BasketRequestError, getBasket, getBasketValidity, setBasketProductCount } from './cart-api.js';
 import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
-import { confirmAvailableCount, decorateStockItems, isProductUnavailable, isQuantityRejected, isRequestedCountRejected, isStockRejection, markRejectedCount, reconcileStockState, setUnavailableProducts } from './stock-state.js';
+import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isRequestedCountRejected, isStockRejection, markRejectedCount, reconcileStockState, setUnavailableProducts } from './stock-state.js';
 import { updateCartMarkup } from './cart-dom.js';
 import { formatMoney } from '../../shared/format-money.js';
 import { rememberedProduct } from '../../data/product-session.js';
 
 const itemCountRules = new Intl.PluralRules('ru-RU');
 const itemCountWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
+const VALIDITY_INTERVAL_MS = 5000;
 
 export interface CartController {
   getProductQuantity(productId: number): number;
@@ -53,25 +54,30 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   const versions = new Map<number, number>();
   const committedItems = new Map<number, CartItem>();
   const pendingCounts = new Map<number, number>();
+  const stockLimitAttempts = new Set<number>();
+  const updatedAvailableCounts = new Map<number, number>();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
   const mutationWaiters = new Map<number, Array<{ version: number; resolve: (success: boolean) => void }>>();
   let mutationRunning = false;
   let validityTimer: ReturnType<typeof setInterval> | undefined;
   let validityRequestVersion = 0;
+  let validityIndicator = false;
 
   function getItems(): CartItem[] {
     return cart?.items ?? [];
   }
 
   function getDisplayItems(): (CartItem & { stockWarning: string; increaseDisabled: boolean })[] {
-    return userId ? decorateStockItems(userId, getItems()) : [];
+    return userId ? decorateStockItems(userId, getItems()).map((item) => ({
+      ...item,
+      stockWarning: item.stockWarning || (stockLimitAttempts.has(item.id) ? 'В наличии больше нет' : ''),
+    })) : [];
   }
 
   function isIncreaseDisabled(productId: number): boolean {
     const available = getAvailableCount(productId);
-    return getProductQuantity(productId) >= 99 || (available !== undefined && getProductQuantity(productId) >= available)
-      || Boolean(userId && (isProductUnavailable(userId, productId)
-      || isQuantityRejected(userId, productId, getProductQuantity(productId))));
+    return getProductQuantity(productId) >= 99 || (available === 0 && getProductQuantity(productId) === 0)
+      || Boolean(userId && isQuantityRejected(userId, productId, getProductQuantity(productId)));
   }
 
   function getProductQuantity(productId: number): number {
@@ -117,8 +123,9 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
 
   function renderCart(): void {
     const count = getItems().reduce((sum, item) => sum + item.quantity, 0);
-    cartCount.hidden = count === 0;
-    cartCount.textContent = count > 99 ? '99+' : String(count);
+    cartCount.hidden = count === 0 && !validityIndicator;
+    cartCount.textContent = validityIndicator ? '!' : count > 99 ? '99+' : String(count);
+    cartCount.classList.toggle('site-header__cart-count--invalid', validityIndicator);
     cartButton.setAttribute('aria-label', count ? `Корзина, ${getDisplayCount()}` : 'Корзина');
     updateCartMarkup(cartPanel, cartTemplate({
       items: getDisplayItems(),
@@ -137,6 +144,8 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   }
 
   function getAvailableCount(productId: number): number | undefined {
+    const updated = updatedAvailableCounts.get(productId);
+    if (updated !== undefined) return updated;
     const product: unknown = rememberedProduct(productId);
     const count = typeof product === 'object' && product !== null && 'availableCount' in product
       ? (product as { availableCount?: unknown }).availableCount : undefined;
@@ -197,15 +206,27 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     if (!userId) return;
     const requestVersion = ++validityRequestVersion;
     try {
-      const unavailable = await getBasketValidity(userId);
-      if (requestVersion !== validityRequestVersion) return;
-      setUnavailableProducts(userId, unavailable);
-      validityError = false;
+       const validity = await getBasketValidity(userId);
+       if (requestVersion !== validityRequestVersion) return;
+       if (!validity.isInvalid) updatedAvailableCounts.clear();
+       for (const { id, newAvailableCount } of validity.products) updatedAvailableCounts.set(id, newAvailableCount);
+       setUnavailableProducts(userId, validity.products);
+       validityError = false;
+        validityIndicator = validity.isInvalid;
+       if (validity.isInvalid) {
+         shakeValidityIndicator();
+       }
     } catch {
       if (requestVersion !== validityRequestVersion) return;
       validityError = true;
     }
     if (!validityError) updatePage(null);
+  }
+
+  function shakeValidityIndicator(): void {
+    cartCount.classList.remove('site-header__cart-count--shake');
+    void cartCount.offsetWidth;
+    cartCount.classList.add('site-header__cart-count--shake');
   }
 
   function scheduleSave(productId: number): void {
@@ -260,6 +281,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       const stockExceeded = error instanceof BasketRequestError
         && isStockRejection(error.status, error.method, currentCount, target, error.responseBody);
       if (stockExceeded) markRejectedCount(userId, productId, target);
+      if (error instanceof BasketRequestError && error.status === 422) shakeValidityIndicator();
       if ((versions.get(productId) ?? 0) === version) {
         pendingCounts.delete(productId);
         rebuildCart();
@@ -298,11 +320,17 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       return Promise.resolve(false);
     }
     const availableCount = getAvailableCount(productId);
-    if (newCount > 99 || (availableCount !== undefined && newCount > availableCount && newCount > getProductQuantity(productId))
-      || newCount === getProductQuantity(productId)) {
+    const currentCount = getProductQuantity(productId);
+    if (availableCount !== undefined && newCount > availableCount && newCount > currentCount) {
+      stockLimitAttempts.add(productId);
+      updatePage(productId);
+      return Promise.resolve(false);
+    }
+    if (newCount > 99 || newCount === getProductQuantity(productId)) {
       return Promise.resolve(false);
     }
     if (newCount > getProductQuantity(productId) && isRequestedCountRejected(userId, productId, newCount)) return Promise.resolve(false);
+    stockLimitAttempts.delete(productId);
     const version = (versions.get(productId) ?? 0) + 1;
     versions.set(productId, version);
     pendingCounts.set(productId, newCount);
@@ -332,7 +360,10 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   function changeProductQuantity(productId: number, change: number): void {
     const currentCount = getProductQuantity(productId);
     if (currentCount > 0) {
-      saveProductCount(productId, Math.max(0, currentCount + change));
+      const availableCount = updatedAvailableCounts.get(productId);
+      const newCount = change < 0 && availableCount !== undefined && currentCount > availableCount
+        ? availableCount : Math.max(0, currentCount + change);
+      void saveProductCount(productId, newCount);
     }
   }
 
@@ -428,7 +459,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
         return;
       }
       void checkValidity();
-    }, 12000);
+    }, VALIDITY_INTERVAL_MS);
   }
   productGrid?.addEventListener('click', handleProductButtonClick);
   page.addEventListener('change', (event) => {
@@ -454,8 +485,8 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     isIncreaseDisabled,
     isRequestedCountRejected: (productId, count) => {
       const available = getAvailableCount(productId);
-      return (available !== undefined && count > available) || Boolean(userId && (isProductUnavailable(userId, productId)
-        || isRequestedCountRejected(userId, productId, count)));
+      return (available !== undefined && count > available)
+        || Boolean(userId && isRequestedCountRejected(userId, productId, count));
     },
     getDisplayCount,
     getDisplayTotal,
