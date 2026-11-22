@@ -1,7 +1,9 @@
 import type { CartItem } from './cart-model.js';
+import type { BasketValidityProduct } from './cart-api.js';
 
 // The API exposes no stock count. A rejected requested quantity is only a session hint.
 const rejectedCounts = new Map<string, Map<number, number>>();
+const availableCounts = new Map<string, Map<number, number>>();
 
 function state(userId: string): Map<number, number> {
   let current = rejectedCounts.get(userId);
@@ -31,6 +33,19 @@ export function confirmAvailableCount(userId: string, productId: number, count: 
 
 export function clearStockState(): void {
   rejectedCounts.clear();
+  availableCounts.clear();
+}
+
+export function setUnavailableProducts(userId: string, products: BasketValidityProduct[]): void {
+  availableCounts.set(userId, new Map(products.map((product) => [product.id, product.newAvailableCount])));
+}
+
+export function isProductUnavailable(userId: string, productId: number): boolean {
+  return availableCounts.get(userId)?.has(productId) ?? false;
+}
+
+export function getNewAvailableCount(userId: string, productId: number): number | undefined {
+  return availableCounts.get(userId)?.get(productId);
 }
 
 export function isQuantityRejected(userId: string, productId: number, quantity: number): boolean {
@@ -45,10 +60,16 @@ export function isRequestedCountRejected(userId: string, productId: number, coun
 }
 
 export function decorateStockItems(userId: string, items: CartItem[]): (CartItem & { stockWarning: string; increaseDisabled: boolean })[] {
-  return items.map((item) => ({ ...item,
-    stockWarning: isQuantityRejected(userId, item.id, item.quantity) ? 'В наличии больше нет' : '',
-    increaseDisabled: isQuantityRejected(userId, item.id, item.quantity),
-  }));
+  return items.map((item) => {
+    const availableCount = getNewAvailableCount(userId, item.id);
+    const limited = availableCount !== undefined && item.quantity > availableCount;
+    return { ...item,
+      stockWarning: limited
+        ? availableCount === 0 ? 'Товара в наличии больше нет' : `Текущее допустимое количество: ${availableCount}.`
+        : isQuantityRejected(userId, item.id, item.quantity) ? 'Текущее допустимое количество недоступно.' : '',
+      increaseDisabled: isQuantityRejected(userId, item.id, item.quantity),
+    };
+  });
 }
 
 export function reconcileStockState(userId: string, items: CartItem[]): void {

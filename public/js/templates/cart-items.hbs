@@ -25,7 +25,7 @@
             <div class="cart-item__actions">
               <div class="cart-item__quantity-control">
                 <button class="cart-item__decrease" type="button" aria-label="Уменьшить количество товара {{title}}"{{#unless ../canUseCart}} disabled{{/unless}}>−</button>
-                <span class="cart-item__quantity">{{quantity}}</span>
+                <input class="cart-item__quantity" type="number" min="1" max="99" value="{{quantity}}" aria-label="Количество товара {{title}}" />
                 <button class="cart-item__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if increaseDisabled}} disabled{{else}}{{#unless ../canUseCart}} disabled{{/unless}}{{/if}}>+</button>
               </div>
               <button class="cart-item__remove" type="button" aria-label="Удалить товар {{title}} из корзины"{{#unless ../canUseCart}} disabled{{/unless}}>Удалить</button>

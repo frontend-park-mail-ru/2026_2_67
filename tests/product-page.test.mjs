@@ -17,6 +17,8 @@ localStorage.setItem('userId', '42');
 let basket = [];
 let basketFails = false;
 let patchFails = false;
+let validityUnavailable = [];
+let validityFails = false;
 let pendingPost = null;
 let pendingPatch = null;
 let detailProduct = null;
@@ -29,6 +31,13 @@ globalThis.fetch = async (url, options = {}) => {
   if (path.startsWith('file:')) return new Response(readFileSync(new URL(path), 'utf8'));
   requests.push({ path, options });
   if (path.endsWith('/profile')) return Response.json({ name: 'Покупатель' });
+  if (path.endsWith('/basket/is_valid')) {
+    if (validityFails) return new Response(null, { status: 503 });
+    if (validityUnavailable.length) {
+      return new Response(JSON.stringify({ products: validityUnavailable.map((item) => typeof item === 'number' ? { id: item, newAvailableCount: 0 } : item) }), { status: 422 });
+    }
+    return Response.json({});
+  }
   if (path.endsWith('/basket')) {
     if (basketFails) return new Response(null, { status: 502 });
     return Response.json({ basketProducts: basket, basketSum: 0, basketSumResult: 0 });
@@ -43,7 +52,9 @@ globalThis.fetch = async (url, options = {}) => {
   if (path.endsWith('/basket/products/9') && options.method === 'PATCH') {
     if (patchFails) return new Response(null, { status: 422 });
     if (pendingPatch) await pendingPatch;
-    basket[0].count = JSON.parse(options.body).count;
+    const count = JSON.parse(options.body).count;
+    if (count === 0) basket = basket.filter((item) => item.id !== 9);
+    else basket.find((item) => item.id === 9).count = count;
     return new Response(null, { status: 200 });
   }
   if (path.endsWith('/products/9') && detailProduct) return Response.json({ product: detailProduct });
@@ -66,7 +77,22 @@ const cartItemsTemplate = Handlebars.compile(readFileSync(new URL('../public/js/
 const ordersListTemplate = Handlebars.compile(readFileSync(new URL('../public/js/templates/orders-list.hbs', import.meta.url), 'utf8'));
 await loadTemplates();
 const app = document.querySelector('#app');
-const tick = async () => { await new Promise((resolve) => setTimeout(resolve, 0)); await new Promise((resolve) => setTimeout(resolve, 0)); };
+const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test.beforeEach((t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  requests.length = 0;
+  basket = [];
+  validityUnavailable = [];
+  validityFails = false;
+  patchFails = false;
+  pendingPost = null;
+  pendingPatch = null;
+});
+
+test.afterEach(() => {
+  app.replaceChildren();
+});
 
 test('catalog link opens a product route without wrapping the cart button', async () => {
   renderCatalogPage(app);
@@ -134,7 +160,7 @@ test('catalog fallback follows real cursors to find an uncached product', async 
   catalogPages = null;
 });
 
-test('add to cart sends quantity once and waits for basket success', async () => {
+test('add to cart applies optimistically and debounces the request', async (t) => {
   basket = [];
   const destinations = [];
   renderProductPage(app, 9, (path) => destinations.push(path));
@@ -147,8 +173,14 @@ test('add to cart sends quantity once and waits for basket success', async () =>
   const before = requests.filter((request) => request.path.endsWith('/basket/products') && request.options.method === 'POST').length;
   document.querySelector('[data-detail-add]').click();
   document.querySelector('[data-detail-add]').click();
+  assert.equal(document.querySelector('.site-header__cart-count').textContent, '2');
+  t.mock.timers.tick(499);
   await tick();
   assert.deepEqual(destinations, []);
+  assert.equal(requests.filter((request) => request.path.endsWith('/basket/products') && request.options.method === 'POST').length, before);
+  t.mock.timers.tick(201);
+  await tick();
+  await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products') && request.options.method === 'POST').length, before + 1);
   release();
   pendingPost = null;
@@ -157,7 +189,9 @@ test('add to cart sends quantity once and waits for basket success', async () =>
   assert.deepEqual(destinations, []);
 });
 
-test('PATCH 422 keeps the page and basket quantity; retry recovers basket loading', async () => {
+test('PATCH 422 rolls back the optimistic quantity; retry recovers basket loading', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 2 }];
   patchFails = true;
   const destinations = [];
   await renderProductPage(app, 9, (path) => destinations.push(path));
@@ -168,11 +202,15 @@ test('PATCH 422 keeps the page and basket quantity; retry recovers basket loadin
   quantity.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
   const before = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length;
   document.querySelector('[data-detail-add]').click();
+  assert.equal(quantity.value, '13');
+  t.mock.timers.tick(501);
   await tick();
   assert.equal(basket[0].count, 2);
   assert.match(document.querySelector('[data-detail-message]').textContent, /наличии/);
   assert.equal(document.querySelector('[data-detail-add]').disabled, true);
   document.querySelector('[data-detail-add]').click();
+  t.mock.timers.tick(500);
+  await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before + 1);
   document.querySelector('[data-quantity-minus]').click();
   assert.equal(quantity.value, '12');
@@ -192,7 +230,9 @@ test('PATCH 422 keeps the page and basket quantity; retry recovers basket loadin
   assert.equal(document.querySelector('[data-detail-retry]').hidden, true);
 });
 
-test('pending PATCH cannot duplicate and badge waits for confirmed basket', async () => {
+test('pending PATCH cannot duplicate and badge waits for confirmed basket', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 2 }];
   const destinations = [];
   await renderProductPage(app, 9, (path) => destinations.push(path));
   await tick();
@@ -203,15 +243,221 @@ test('pending PATCH cannot duplicate and badge waits for confirmed basket', asyn
   const before = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length;
   document.querySelector('[data-detail-add]').click();
   document.querySelector('[data-detail-add]').click();
+  assert.equal(document.querySelector('[data-quantity]').value, '3');
+  t.mock.timers.tick(500);
   await tick();
   assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before + 1);
-  assert.equal(document.querySelector('.site-header__cart-count').textContent, '2');
+  assert.equal(document.querySelector('.site-header__cart-count').textContent, '3');
   assert.deepEqual(destinations, []);
   release();
   pendingPatch = null;
   await tick();
   assert.equal(document.querySelector('.site-header__cart-count').textContent, '3');
   assert.deepEqual(destinations, []);
+});
+
+test('ordinary cart minus decrements the quantity with one debounced PATCH', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 3 }];
+  await renderProductPage(app, 9, () => {});
+  await tick();
+  const before = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length;
+  document.querySelector('.cart-item__decrease').click();
+  assert.equal(document.querySelector('.cart-item__quantity').value, '2');
+  t.mock.timers.tick(499);
+  await tick();
+  assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before);
+  t.mock.timers.tick(1);
+  await tick();
+  await tick();
+  const patches = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH');
+  assert.equal(patches.length, before + 1);
+  assert.deepEqual(JSON.parse(patches.at(-1).options.body), { count: 2 });
+  assert.equal(basket[0].count, 2);
+});
+
+test('debounce resets when quantity changes before 500ms', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 2 }];
+  await renderProductPage(app, 9, () => {});
+  await tick();
+  const quantity = document.querySelector('[data-quantity]');
+  quantity.value = '3';
+  quantity.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  document.querySelector('[data-detail-add]').click();
+  t.mock.timers.tick(299);
+  quantity.value = '4';
+  quantity.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  document.querySelector('[data-detail-add]').click();
+  const before = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length;
+  t.mock.timers.tick(1);
+  await tick();
+  assert.equal(requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH').length, before);
+  t.mock.timers.tick(500);
+  await tick();
+  await tick();
+  await tick();
+  const patches = requests.filter((request) => request.path.endsWith('/basket/products/9') && request.options.method === 'PATCH');
+  assert.equal(patches.length, before + 1);
+  assert.deepEqual(JSON.parse(patches.at(-1).options.body), { count: 4 });
+});
+
+test('is_valid refreshes every 5 seconds and stops when the page is removed', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 1 }];
+  validityUnavailable = [9];
+  await renderProductPage(app, 9, () => {});
+  await tick();
+  const validityRequests = () => requests.filter((request) => request.path.endsWith('/basket/is_valid'));
+  assert.equal(validityRequests().length, 1);
+  assert.equal(document.querySelector('#cart-panel').hidden, true);
+  assert.equal(document.querySelector('.site-header__cart-count').textContent, '!');
+  assert.equal(document.querySelector('[data-detail-add]').disabled, true);
+  assert.match(document.querySelector('[data-detail-message]').textContent, /наличии/);
+
+  const indicator = document.querySelector('.site-header__cart-count');
+  indicator.classList.remove('site-header__cart-count--shake');
+  t.mock.timers.tick(5000);
+  await tick();
+  assert.equal(validityRequests().length, 2);
+  assert.equal(indicator.classList.contains('site-header__cart-count--shake'), true);
+
+  validityUnavailable = [];
+  t.mock.timers.tick(4999);
+  await tick();
+  assert.equal(validityRequests().length, 2);
+  t.mock.timers.tick(1);
+  await tick();
+  assert.equal(validityRequests().length, 3);
+  assert.equal(document.querySelector('.site-header__cart-count').textContent, '1');
+  assert.equal(document.querySelector('[data-detail-add]').disabled, true);
+
+  app.replaceChildren();
+  const before = validityRequests().length;
+  t.mock.timers.tick(5000);
+  await tick();
+  assert.equal(validityRequests().length, before);
+});
+
+for (const availableCount of [0, 2]) {
+  test(`is_valid keeps the basket count unchanged at ${availableCount} until minus is pressed`, async (t) => {
+    basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+      price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 3 }];
+    validityUnavailable = [{ id: 9, newAvailableCount: availableCount }];
+    await renderProductPage(app, 9, () => {});
+    await tick();
+    const mutations = () => requests.filter(({ path, options }) => path.includes('/basket/products') && options.method !== 'GET');
+    assert.equal(document.querySelectorAll('.cart-item').length, 1);
+    assert.equal(document.querySelector('.cart-item__quantity').value, '3');
+    assert.equal(basket[0].count, 3);
+    t.mock.timers.tick(499);
+    await tick();
+    assert.equal(mutations().length, 0);
+    document.querySelector('.cart-item__decrease').click();
+    assert.equal(document.querySelector('.cart-item__quantity')?.value ?? '0', String(availableCount));
+    assert.equal(basket[0].count, 3);
+    t.mock.timers.tick(499);
+    await tick();
+    assert.equal(mutations().length, 0);
+    t.mock.timers.tick(1);
+    await tick();
+    await tick();
+    assert.deepEqual(mutations().map(({ path, options }) => ({ path, method: options.method, body: JSON.parse(options.body) })),
+      [{ path: '/api/v1/buyers/42/basket/products/9', method: 'PATCH', body: { count: availableCount } }]);
+    assert.equal(basket[0]?.count ?? 0, availableCount);
+    t.mock.timers.tick(10000);
+    await tick();
+    assert.equal(mutations().length, 1);
+  });
+}
+
+test('catalog shows the same availability warning as the basket', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 3 }];
+  validityUnavailable = [{ id: 9, newAvailableCount: 2 }];
+  renderCatalogPage(app);
+  await tick();
+  const warning = () => document.querySelector('.product-card__stock-warning').textContent;
+  assert.equal(document.querySelector('.product-card__quantity').value, '3');
+  assert.match(warning(), /допустимое количество: 2/);
+  validityUnavailable = [9];
+  t.mock.timers.tick(5000);
+  await tick();
+  assert.equal(warning(), 'Товара в наличии больше нет');
+  validityUnavailable = [];
+  t.mock.timers.tick(5000);
+  await tick();
+  assert.equal(warning(), '');
+});
+
+test('catalog warns only after an attempt to exceed available stock', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 1 }];
+  catalogPages = [{ products: [{ ...product, availableCount: 2 }], nextCursor: '' }];
+  try {
+    renderCatalogPage(app);
+    await tick();
+    const warning = () => document.querySelector('.product-card__stock-warning').textContent;
+    const quantity = () => document.querySelector('.product-card__quantity').value;
+    document.querySelector('.product-card__increase').click();
+    assert.equal(quantity(), '2');
+    assert.equal(warning(), '');
+    const requestsBefore = requests.length;
+    document.querySelector('.product-card__increase').click();
+    assert.equal(quantity(), '2');
+    assert.equal(warning(), 'В наличии больше нет');
+    assert.equal(requests.length, requestsBefore);
+    t.mock.timers.tick(3999);
+    await tick();
+    assert.equal(warning(), 'В наличии больше нет');
+    document.querySelector('.product-card__increase').click();
+    t.mock.timers.tick(3999);
+    await tick();
+    assert.equal(warning(), 'В наличии больше нет');
+    t.mock.timers.tick(1);
+    await tick();
+    assert.equal(warning(), '');
+    document.querySelector('.product-card__decrease').click();
+    assert.equal(quantity(), '1');
+    assert.equal(warning(), '');
+  } finally {
+    catalogPages = null;
+  }
+});
+
+test('updated availability becomes the limit after reducing the basket quantity', async (t) => {
+  basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
+    price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 3 }];
+  catalogPages = [{ products: [{ ...product, availableCount: 5 }], nextCursor: '' }];
+  validityUnavailable = [{ id: 9, newAvailableCount: 2 }];
+  try {
+    renderCatalogPage(app);
+    await tick();
+    assert.equal(document.querySelector('.product-card__quantity').value, '3');
+    assert.match(document.querySelector('.product-card__stock-warning').textContent, /допустимое количество: 2/);
+    assert.equal(document.querySelector('.product-card__increase').disabled, false);
+    document.querySelector('.product-card__decrease').click();
+    assert.equal(document.querySelector('.product-card__quantity').value, '2');
+    t.mock.timers.tick(500);
+    await tick();
+    await tick();
+    assert.equal(basket[0].count, 2);
+    document.querySelector('.product-card__increase').click();
+    assert.equal(document.querySelector('.product-card__quantity').value, '2');
+    assert.equal(document.querySelector('.product-card__stock-warning').textContent, 'В наличии больше нет');
+    validityUnavailable = [];
+    t.mock.timers.tick(5000);
+    await tick();
+    const patchesBefore = requests.filter(({ options }) => options.method === 'PATCH').length;
+    document.querySelector('.product-card__increase').click();
+    assert.equal(document.querySelector('.product-card__quantity').value, '2');
+    assert.equal(document.querySelector('.product-card__stock-warning').textContent, 'В наличии больше нет');
+    t.mock.timers.tick(500);
+    await tick();
+    assert.equal(requests.filter(({ options }) => options.method === 'PATCH').length, patchesBefore);
+  } finally {
+    catalogPages = null;
+  }
 });
 
 test('cart and order product links keep controls separate', () => {

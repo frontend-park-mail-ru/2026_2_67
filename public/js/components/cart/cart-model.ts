@@ -6,6 +6,7 @@ export interface CartItem {
   title: string;
   image: string;
   price: string;
+  unitPrice: number;
   quantity: number;
 }
 
@@ -21,6 +22,7 @@ export function mapBasket(basket: BasketResponse): CartModel {
       title: product.name,
       image: product.pictureUrl,
       price: formatMoney(product.priceResult * product.count),
+      unitPrice: product.priceResult,
       quantity: product.count,
     })),
     priceSum: basket.basketSumResult,

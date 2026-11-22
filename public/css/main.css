@@ -487,6 +487,18 @@ a:focus-visible, button:focus-visible {
 .site-header__cart-count[hidden] {
   display: none;
 }
+.site-header__cart-count--invalid {
+  background: #d92d20;
+  color: #fff;
+}
+.site-header__cart-count--shake {
+  animation: cart-count-shake 0.45s ease-in-out;
+}
+@keyframes cart-count-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
 .site-header__icon--link img {
   position: relative;
   top: -0.5px;
@@ -905,6 +917,10 @@ a:focus-visible, button:focus-visible {
   line-height: 1;
 }
 .product-card__quantity {
+  border: 0;
+  background: transparent;
+  text-align: center;
+  appearance: textfield;
   min-width: 2ch;
   font-weight: 700;
   text-align: center;
