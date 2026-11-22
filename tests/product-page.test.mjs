@@ -390,7 +390,7 @@ test('catalog shows the same availability warning as the basket', async (t) => {
   assert.equal(warning(), '');
 });
 
-test('catalog warns only after an attempt to exceed available stock', async () => {
+test('catalog warns only after an attempt to exceed available stock', async (t) => {
   basket = [{ id: 9, category: '', name: product.name, pictureUrl: product.pictureUrls[0],
     price: product.priceResult, discount: 0, priceResult: product.priceResult, count: 1 }];
   catalogPages = [{ products: [{ ...product, availableCount: 2 }], nextCursor: '' }];
@@ -407,6 +407,16 @@ test('catalog warns only after an attempt to exceed available stock', async () =
     assert.equal(quantity(), '2');
     assert.equal(warning(), 'В наличии больше нет');
     assert.equal(requests.length, requestsBefore);
+    t.mock.timers.tick(3999);
+    await tick();
+    assert.equal(warning(), 'В наличии больше нет');
+    document.querySelector('.product-card__increase').click();
+    t.mock.timers.tick(3999);
+    await tick();
+    assert.equal(warning(), 'В наличии больше нет');
+    t.mock.timers.tick(1);
+    await tick();
+    assert.equal(warning(), '');
     document.querySelector('.product-card__decrease').click();
     assert.equal(quantity(), '1');
     assert.equal(warning(), '');

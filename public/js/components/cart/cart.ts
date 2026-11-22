@@ -55,6 +55,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   const committedItems = new Map<number, CartItem>();
   const pendingCounts = new Map<number, number>();
   const stockLimitAttempts = new Set<number>();
+  const stockWarningTimers = new Map<number, ReturnType<typeof setTimeout>>();
   const updatedAvailableCounts = new Map<number, number>();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
   const mutationWaiters = new Map<number, Array<{ version: number; resolve: (success: boolean) => void }>>();
@@ -322,6 +323,13 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     const currentCount = getProductQuantity(productId);
     if (availableCount !== undefined && newCount > availableCount && newCount > currentCount) {
       stockLimitAttempts.add(productId);
+      const timer = stockWarningTimers.get(productId);
+      if (timer) clearTimeout(timer);
+      stockWarningTimers.set(productId, setTimeout(() => {
+        stockWarningTimers.delete(productId);
+        stockLimitAttempts.delete(productId);
+        if (page.isConnected) updatePage(productId);
+      }, 4000));
       updatePage(productId);
       return Promise.resolve(false);
     }
@@ -330,6 +338,9 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
     if (newCount > getProductQuantity(productId) && isRequestedCountRejected(userId, productId, newCount)) return Promise.resolve(false);
     stockLimitAttempts.delete(productId);
+    const warningTimer = stockWarningTimers.get(productId);
+    if (warningTimer) clearTimeout(warningTimer);
+    stockWarningTimers.delete(productId);
     const version = (versions.get(productId) ?? 0) + 1;
     versions.set(productId, version);
     pendingCounts.set(productId, newCount);
