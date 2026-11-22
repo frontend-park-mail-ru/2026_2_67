@@ -5,10 +5,10 @@
   <article class="orders-page__order" aria-labelledby="order-{{id}}">
     <header class="orders-page__heading">
       <div>
-        <h2 id="order-{{id}}">Заказ №{{number}}</h2>
+        <h2 id="order-{{id}}">Заказ №{{displayNumber}}</h2>
         <p class="orders-page__date">Оформлен <time datetime="{{createdAt}}">{{createdDate}}</time></p>
       </div>
-      <span class="orders-page__status">{{status}}</span>
+      <span class="orders-page__status">{{statusName}}</span>
     </header>
 
     <div class="orders-page__summary">
@@ -30,8 +30,8 @@
             </a>
             <div class="orders-page__product-info">
               <h4><a href="{{productUrl productId name}}" data-product-link>{{name}}</a></h4>
-              <p class="orders-page__muted">{{category}} · Продавец: {{sellerName}}</p>
-              {{#if sellerAvatar}}<img class="orders-page__seller-avatar" src="{{sellerAvatar}}" alt="Аватар продавца {{sellerName}}" loading="lazy" width="32" height="32" />{{/if}}
+              <p class="orders-page__muted">{{categoryName}} · Продавец: {{sellerDisplayName}}</p>
+              {{#if sellerAvatar}}<img class="orders-page__seller-avatar" src="{{sellerAvatar}}" alt="Аватар продавца {{sellerDisplayName}}" loading="lazy" width="32" height="32" />{{/if}}
               {{#if description}}
                 <details class="orders-page__description">
                   <summary>Описание товара</summary>
@@ -53,12 +53,12 @@
         <h3>Получение заказа</h3>
         <p><strong>Пункт выдачи №{{pickupPoint.id}}</strong></p>
         <p>Время работы: {{pickupPoint.workingHours}}</p>
-        <p class="orders-page__muted">Координаты: {{pickupPoint.latitude}}, {{pickupPoint.longitude}}</p>
+        <p><a href="https://yandex.ru/maps/?whatshere[point]={{pickupPoint.longitude}},{{pickupPoint.latitude}}&amp;whatshere[zoom]=15" target="_blank" rel="noopener noreferrer">Пункт выдачи заказов на карте</a></p>
       </section>
       <section class="orders-page__section" aria-label="Промокод заказа">
         <h3>Промокод</h3>
-        {{#if promocode}}
-          <p><strong>{{promocode}}</strong></p>
+        {{#if promocodeCode}}
+          <p><strong>{{promocodeCode}}</strong></p>
         {{else}}
           <p class="orders-page__muted">Не использовался</p>
         {{/if}}

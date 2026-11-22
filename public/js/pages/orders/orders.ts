@@ -68,6 +68,43 @@ function isOrder(value: unknown): value is Order {
     && isInteger(value.totalCount) && isPrice(value.totalPrice);
 }
 
+function invalidOrderFields(value: unknown): string[] {
+  if (!isRecord(value)) return ['order'];
+  const fields: string[] = [];
+  const check = (path: string, valid: boolean): void => { if (!valid) fields.push(path); };
+  check('id', isInteger(value.id));
+  check('number', isInteger(value.number));
+  check('status', typeof value.status === 'string');
+  check('createdAt', isDate(value.createdAt));
+  check('updatedAt', isDate(value.updatedAt));
+  const point = value.pickupPoint;
+  if (!isRecord(point)) fields.push('pickupPoint');
+  else {
+    check('pickupPoint.id', isInteger(point.id));
+    check('pickupPoint.longitude', typeof point.longitude === 'number' && Number.isFinite(point.longitude));
+    check('pickupPoint.latitude', typeof point.latitude === 'number' && Number.isFinite(point.latitude));
+    check('pickupPoint.startTime', typeof point.startTime === 'string');
+    check('pickupPoint.endTime', typeof point.endTime === 'string');
+  }
+  check('promocode', value.promocode === null || typeof value.promocode === 'string');
+  check('totalCount', isInteger(value.totalCount));
+  check('totalPrice', isPrice(value.totalPrice));
+  if (!Array.isArray(value.products)) fields.push('products');
+  else value.products.forEach((product: unknown, index: number) => {
+    if (!isRecord(product)) { fields.push(`products[${index}]`); return; }
+    const prefix = `products[${index}]`;
+    check(`${prefix}.productId`, isInteger(product.productId));
+    for (const key of ['name', 'description', 'category', 'sellerName', 'sellerAvatarUrl']) {
+      check(`${prefix}.${key}`, typeof product[key] === 'string');
+    }
+    check(`${prefix}.pictureUrls`, Array.isArray(product.pictureUrls) && product.pictureUrls.every((url: unknown) => typeof url === 'string'));
+    check(`${prefix}.count`, isInteger(product.count));
+    check(`${prefix}.unitPrice`, isPrice(product.unitPrice));
+    check(`${prefix}.totalPrice`, isPrice(product.totalPrice));
+  });
+  return fields;
+}
+
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' });
 
 // В изображениях допускаем только HTTP(S) и относительные пути, но не произвольные схемы URL.
@@ -84,6 +121,8 @@ function safeImageUrl(value: string): string | null {
 function orderView(order: Order) {
   return {
     ...order,
+    displayNumber: order.number,
+    statusName: order.status,
     createdDate: dateFormatter.format(new Date(order.createdAt)),
     updatedDate: dateFormatter.format(new Date(order.updatedAt)),
     formattedTotal: formatMoney(order.totalPrice),
@@ -93,11 +132,14 @@ function orderView(order: Order) {
     },
     products: order.products.map((product) => ({
       ...product,
+      categoryName: product.category,
+      sellerDisplayName: product.sellerName,
+      sellerAvatar: product.sellerAvatarUrl ? safeImageUrl(product.sellerAvatarUrl) : null,
       formattedUnitPrice: formatMoney(product.unitPrice),
       formattedTotal: formatMoney(product.totalPrice),
       pictures: product.pictureUrls.map(safeImageUrl).filter((url) => url !== null),
-      sellerAvatar: safeImageUrl(product.sellerAvatarUrl),
     })),
+    promocodeCode: order.promocode,
   };
 }
 
@@ -118,7 +160,13 @@ export async function renderOrdersPage(app: HTMLElement): Promise<void> {
       if (!response.ok) throw new Error(`Не удалось загрузить заказы: ${response.status}`);
       const result: unknown = await response.json();
       const orders: unknown = isRecord(result) ? result.orders : undefined;
-      if (!Array.isArray(orders) || !orders.every(isOrder)) throw new Error('Сервер вернул неверный список заказов.');
+      if (!Array.isArray(orders)) throw new Error('Сервер вернул неверный список заказов: поле orders не является массивом.');
+      if (!orders.every(isOrder)) {
+        const invalidIndex = orders.findIndex((order: unknown) => !isOrder(order));
+        const fields = invalidOrderFields(orders[invalidIndex]);
+        console.error('Неверный формат заказа:', fields.map((field) => `orders[${invalidIndex}].${field}`).join(', '));
+        throw new Error(`Сервер вернул неверный формат заказа. Проверьте поля: ${fields.join(', ')}.`);
+      }
 
       if (!list.isConnected) return;
       list.innerHTML = ordersListTemplate({
