@@ -43,14 +43,16 @@ function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuant
   });
 }
 
-async function loadProducts(grid: HTMLElement, page: HTMLElement, category: string | null, cursor: string, onProducts: ProductsCallback): Promise<boolean> {
+async function loadProducts(grid: HTMLElement, page: HTMLElement, category: string | null, query: string, sortBy: string, cursor: string, signal: AbortSignal, onProducts: ProductsCallback): Promise<boolean> {
   try {
     // При следующей загрузке сохраняем категорию и добавляем курсор из прошлого ответа.
     const params = new window.URLSearchParams();
     if (category) params.set('category', category);
+    if (query) params.set('query', query);
+    if (category) params.set('sortBy', sortBy);
     if (cursor) params.set('cursor', cursor);
     const path = params.size ? `/products?${params}` : '/products';
-    const response = await authorizedFetch(path);
+    const response = await authorizedFetch(path, { signal });
     if (!response.ok) {
       throw new Error(`Products request failed: ${response.status}`);
     }
@@ -60,7 +62,7 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
       throw new Error('Products response must contain an array of products.');
     }
 
-    if (page !== grid.closest('.catalog-page')) {
+    if (signal.aborted || !page.isConnected) {
       return false;
     }
 
@@ -71,7 +73,7 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
     onProducts(apiProducts.map((product) => mapApiProduct(product as ApiProduct)), (next || '') as string);
     return true;
   } catch {
-    if (!cursor && page === grid.closest('.catalog-page')) {
+    if (!cursor && !signal.aborted && page.isConnected) {
       grid.innerHTML = '<p class="catalog-page__message" role="alert">Не удалось загрузить товары. <button type="button" data-retry-products>Повторить</button></p>';
     }
     return false;
@@ -82,8 +84,9 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
  * Renders the catalog and connects each product card.
  * @param {HTMLElement} app Main application container.
  */
-export function renderCatalogPage(app: HTMLElement): void {
+export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   const category = new window.URLSearchParams(window.location.search).get('category');
+  const query = new window.URLSearchParams(window.location.search).get('query')?.trim() ?? '';
   app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, category, heading: category || 'Каталог товаров' });
   const page = requireHTMLElement(app, '.catalog-page');
   const sort = page.querySelector<HTMLDetailsElement>('.catalog-page__sort');
@@ -91,12 +94,22 @@ export function renderCatalogPage(app: HTMLElement): void {
     const toggle = requireHTMLElement(sort, '.catalog-page__sort-toggle');
     const options = sort.querySelectorAll<HTMLButtonElement>('button');
     options.forEach((option) => {
+      const selected = option.dataset.sortBy === sortBy;
+      option.setAttribute('aria-pressed', String(selected));
+      if (selected) {
+        toggle.textContent = option.textContent;
+        toggle.setAttribute('aria-label', `Сортировка: ${option.textContent}`);
+      }
       option.addEventListener('click', () => {
         options.forEach((item) => item.setAttribute('aria-pressed', String(item === option)));
         toggle.textContent = option.textContent;
         toggle.setAttribute('aria-label', `Сортировка: ${option.textContent}`);
         sort.open = false;
         toggle.focus();
+        const selectedSort = option.dataset.sortBy;
+        if (!selectedSort || selectedSort === sortBy) return;
+        sortBy = selectedSort;
+        void requestProducts();
       });
     });
     sort.addEventListener('keydown', (event) => {
@@ -119,9 +132,10 @@ export function renderCatalogPage(app: HTMLElement): void {
   const loadMoreButton = requireButton(loadMoreWrap, 'button');
   const searchForm = requireHTMLElement(page, '[data-catalog-search]');
   const searchInput = requireInput(searchForm, 'input[name="query"]');
-  searchInput.value = new window.URLSearchParams(window.location.search).get('query') ?? '';
+  searchInput.value = query;
   let products: ProductCard[] | null = null;
   let nextCursor: string = '';
+  let requestController: AbortController | undefined;
 
   const cart = initCart(
     page,
@@ -166,20 +180,11 @@ export function renderCatalogPage(app: HTMLElement): void {
     }
 
     if (products.length === 0) {
-      grid.textContent = category ? 'В этой категории пока нет товаров.' : 'Товары пока не добавлены.';
+      grid.textContent = query ? 'По вашему запросу ничего не найдено.' : category ? 'В этой категории пока нет товаров.' : 'Товары пока не добавлены.';
       return;
     }
 
-    const query = searchInput.value.trim().toLocaleLowerCase();
-    const matchingProducts = products.filter((product) =>
-      product.title.toLocaleLowerCase().includes(query));
-
-    if (matchingProducts.length === 0) {
-      grid.textContent = 'Среди загруженных товаров ничего не найдено.';
-      return;
-    }
-
-    renderProducts(grid, matchingProducts, cart.getProductQuantity, cart.isIncreaseDisabled, cart.canUseCart());
+    renderProducts(grid, products, cart.getProductQuantity, cart.isIncreaseDisabled, cart.canUseCart());
   }
 
   function acceptProducts(loadedProducts: ProductCard[], cursor: string): void {
@@ -194,39 +199,44 @@ export function renderCatalogPage(app: HTMLElement): void {
     acceptProducts([...products, ...loadedProducts], cursor);
   }
 
-  grid.setAttribute('aria-busy', 'true');
-  grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
-
-  loadProducts(grid, page, category, '', acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
-
-  loadMoreButton.addEventListener('click', async () => {
+  async function requestProducts(append = false): Promise<void> {
+    requestController?.abort();
+    requestController = new AbortController();
+    const { signal } = requestController;
+    if (!append) {
+      products = null;
+      nextCursor = '';
+      loadMoreWrap.hidden = true;
+      grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
+    }
+    grid.setAttribute('aria-busy', 'true');
     loadMoreButton.disabled = true;
     loadMoreButton.textContent = 'Загрузка…';
-    const loaded = await loadProducts(grid, page, category, nextCursor, appendProducts);
+    const loaded = await loadProducts(grid, page, category, query, sortBy, nextCursor, signal,
+      append ? appendProducts : acceptProducts);
+    if (signal.aborted || !page.isConnected) return;
+    grid.setAttribute('aria-busy', 'false');
     loadMoreButton.disabled = false;
     loadMoreButton.textContent = loaded ? 'Показать ещё' : 'Не удалось загрузить. Повторить';
-  });
+  }
 
-  searchInput.addEventListener('input', () => {
-    if (!searchInput.value.trim() && new window.URLSearchParams(window.location.search).has('query')) {
-      window.history.replaceState({}, '', '/');
-    }
-    showProducts();
+  void requestProducts();
+
+  loadMoreButton.addEventListener('click', () => {
+    if (!loadMoreButton.disabled && nextCursor) void requestProducts(true);
   });
 
   grid.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('[data-retry-products]')) {
-      grid.setAttribute('aria-busy', 'true');
-      grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
-      loadProducts(grid, page, category, '', acceptProducts).finally(() => grid.setAttribute('aria-busy', 'false'));
+      void requestProducts();
     }
   });
 
   const currentUser = getCurrentUser();
   if (currentUser && !currentUser.name) {
     loadCurrentUser().then((user) => {
-      if (user?.name && app.querySelector('.catalog-page')) {
-        renderCatalogPage(app);
+      if (user?.name && page.isConnected) {
+        renderCatalogPage(app, sortBy);
       }
     });
   }

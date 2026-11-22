@@ -5,13 +5,14 @@
       <h1>{{heading}}</h1>
       {{#if category}}
       <details class="catalog-page__sort">
-        <summary class="catalog-page__sort-toggle" aria-label="Сортировка: По умолчанию">По умолчанию</summary>
+        <summary class="catalog-page__sort-toggle" aria-label="Сортировка: Сначала новые">Сначала новые</summary>
         <div class="catalog-page__sort-options" role="group" aria-label="Варианты сортировки">
-          <button type="button" aria-pressed="true">По умолчанию</button>
-          <button type="button" aria-pressed="false">Цена: по возрастанию</button>
-          <button type="button" aria-pressed="false">Цена: по убыванию</button>
-          <button type="button" aria-pressed="false">Рейтинг: по возрастанию</button>
-          <button type="button" aria-pressed="false">Рейтинг: по убыванию</button>
+          <button type="button" data-sort-by="new" aria-pressed="true">Сначала новые</button>
+          <button type="button" data-sort-by="buy-count" aria-pressed="false">По количеству покупок</button>
+          <button type="button" data-sort-by="asc-price" aria-pressed="false">Сначала дешёвые</button>
+          <button type="button" data-sort-by="desc-price" aria-pressed="false">Сначала дорогие</button>
+          <button type="button" data-sort-by="high-rating" aria-pressed="false">Сначала с высоким рейтингом</button>
+          <button type="button" data-sort-by="name" aria-pressed="false">По названию</button>
         </div>
       </details>
       {{/if}}

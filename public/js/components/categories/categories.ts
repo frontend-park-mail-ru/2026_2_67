@@ -5,12 +5,25 @@ type Category = {
   pictureUrl: string;
 };
 
-async function getCategories(): Promise<Category[]> {
+let categoriesPromise: Promise<Category[]> | null = null;
+
+export function getCategories(): Promise<Category[]> {
+  if (!categoriesPromise) {
+    categoriesPromise = loadCategories().catch((error: unknown) => {
+      categoriesPromise = null;
+      throw error;
+    });
+  }
+  return categoriesPromise;
+}
+
+async function loadCategories(): Promise<Category[]> {
   const response = await fetch('/api/v1/categories/');
   if (!response.ok) throw new Error(`Не удалось загрузить категории: ${response.status}`);
 
   const result = await response.json() as { categories?: Category[] };
-  if (!Array.isArray(result.categories)) throw new Error('Сервер не вернул список категорий.');
+  if (!Array.isArray(result.categories) || !result.categories.every((item) =>
+    item && typeof item.category === 'string')) throw new Error('Сервер не вернул список категорий.');
   return result.categories;
 }
 

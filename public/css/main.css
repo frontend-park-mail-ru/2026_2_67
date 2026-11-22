@@ -369,7 +369,6 @@ a:focus-visible, button:focus-visible {
   opacity: 1;
 }
 .site-header__suggestions {
-  display: none;
   position: absolute;
   z-index: 20;
   top: calc(100% + 8px);
@@ -384,8 +383,15 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-text);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--vm-shadow) 15%, transparent);
 }
-.site-header__search:focus-within .site-header__suggestions {
-  display: block;
+.site-header__suggestions[hidden] {
+  display: none;
+}
+.site-header__suggestions-status {
+  margin: 4px 8px;
+  color: var(--vm-muted);
+}
+.site-header__suggestions-status:empty {
+  display: none;
 }
 .site-header__suggestions section + section {
   margin-top: 12px;
@@ -410,6 +416,7 @@ a:focus-visible, button:focus-visible {
   min-height: 44px;
   padding: 10px 8px;
   border: 0;
+  border-radius: var(--button-radius);
   background: transparent;
   color: var(--vm-text);
   text-align: left;
@@ -677,6 +684,9 @@ a:focus-visible, button:focus-visible {
   border: 0;
   background: transparent;
   text-align: left;
+}
+.catalog-page__sort-options button + button {
+  margin-top: 8px;
 }
 .catalog-page__sort-toggle:hover,
 .catalog-page__sort-options button:hover,

@@ -1,4 +1,3 @@
-import * as amplitude from '@amplitude/unified';
 import { loadTemplates } from './templates/templates.js';
 import { renderCatalogPage } from './pages/catalog/catalog.js';
 import { renderLoginPage } from './pages/login/login.js';
@@ -9,6 +8,7 @@ import { renderCheckoutPage } from './pages/checkout/checkout-page.js';
 import { renderOrdersPage } from './pages/orders/orders.js';
 import { renderProductPage } from './pages/product/product-page.js';
 import { renderCategories } from './components/categories/categories.js';
+import { initSearch } from './components/search/search.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
 import { requiresAuthentication } from './shared/route-guards.js';
 import { productIdFromPath } from './shared/product-url.js';
@@ -20,9 +20,7 @@ function requireApp(): HTMLElement {
 }
 
 const app = requireApp();
-if (typeof window !== 'undefined') {
-  amplitude.initAll('7166680b4e29e7e65ce1808dc80fd076', { analytics: { autocapture: true }, sessionReplay: { sampleRate: 1 } });
-}
+const closeSearch = initSearch(app);
 
 const themeStorageKey = 'vibemarket-theme';
 
@@ -57,6 +55,7 @@ const routes: Record<string, () => void> = {
  * @returns {void}
  */
 function renderCurrentRoute(): void {
+  closeSearch();
   if (requiresAuthentication(window.location.pathname, getCurrentUser())) {
     window.history.replaceState({}, '', '/login');
   }
