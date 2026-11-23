@@ -9,6 +9,8 @@ export interface ApiProduct {
   availableCount?: number;
   description?: string | null;
   rating: number;
+  raiting?: number;
+  marksCount?: number;
   reviewsCount: number;
 }
 

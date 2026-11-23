@@ -2,8 +2,8 @@ import { getCurrentUser } from '../../shared/auth.js';
 import { initCart } from '../../components/cart/cart.js';
 import { mapApiProduct } from '../../data/map-api-product.js';
 import { productDetailTemplate, productPageTemplate } from '../../templates/templates.js';
-import { formatProductTotal } from './product-price.js';
 import { loadProduct } from './load-product.js';
+import { initProductReviews, productReviewsView } from './product-reviews.js';
 
 export async function renderProductPage(app: HTMLElement, id: number, navigate: (path: string) => void): Promise<void> {
   const user = getCurrentUser();
@@ -23,13 +23,14 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   const product = await loadProduct(id);
   if (!page.isConnected) return;
   if (!product) {
+    document.title = 'VibeMarket — Товар недоступен';
     body.innerHTML = '<div class="product-page__empty" role="alert"><h1>Не удалось открыть товар</h1><p>Сведения об этом товаре сейчас недоступны. Попробуйте найти его в каталоге.</p><a href="/" data-page="catalog">Перейти в каталог</a></div>';
     body.setAttribute('aria-busy', 'false');
     return;
   }
 
   const mapped = mapApiProduct(product);
-  const unitPrice = product.priceResult;
+  document.title = `VibeMarket — ${mapped.title}`;
   const photos = Array.isArray(mapped.images) ? mapped.images.filter((url) => typeof url === 'string' && url.trim()) : [];
   body.innerHTML = productDetailTemplate({
     title: mapped.title,
@@ -42,8 +43,12 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     hasMultiplePhotos: photos.length > 1,
     photos: photos.map((url, index) => ({ url, index, number: index + 1, active: index === 0 })),
     isGuest: !user,
+    reviews: productReviewsView(product),
   });
   body.setAttribute('aria-busy', 'false');
+
+  const reviewsSection = body.querySelector<HTMLElement>('[data-product-reviews]');
+  if (reviewsSection) void initProductReviews(reviewsSection, product);
 
   let imageIndex = 0;
   const image = body.querySelector('[data-detail-image]');
@@ -60,7 +65,6 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   thumbs.forEach((thumb) => thumb.addEventListener('click', () => showImage(Number(thumb.dataset.detailThumbnail))));
 
   const quantity = body.querySelector<HTMLInputElement>('[data-quantity]');
-  const price = body.querySelector<HTMLElement>('.product-page__price');
   const add = body.querySelector<HTMLButtonElement>('[data-detail-add]');
   const plus = body.querySelector<HTMLButtonElement>('[data-quantity-plus]');
   const message = body.querySelector<HTMLElement>('[data-detail-message]');
@@ -80,7 +84,6 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     }
     const count = selectedCount();
     const stockLimited = count > 0 && cart.isRequestedCountRejected(id, count);
-    if (price) price.textContent = count ? formatProductTotal(unitPrice, count) : '—';
     add.disabled = !cart.canUseCart() || !count || stockLimited;
     if (plus) plus.disabled = !count || count >= 99 || cart.isRequestedCountRejected(id, count + 1);
     const cartError = cart.getErrorMessage();

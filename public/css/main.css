@@ -97,7 +97,9 @@ a:focus-visible, button:focus-visible {
 }
 
 .site-header {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   width: 100%;
   min-height: 74px;
   border-bottom: 1px solid #DED5CB;
@@ -876,6 +878,18 @@ a:focus-visible, button:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.product-card__reviews {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 2px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.product-card__rating { white-space: nowrap; }
+.product-card__star { color: #b87500; }
+.product-card__reviews-count { color: var(--vm-muted); }
 .product-card__cart-actions {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1364,13 +1378,16 @@ a:focus-visible, button:focus-visible {
   line-height: 32px;
 }
 .profile-edit-dialog__close {
+  display: grid;
+  place-items: center;
+  flex: none;
   width: 32px;
   height: 32px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--vm-muted);
-  font-size: 28px;
+  font-size: 36px;
   line-height: 1;
 }
 .profile-edit-dialog--photo .profile-edit-dialog__close:focus-visible {
@@ -1390,11 +1407,50 @@ a:focus-visible, button:focus-visible {
 .profile-edit-dialog__field input {
   width: 100%;
   height: 40px;
-  padding: 8px 12px;
+  padding: 0 12px;
+  line-height: normal;
   border: 1px solid var(--vm-border);
   border-radius: var(--button-radius);
   background: var(--vm-subtle);
   color: var(--vm-text);
+}
+.profile-edit-dialog__input-wrap {
+  position: relative;
+  min-width: 0;
+}
+.profile-edit-dialog__input-wrap input {
+  padding-right: 44px;
+}
+.profile-edit-dialog__clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vm-muted);
+}
+.profile-edit-dialog__clear::before,
+.profile-edit-dialog__clear::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: 14px;
+  height: 1.5px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+.profile-edit-dialog__clear::after {
+  transform: rotate(-45deg);
+}
+.profile-edit-dialog__clear:hover {
+  color: var(--vm-text);
+}
+.profile-edit-dialog :focus-visible {
+  outline: none;
 }
 .profile-edit-dialog__error,
 .profile-edit-dialog__message {

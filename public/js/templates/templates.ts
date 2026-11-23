@@ -20,6 +20,7 @@ export let loginTemplate: Template;
 export let productCardTemplate: Template;
 export let productPageTemplate: Template;
 export let productDetailTemplate: Template;
+export let productReviewsTemplate: Template;
 export let profileTemplate: Template;
 export let signupTemplate: Template;
 
@@ -61,6 +62,12 @@ export async function loadTemplates() {
   const cartItemsSource = await cartItemsResponse.text();
   Handlebars.registerPartial('cartItems', cartItemsSource);
   cartItemsTemplate = Handlebars.compile(cartItemsSource);
+
+  const reviewsResponse = await fetch(new URL('./product-reviews.hbs', import.meta.url));
+  if (!reviewsResponse.ok) throw new Error(`Не удалось загрузить шаблон отзывов: ${reviewsResponse.status}`);
+  const reviewsSource = await reviewsResponse.text();
+  Handlebars.registerPartial('productReviews', reviewsSource);
+  productReviewsTemplate = Handlebars.compile(reviewsSource);
 
   [categoryButtonsTemplate, catalogTemplate, cartTemplate, cartPageTemplate, checkoutPageTemplate, ordersPageTemplate, ordersListTemplate, loginTemplate, productCardTemplate, profileTemplate, signupTemplate, productPageTemplate, productDetailTemplate] = await Promise.all([
     loadTemplate('category-buttons'),

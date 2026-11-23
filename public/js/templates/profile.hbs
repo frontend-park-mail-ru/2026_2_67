@@ -71,24 +71,33 @@
         <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
       </div>
       <div class="profile-edit-dialog__fields">
-        <label class="profile-edit-dialog__field">
-          <span>Фамилия</span>
-          <input type="text" name="surname" value="{{user.surname}}" autocomplete="family-name" />
-        </label>
-        <label class="profile-edit-dialog__field">
-          <span>Имя</span>
-          <input type="text" name="name" value="{{user.name}}" autocomplete="given-name" />
-        </label>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-surname">Фамилия</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-surname" type="text" name="surname" value="{{user.surname}}" autocomplete="family-name" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Фамилия"></button>
+          </div>
+        </div>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-name">Имя</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-name" type="text" name="name" value="{{user.name}}" autocomplete="given-name" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Имя"></button>
+          </div>
+        </div>
         {{!--
         <label class="profile-edit-dialog__field">
           <span>Отчество</span>
           <input type="text" name="patronymic" autocomplete="additional-name" />
         </label>
         --}}
-        <label class="profile-edit-dialog__field">
-          <span>Дата рождения</span>
-          <input type="date" name="birthDate" value="{{birthDate}}" min="1909-01-01" />
-        </label>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-birthDate">Дата рождения</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-birthDate" type="date" name="birthDate" value="{{birthDate}}" min="1909-01-01" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Дата рождения"></button>
+          </div>
+        </div>
       </div>
       {{!--
       <fieldset class="profile-edit-dialog__gender">
@@ -110,10 +119,13 @@
         <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
       </div>
       <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
-        <label class="profile-edit-dialog__field">
-          <span>Почта</span>
-          <input type="email" name="email" value="{{user.email}}" autocomplete="email" />
-        </label>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-email">Почта</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-email" type="email" name="email" value="{{user.email}}" autocomplete="email" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Почта"></button>
+          </div>
+        </div>
       </div>
       <div class="profile-edit-dialog__footer">
         <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
@@ -128,10 +140,13 @@
         <button class="profile-edit-dialog__close" type="button" aria-label="Закрыть">×</button>
       </div>
       <div class="profile-edit-dialog__fields profile-edit-dialog__fields--single">
-        <label class="profile-edit-dialog__field">
-          <span>Номер телефона</span>
-          <input type="tel" name="phoneNumber" value="{{user.phoneNumber}}" autocomplete="tel" />
-        </label>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-phoneNumber">Номер телефона</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-phoneNumber" type="tel" name="phoneNumber" value="{{user.phoneNumber}}" autocomplete="tel" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Номер телефона"></button>
+          </div>
+        </div>
       </div>
       <div class="profile-edit-dialog__footer">
         <button class="profile-edit-dialog__cancel" type="button">Отмена</button>
@@ -153,15 +168,21 @@
           <input type="password" name="currentPassword" autocomplete="current-password" />
         </label>
         --}}
-        <label class="profile-edit-dialog__field">
-          <span>Новый пароль</span>
-          <input type="password" name="newPassword" autocomplete="new-password" aria-describedby="profile-new-password-rules" />
-        </label>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-newPassword">Новый пароль</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-newPassword" type="password" name="newPassword" autocomplete="new-password" aria-describedby="profile-new-password-rules" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Новый пароль"></button>
+          </div>
+        </div>
         <p class="profile-edit-dialog__password-rules password-requirements" id="profile-new-password-rules" aria-live="polite"></p>
-        <label class="profile-edit-dialog__field">
-          <span>Подтвердите новый пароль</span>
-          <input type="password" name="confirmPassword" autocomplete="new-password" />
-        </label>
+        <div class="profile-edit-dialog__field">
+          <label for="profile-confirmPassword">Подтвердите новый пароль</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-confirmPassword" type="password" name="confirmPassword" autocomplete="new-password" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Подтвердите новый пароль"></button>
+          </div>
+        </div>
       </div>
       <p class="profile-edit-dialog__message" id="profile-password-message" role="alert"></p>
       <div class="profile-edit-dialog__footer">

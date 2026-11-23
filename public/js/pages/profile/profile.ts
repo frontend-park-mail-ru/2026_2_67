@@ -7,6 +7,10 @@ import { ProfileRequestError, changePassword, profileFields, updateProfile } fro
 import type { ProfileFields } from './profile-api.js';
 
 const PERSON_NAME_PATTERN = /^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u;
+const MONTH_NAMES = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
 
 function phoneDigits(value: string): string {
   // Берём только цифры номера; +7 или начальную 8 из сохранённого номера пропускаем.
@@ -48,7 +52,7 @@ export function renderProfilePage(app: HTMLElement): void {
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
   const [year, month, day] = birthDate.split('-');
-  const birthDateDisplay = birthDate ? `${day}-${month}-${year}` : '';
+  const birthDateDisplay = birthDate ? `${Number(day)} ${MONTH_NAMES[Number(month) - 1]} ${year}` : '';
   const avatarUrl = typeof user?.avatarSrc === 'string' ? user.avatarSrc : avatarSource(user?.avatarUrl);
   const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
   app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl });
@@ -112,7 +116,7 @@ export function renderProfilePage(app: HTMLElement): void {
       error.className = 'profile-edit-dialog__error';
       error.setAttribute('data-profile-error', input.name === 'phoneNumber' ? 'telephone' : input.name);
       error.setAttribute('role', 'alert');
-      input.closest('label')?.append(error);
+      input.closest('.profile-edit-dialog__field')?.append(error);
       input.addEventListener('input', () => {
         error.textContent = '';
         input.removeAttribute('aria-invalid');
@@ -407,6 +411,17 @@ export function renderProfilePage(app: HTMLElement): void {
     restorePhotoPreview();
     photoFile.disabled = false;
     photoStatus.textContent = currentPhotoStatus;
+  });
+
+  page.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest('[data-clear-input]');
+    if (!button) return;
+    const input = button.parentElement?.querySelector('input');
+    if (!(input instanceof HTMLInputElement) || input.disabled || input.readOnly) return;
+    input.value = '';
+    input.focus();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
   // Кнопка «Отмена» закрывает то окно профиля, в котором находится.

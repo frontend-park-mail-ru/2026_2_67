@@ -1,4 +1,3 @@
-import { authorizedFetch } from '../../shared/auth.js';
 import { productUrl } from '../../shared/product-url.js';
 import { getCategories } from '../categories/categories.js';
 
@@ -42,7 +41,7 @@ export function initSearch(app: HTMLElement): () => void {
     timer = setTimeout(() => {
       if (!isCurrent()) return;
       const params = new URLSearchParams({ query, limit: '5' });
-      void authorizedFetch(`/products?${params}`, { signal })
+      void fetch(`/api/v1/products?${params}`, { signal })
         .then(async (response) => {
           if (!response.ok) throw new Error('Не удалось загрузить товары.');
           const result: unknown = await response.json();

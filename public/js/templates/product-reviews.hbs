@@ -1,0 +1,46 @@
+<section class="product-reviews" aria-labelledby="product-reviews-title" aria-busy="{{reviews.loading}}">
+  <div class="product-reviews__heading">
+    <h2 id="product-reviews-title">Отзывы о товаре</h2>
+    <span class="product-reviews__count" aria-label="Количество текстовых отзывов">{{reviews.textCount}}</span>
+  </div>
+  <div class="product-reviews__list">
+    {{#each reviews.items}}
+      <article class="product-review" aria-label="Отзыв покупателя {{name}}">
+        <header class="product-review__header">
+          <img class="product-review__avatar" src="{{avatar}}" alt="" loading="lazy" width="48" height="48" />
+          <div class="product-review__author">
+            <h3>{{name}}</h3>
+            {{#if date}}<time datetime="{{dateTime}}">{{date}}</time>{{/if}}
+          </div>
+          <div class="product-reviews__stars" role="img" aria-label="{{ratingLabel}}">
+            {{#each stars}}<span class="product-reviews__star" aria-hidden="true">★<span style="width: {{fill}}%">★</span></span>{{/each}}
+          </div>
+        </header>
+        {{#if text}}<p class="product-review__text">{{text}}</p>{{/if}}
+      </article>
+    {{else}}
+      <p class="product-reviews__empty" role="status">{{reviews.emptyMessage}}</p>
+      {{#if reviews.failed}}<button type="button" class="product-page__retry" data-reviews-retry>Повторить загрузку отзывов</button>{{/if}}
+    {{/each}}
+  </div>
+  <aside class="product-reviews__summary" aria-labelledby="product-rating-title">
+    <h2 id="product-rating-title">Общая оценка</h2>
+    <div class="product-reviews__average">
+      <strong>{{reviews.rating}}</strong>
+      <div class="product-reviews__stars" role="img" aria-label="{{reviews.ratingLabel}}">
+        {{#each reviews.stars}}<span class="product-reviews__star" aria-hidden="true">★<span style="width: {{fill}}%">★</span></span>{{/each}}
+      </div>
+    </div>
+    <p class="product-reviews__basis">{{reviews.basis}}</p>
+    <ul class="product-reviews__distribution" aria-label="Распределение оценок">
+      {{#each reviews.distribution}}
+        <li aria-label="Оценка {{rating}} из 5, количество {{count}}">
+          <span>{{rating}} <span aria-hidden="true">★</span></span>
+          <span class="product-reviews__bar" aria-hidden="true"><span style="width: {{percent}}%"></span></span>
+          <span class="product-reviews__rating-count">{{count}}</span>
+        </li>
+      {{/each}}
+    </ul>
+    <button type="button" class="product-page__primary">Написать отзыв</button>
+  </aside>
+</section>

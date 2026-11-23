@@ -1,6 +1,10 @@
 import { productCardTemplate } from '../../templates/templates.js';
 import type { ProductCard } from '../../data/map-api-product.js';
 
+const ratingFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+const reviewPluralRules = new Intl.PluralRules('ru-RU');
+const reviewWords: Record<string, string> = { one: 'отзыв', few: 'отзыва', many: 'отзывов', other: 'отзывов' };
+
 /**
  * Creates product-card HTML from product data.
  * @param {Object} product Catalog product.
@@ -9,6 +13,7 @@ import type { ProductCard } from '../../data/map-api-product.js';
  * @returns {string} Product-card HTML.
  */
 export function createProductCard(product: ProductCard, showAddToCartButton: boolean, quantity = 0, stockLimited = false, stockWarning = ''): string {
+  const reviewsCount = Number.isSafeInteger(product.reviewsCount) && product.reviewsCount >= 0 ? product.reviewsCount : 0;
   return productCardTemplate({
     id: product.id,
     title: product.title,
@@ -16,8 +21,8 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
     price: product.price,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
-    rating: product.rating,
-    reviewsCount: product.reviewsCount,
+    rating: Number.isFinite(product.rating) && product.rating >= 0 && product.rating <= 5 ? ratingFormatter.format(product.rating) : '—',
+    reviewsText: `${reviewsCount} ${reviewWords[reviewPluralRules.select(reviewsCount)]}`,
     showAddToCartButton,
     quantity,
     stockLimited,

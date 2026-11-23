@@ -71,7 +71,6 @@ const { loadTemplates } = await import('../public/js/templates/templates.ts');
 const { rememberProducts } = await import('../public/js/data/product-session.ts');
 const { renderProductPage } = await import('../public/js/pages/product/product-page.ts');
 const { renderCatalogPage } = await import('../public/js/pages/catalog/catalog.ts');
-const { formatProductTotal } = await import('../public/js/pages/product/product-price.ts');
 const { getProfileEmailError } = await import('../public/js/shared/forms/validation.ts');
 const cartItemsTemplate = Handlebars.compile(readFileSync(new URL('../public/js/templates/cart-items.hbs', import.meta.url), 'utf8'));
 const ordersListTemplate = Handlebars.compile(readFileSync(new URL('../public/js/templates/orders-list.hbs', import.meta.url), 'utf8'));
@@ -117,23 +116,19 @@ test('gallery and price use the real catalog response', async () => {
   assert.match(document.querySelector('.product-page__empty').textContent, /недоступны/);
 });
 
-test('price uses discounted unit kopecks on every quantity change', async () => {
-  assert.match(formatProductTotal(199.99, 1), /199,99/);
-  assert.match(formatProductTotal(199.99, 2), /399,98/);
-  assert.match(formatProductTotal(199.99, 3), /599,97/);
-  assert.match(formatProductTotal(199.99, 13), /2\s?599,87/);
+test('price stays at the backend unit price when quantity changes', async () => {
   await renderProductPage(app, 9, () => {});
   await tick();
   const quantity = document.querySelector('[data-quantity]');
   const shown = () => document.querySelector('.product-page__price').textContent;
   assert.match(shown(), /85,49/);
   document.querySelector('[data-quantity-plus]').click();
-  assert.match(shown(), /170,98/);
+  assert.match(shown(), /85,49/);
   document.querySelector('[data-quantity-minus]').click();
   assert.match(shown(), /85,49/);
   quantity.value = '3';
   quantity.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-  assert.match(shown(), /256,47/);
+  assert.match(shown(), /85,49/);
 });
 
 test('description from an item response is escaped and retains line breaks', async () => {
