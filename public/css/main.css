@@ -97,7 +97,9 @@ a:focus-visible, button:focus-visible {
 }
 
 .site-header {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   width: 100%;
   min-height: 74px;
   border-bottom: 1px solid #DED5CB;
