@@ -2,7 +2,6 @@ import { getCurrentUser } from '../../shared/auth.js';
 import { initCart } from '../../components/cart/cart.js';
 import { mapApiProduct } from '../../data/map-api-product.js';
 import { productDetailTemplate, productPageTemplate } from '../../templates/templates.js';
-import { formatProductTotal } from './product-price.js';
 import { loadProduct } from './load-product.js';
 import { initProductReviews, productReviewsView } from './product-reviews.js';
 
@@ -32,7 +31,6 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
 
   const mapped = mapApiProduct(product);
   document.title = `VibeMarket — ${mapped.title}`;
-  const unitPrice = product.priceResult;
   const photos = Array.isArray(mapped.images) ? mapped.images.filter((url) => typeof url === 'string' && url.trim()) : [];
   body.innerHTML = productDetailTemplate({
     title: mapped.title,
@@ -67,7 +65,6 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   thumbs.forEach((thumb) => thumb.addEventListener('click', () => showImage(Number(thumb.dataset.detailThumbnail))));
 
   const quantity = body.querySelector<HTMLInputElement>('[data-quantity]');
-  const price = body.querySelector<HTMLElement>('.product-page__price');
   const add = body.querySelector<HTMLButtonElement>('[data-detail-add]');
   const plus = body.querySelector<HTMLButtonElement>('[data-quantity-plus]');
   const message = body.querySelector<HTMLElement>('[data-detail-message]');
@@ -87,7 +84,6 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     }
     const count = selectedCount();
     const stockLimited = count > 0 && cart.isRequestedCountRejected(id, count);
-    if (price) price.textContent = count ? formatProductTotal(unitPrice, count) : '—';
     add.disabled = !cart.canUseCart() || !count || stockLimited;
     if (plus) plus.disabled = !count || count >= 99 || cart.isRequestedCountRejected(id, count + 1);
     const cartError = cart.getErrorMessage();
