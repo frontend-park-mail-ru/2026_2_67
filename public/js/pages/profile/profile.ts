@@ -7,6 +7,10 @@ import { ProfileRequestError, changePassword, profileFields, updateProfile } fro
 import type { ProfileFields } from './profile-api.js';
 
 const PERSON_NAME_PATTERN = /^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u;
+const MONTH_NAMES = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
 
 function phoneDigits(value: string): string {
   // Берём только цифры номера; +7 или начальную 8 из сохранённого номера пропускаем.
@@ -48,7 +52,7 @@ export function renderProfilePage(app: HTMLElement): void {
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
   const [year, month, day] = birthDate.split('-');
-  const birthDateDisplay = birthDate ? `${day}-${month}-${year}` : '';
+  const birthDateDisplay = birthDate ? `${Number(day)} ${MONTH_NAMES[Number(month) - 1]} ${year}` : '';
   const avatarUrl = typeof user?.avatarSrc === 'string' ? user.avatarSrc : avatarSource(user?.avatarUrl);
   const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
   app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl });
