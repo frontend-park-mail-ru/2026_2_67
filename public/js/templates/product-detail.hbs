@@ -44,3 +44,30 @@
   </aside>
 </div>
 <div data-product-reviews>{{> productReviews}}</div>
+<dialog class="profile-edit-dialog review-dialog" aria-labelledby="review-title">
+  <form class="profile-edit-dialog__content" method="dialog">
+    <div class="profile-edit-dialog__heading">
+      <h2 id="review-title">Написать отзыв</h2>
+      <button class="profile-edit-dialog__close" type="submit" aria-label="Закрыть" formnovalidate>×</button>
+    </div>
+    <p class="review-dialog__product">{{title}}</p>
+    <fieldset class="review-dialog__rating">
+      <legend>Ваша оценка</legend>
+      <div class="review-dialog__stars">
+        {{#each ratings}}
+          <label class="review-dialog__star" data-rating="{{this}}">
+            <input class="visually-hidden" type="radio" name="rating" value="{{this}}" aria-label="{{this}} из 5" />
+            <span aria-hidden="true">★</span>
+          </label>
+        {{/each}}
+      </div>
+    </fieldset>
+    <label class="review-dialog__text" for="review-text">Ваш отзыв</label>
+    <textarea id="review-text" name="review" placeholder="Расскажите, что вам понравилось в товаре, а что можно улучшить."></textarea>
+    <p class="profile-edit-dialog__message" data-review-error role="alert"></p>
+    <div class="profile-edit-dialog__footer">
+      <button class="profile-edit-dialog__cancel" type="submit" formnovalidate>Отмена</button>
+      <button class="profile-edit-dialog__apply" type="submit" data-publish-review>Опубликовать отзыв</button>
+    </div>
+  </form>
+</dialog>

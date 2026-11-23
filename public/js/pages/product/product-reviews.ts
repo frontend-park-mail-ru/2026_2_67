@@ -14,6 +14,7 @@ export interface ProductReview {
 
 export interface ProductReviews {
   wasReview: boolean;
+  canReview?: boolean;
   reviews: ProductReview[];
   avgRating: number;
   reviewsCount: number;
@@ -46,6 +47,7 @@ export function productReviewsView(product: ApiProduct, data?: ProductReviews, f
     loading: !data && !failed,
     failed,
     wasReview: data?.wasReview ?? false,
+    canReview: data?.canReview === true,
     textCount: data?.reviewsCount ?? product.reviewsCount,
     rating: hasRating ? numberFormatter.format(rating) : '—',
     ratingLabel: hasRating ? `${numberFormatter.format(rating)} из 5` : 'Оценок пока нет',
@@ -77,6 +79,7 @@ function isProductReviews(value: unknown): value is ProductReviews {
   const data = value as Record<string, unknown>;
   const counts = [data.reviewsCount, data.rating5Count, data.rating4Count, data.rating3Count, data.rating2Count, data.rating1Count];
   return typeof data.wasReview === 'boolean'
+    && (data.canReview === undefined || typeof data.canReview === 'boolean')
     && typeof data.avgRating === 'number' && Number.isFinite(data.avgRating) && data.avgRating >= 0 && data.avgRating <= 5
     && counts.every((count) => typeof count === 'number' && Number.isSafeInteger(count) && count >= 0)
     && Array.isArray(data.reviews) && data.reviews.every((review: unknown) => {
@@ -90,8 +93,10 @@ function isProductReviews(value: unknown): value is ProductReviews {
     });
 }
 
-export async function initProductReviews(container: HTMLElement, product: ApiProduct): Promise<void> {
+export function initProductReviews(container: HTMLElement, product: ApiProduct): () => Promise<void> {
+  let request = 0;
   async function load(): Promise<void> {
+    const current = ++request;
     container.innerHTML = productReviewsTemplate({ reviews: productReviewsView(product) });
     try {
       const path = `/products/${product.id}/reviews`;
@@ -102,9 +107,9 @@ export async function initProductReviews(container: HTMLElement, product: ApiPro
       if (!response.ok) throw new Error(`Не удалось загрузить отзывы: ${response.status}`);
       const data: unknown = await response.json();
       if (!isProductReviews(data)) throw new Error('Неверный формат отзывов.');
-      if (container.isConnected) container.innerHTML = productReviewsTemplate({ reviews: productReviewsView(product, data) });
+      if (current === request && container.isConnected) container.innerHTML = productReviewsTemplate({ reviews: productReviewsView(product, data) });
     } catch {
-      if (container.isConnected) container.innerHTML = productReviewsTemplate({ reviews: productReviewsView(product, undefined, true) });
+      if (current === request && container.isConnected) container.innerHTML = productReviewsTemplate({ reviews: productReviewsView(product, undefined, true) });
     }
   }
   container.addEventListener('click', (event) => {
@@ -117,5 +122,6 @@ export async function initProductReviews(container: HTMLElement, product: ApiPro
       image.src = '/images/profile-avatar-placeholder.png';
     }
   }, true);
-  await load();
+  void load();
+  return load;
 }

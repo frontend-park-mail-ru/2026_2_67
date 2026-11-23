@@ -41,6 +41,8 @@
         </li>
       {{/each}}
     </ul>
-    <button type="button" class="product-page__primary">Написать отзыв</button>
+    {{#if reviews.canReview}}
+      <button type="button" class="product-page__primary" data-write-review>Написать отзыв</button>
+    {{/if}}
   </aside>
 </section>

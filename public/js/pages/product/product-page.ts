@@ -1,4 +1,4 @@
-import { getCurrentUser } from '../../shared/auth.js';
+import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { initCart } from '../../components/cart/cart.js';
 import { mapApiProduct } from '../../data/map-api-product.js';
 import { productDetailTemplate, productPageTemplate } from '../../templates/templates.js';
@@ -44,11 +44,103 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     photos: photos.map((url, index) => ({ url, index, number: index + 1, active: index === 0 })),
     isGuest: !user,
     reviews: productReviewsView(product),
+    ratings: [1, 2, 3, 4, 5],
   });
   body.setAttribute('aria-busy', 'false');
 
   const reviewsSection = body.querySelector<HTMLElement>('[data-product-reviews]');
-  if (reviewsSection) void initProductReviews(reviewsSection, product);
+  const reloadReviews = reviewsSection ? initProductReviews(reviewsSection, product) : null;
+
+  const dialog = body.querySelector<HTMLDialogElement>('.review-dialog');
+  const rating = dialog?.querySelector<HTMLElement>('.review-dialog__stars');
+  if (dialog && rating) {
+    const form = dialog.querySelector('form');
+    const text = dialog.querySelector<HTMLTextAreaElement>('textarea');
+    const publish = dialog.querySelector<HTMLButtonElement>('[data-publish-review]');
+    const error = dialog.querySelector<HTMLElement>('[data-review-error]');
+    const stars = rating.querySelectorAll<HTMLElement>('[data-rating]');
+    const getRating = () => Number(rating.querySelector<HTMLInputElement>('input:checked')?.value ?? 0);
+    function highlightStars(rating: number): void {
+      stars.forEach((star) => {
+        star.classList.toggle('is-active', Number(star.dataset.rating) <= rating);
+      });
+    }
+    reviewsSection?.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('[data-write-review]')) {
+        if (error) error.textContent = '';
+        highlightStars(getRating());
+        dialog.showModal();
+      }
+    });
+    rating.addEventListener('pointerover', (event) => {
+      if (!(event.target instanceof Element)) return;
+      const star = event.target.closest<HTMLElement>('[data-rating]');
+      if (star) highlightStars(Number(star.dataset.rating));
+    });
+    rating.addEventListener('pointerleave', () => highlightStars(getRating()));
+    rating.addEventListener('change', () => highlightStars(getRating()));
+    form?.addEventListener('submit', async (event) => {
+      if (event.submitter !== publish) return;
+      event.preventDefault();
+      if (!publish || !text || !error || publish.disabled) return;
+      const value = getRating();
+      if (!value) {
+        error.textContent = 'Выберите оценку от 1 до 5 звёзд.';
+        return;
+      }
+      error.textContent = '';
+      publish.disabled = true;
+      publish.textContent = 'Публикация…';
+      form.setAttribute('aria-busy', 'true');
+      text.disabled = true;
+      rating.querySelectorAll('input').forEach((input) => { input.disabled = true; });
+      try {
+        const response = await authorizedFetch(`/products/${id}/reviews`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: value, review: text.value.trim() }),
+        });
+        if (!page.isConnected) return;
+        if (response.ok) {
+          dialog.close();
+          form.reset();
+          highlightStars(0);
+          void reloadReviews?.();
+        } else if (response.status === 401 || response.status === 403) {
+          error.textContent = 'Не удалось подтвердить вход. Войдите в аккаунт снова.';
+        } else if (response.status === 409) {
+          error.textContent = 'Вы уже оставили отзыв на этот товар.';
+          void reloadReviews?.();
+        } else if (response.status === 422) {
+          const details: unknown = await response.json().catch(() => null);
+          error.textContent = details && typeof details === 'object'
+            && 'errMessage' in details && typeof details.errMessage === 'string'
+            ? details.errMessage : 'Оставить отзыв можно после получения товара. Проверьте оценку.';
+          void reloadReviews?.();
+        } else if (response.status === 404) {
+          error.textContent = 'Товар не найден.';
+        } else {
+          error.textContent = 'Не удалось опубликовать отзыв. Попробуйте ещё раз.';
+        }
+      } catch {
+        if (page.isConnected) error.textContent = 'Не удалось связаться с сервером. Попробуйте ещё раз.';
+      } finally {
+        publish.disabled = false;
+        publish.textContent = 'Опубликовать отзыв';
+        form.setAttribute('aria-busy', 'false');
+        text.disabled = false;
+        rating.querySelectorAll('input').forEach((input) => { input.disabled = false; });
+      }
+    });
+    let outside = false;
+    dialog.addEventListener('pointerdown', (event) => {
+      outside = event.target === dialog;
+    });
+    dialog.addEventListener('click', (event) => {
+      if (outside && event.target === dialog) dialog.close();
+      outside = false;
+    });
+  }
 
   let imageIndex = 0;
   const image = body.querySelector('[data-detail-image]');
