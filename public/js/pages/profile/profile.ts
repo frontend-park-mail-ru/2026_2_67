@@ -116,7 +116,7 @@ export function renderProfilePage(app: HTMLElement): void {
       error.className = 'profile-edit-dialog__error';
       error.setAttribute('data-profile-error', input.name === 'phoneNumber' ? 'telephone' : input.name);
       error.setAttribute('role', 'alert');
-      input.closest('label')?.append(error);
+      input.closest('.profile-edit-dialog__field')?.append(error);
       input.addEventListener('input', () => {
         error.textContent = '';
         input.removeAttribute('aria-invalid');
@@ -411,6 +411,17 @@ export function renderProfilePage(app: HTMLElement): void {
     restorePhotoPreview();
     photoFile.disabled = false;
     photoStatus.textContent = currentPhotoStatus;
+  });
+
+  page.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest('[data-clear-input]');
+    if (!button) return;
+    const input = button.parentElement?.querySelector('input');
+    if (!(input instanceof HTMLInputElement) || input.disabled || input.readOnly) return;
+    input.value = '';
+    input.focus();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
   // Кнопка «Отмена» закрывает то окно профиля, в котором находится.
