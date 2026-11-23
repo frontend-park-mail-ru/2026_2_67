@@ -4,6 +4,7 @@ import { mapApiProduct } from '../../data/map-api-product.js';
 import { productDetailTemplate, productPageTemplate } from '../../templates/templates.js';
 import { formatProductTotal } from './product-price.js';
 import { loadProduct } from './load-product.js';
+import { initProductReviews, productReviewsView } from './product-reviews.js';
 
 export async function renderProductPage(app: HTMLElement, id: number, navigate: (path: string) => void): Promise<void> {
   const user = getCurrentUser();
@@ -42,8 +43,12 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     hasMultiplePhotos: photos.length > 1,
     photos: photos.map((url, index) => ({ url, index, number: index + 1, active: index === 0 })),
     isGuest: !user,
+    reviews: productReviewsView(product),
   });
   body.setAttribute('aria-busy', 'false');
+
+  const reviewsSection = body.querySelector<HTMLElement>('[data-product-reviews]');
+  if (reviewsSection) void initProductReviews(reviewsSection, product);
 
   let imageIndex = 0;
   const image = body.querySelector('[data-detail-image]');

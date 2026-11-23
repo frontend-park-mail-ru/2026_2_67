@@ -8,6 +8,8 @@ export interface ApiProduct {
   priceResult: number;
   description?: string | null;
   rating: number;
+  raiting?: number;
+  marksCount?: number;
   reviewsCount: number;
 }
 

@@ -864,6 +864,18 @@ a:focus-visible, button:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.product-card__reviews {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 2px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.product-card__rating { white-space: nowrap; }
+.product-card__star { color: #b87500; }
+.product-card__reviews-count { color: var(--vm-muted); }
 .product-card__cart-actions {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
