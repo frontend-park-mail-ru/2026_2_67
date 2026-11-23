@@ -1018,6 +1018,166 @@ a:focus-visible, button:focus-visible {
 .profile-page__menu-item:hover {
   text-decoration: none;
 }
+.orders-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.orders-page__filter-field {
+  display: grid;
+  flex: 0 1 240px;
+  min-width: 200px;
+}
+.orders-page__status-filter {
+  position: relative;
+  color: var(--vm-text);
+  font-size: 14px;
+}
+.orders-page__status-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--button-radius);
+  background: var(--vm-surface);
+  list-style: none;
+  cursor: pointer;
+}
+.orders-page__status-toggle::-webkit-details-marker {
+  display: none;
+}
+.orders-page__status-toggle::after {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+.orders-page__status-filter[open] .orders-page__status-toggle::after {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+.orders-page__status-options {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 240px;
+  max-width: calc(100vw - 56px);
+  padding: 8px;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--corner-radius);
+  background: var(--vm-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--vm-shadow) 15%, transparent);
+}
+.orders-page__status-options button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--vm-text);
+  text-align: left;
+}
+.orders-page__status-options button:hover,
+.orders-page__status-options button[aria-pressed='true'] {
+  background: var(--vm-hover);
+}
+.orders-page__status-toggle:focus-visible,
+.orders-page__status-options button:focus-visible {
+  outline: 3px solid var(--vm-dark);
+  outline-offset: -3px;
+}
+.orders-page__sort-filter {
+  position: relative;
+  color: var(--vm-text);
+  font-size: 14px;
+}
+.orders-page__sort-toggle,
+.orders-page__sort-options button {
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--vm-text);
+  cursor: pointer;
+}
+.orders-page__sort-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--button-radius);
+  background: var(--vm-surface);
+  list-style: none;
+}
+.orders-page__sort-toggle::-webkit-details-marker {
+  display: none;
+}
+.orders-page__sort-toggle::after {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+.orders-page__sort-filter[open] .orders-page__sort-toggle::after {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+.orders-page__sort-options {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 240px;
+  max-width: calc(100vw - 56px);
+  padding: 8px;
+  border: 1px solid var(--vm-border);
+  border-radius: var(--corner-radius);
+  background: var(--vm-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--vm-shadow) 15%, transparent);
+}
+.orders-page__sort-options button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.orders-page__sort-options button:hover,
+.orders-page__sort-options button[aria-pressed='true'] {
+  background: var(--vm-hover);
+}
+.orders-page__sort-toggle:focus-visible,
+.orders-page__sort-options button:focus-visible {
+  outline: 3px solid var(--vm-dark);
+  outline-offset: -3px;
+}
+.orders-page__pagination {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin-top: 16px;
+}
+.orders-page__loading {
+  margin: 0;
+}
+.orders-page__load-more[hidden] {
+  display: none;
+}
+.orders-page__sentinel {
+  width: 100%;
+  height: 1px;
+}
 .orders-page__list {
   display: grid;
   gap: 16px;

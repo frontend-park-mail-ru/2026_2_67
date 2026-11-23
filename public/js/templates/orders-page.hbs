@@ -12,7 +12,38 @@
         </nav>
       </aside>
       <section class="profile-page__information" aria-label="История заказов">
-        <div class="orders-page__list" aria-live="polite" aria-busy="true">Загружаем заказы…</div>
+        <form class="orders-page__filters" aria-label="Фильтры заказов">
+          <div class="orders-page__filter-field">
+            <input type="hidden" name="status" value="" />
+            <details class="orders-page__status-filter">
+              <summary class="orders-page__status-toggle" aria-label="Фильтр по статусу"><span id="orders-status-value">Все статусы</span></summary>
+              <div class="orders-page__status-options" aria-label="Статус заказа">
+                <button type="button" data-status="" aria-pressed="true">Все статусы</button>
+                <button type="button" data-status="Обрабатывается" aria-pressed="false">Обрабатывается</button>
+                <button type="button" data-status="В пути" aria-pressed="false">В пути</button>
+                <button type="button" data-status="Ожидает в пункте выдачи" aria-pressed="false">Ожидает в пункте выдачи</button>
+                <button type="button" data-status="Получен" aria-pressed="false">Получен</button>
+                <button type="button" data-status="Возвращен" aria-pressed="false">Возвращен</button>
+              </div>
+            </details>
+          </div>
+          <div class="orders-page__filter-field">
+            <input type="hidden" name="sortBy" value="desc-date" />
+            <details class="orders-page__sort-filter">
+              <summary class="orders-page__sort-toggle" aria-label="Сортировка заказов"><span id="orders-sort-value">Сначала новые</span></summary>
+              <div class="orders-page__sort-options" aria-label="Сортировка заказов">
+                <button type="button" data-sort-by="desc-date" aria-pressed="true">Сначала новые</button>
+                <button type="button" data-sort-by="asc-date" aria-pressed="false">Сначала старые</button>
+              </div>
+            </details>
+          </div>
+        </form>
+        <div class="orders-page__list" aria-busy="true"></div>
+        <div class="orders-page__pagination" aria-live="polite">
+          <p class="orders-page__loading" role="status">Загружаем заказы…</p>
+          <button class="orders-page__load-more orders-page__retry" type="button" hidden>Показать ещё</button>
+          <div class="orders-page__sentinel" aria-hidden="true"></div>
+        </div>
       </section>
     </div>
   </main>
