@@ -40,6 +40,15 @@ try {
 }
 
 const pathsByPage: Record<string, string> = { catalog: '/', login: '/login', signup: '/signup', profile: '/profile', cart: '/cart', checkout: '/checkout', orders: '/orders' };
+const pageTitles: Record<string, string> = {
+  '/': 'Каталог товаров',
+  '/login': 'Вход',
+  '/signup': 'Регистрация',
+  '/profile': 'Личный кабинет',
+  '/cart': 'Корзина',
+  '/checkout': 'Оформление заказа',
+  '/orders': 'Мои заказы',
+};
 const routes: Record<string, () => void> = {
   '/': () => renderCatalogPage(app),
   '/login': () => renderLoginPage(app, () => navigate('/')),
@@ -62,6 +71,7 @@ function renderCurrentRoute(): void {
 
   const productId = productIdFromPath(window.location.pathname);
   if (productId !== null) {
+    document.title = 'VibeMarket — Товар';
     void renderProductPage(app, productId, navigate);
     void renderCategories(app);
     return;
@@ -69,6 +79,16 @@ function renderCurrentRoute(): void {
 
   const renderPage = routes[window.location.pathname];
   if (renderPage) {
+    let title = pageTitles[window.location.pathname];
+    if (window.location.pathname === '/') {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get('category')?.trim();
+      const query = params.get('query')?.trim();
+      if (category) title = category;
+      if (query) title = `Поиск: ${query}`;
+      if (category && query) title = `${category} — поиск: ${query}`;
+    }
+    document.title = `VibeMarket — ${title}`;
     renderPage();
     applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     void renderCategories(app);
@@ -76,6 +96,7 @@ function renderCurrentRoute(): void {
   }
 
   window.history.replaceState({}, '', '/');
+  document.title = 'VibeMarket — Каталог товаров';
   routes['/']();
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   void renderCategories(app);

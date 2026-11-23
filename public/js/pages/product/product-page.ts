@@ -24,12 +24,14 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   const product = await loadProduct(id);
   if (!page.isConnected) return;
   if (!product) {
+    document.title = 'VibeMarket — Товар недоступен';
     body.innerHTML = '<div class="product-page__empty" role="alert"><h1>Не удалось открыть товар</h1><p>Сведения об этом товаре сейчас недоступны. Попробуйте найти его в каталоге.</p><a href="/" data-page="catalog">Перейти в каталог</a></div>';
     body.setAttribute('aria-busy', 'false');
     return;
   }
 
   const mapped = mapApiProduct(product);
+  document.title = `VibeMarket — ${mapped.title}`;
   const unitPrice = product.priceResult;
   const photos = Array.isArray(mapped.images) ? mapped.images.filter((url) => typeof url === 'string' && url.trim()) : [];
   body.innerHTML = productDetailTemplate({
