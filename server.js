@@ -40,15 +40,24 @@ const server = createServer((request, response) => {
         host: upstreamUrl.host,
       },
     }, (proxyResponse) => {
+      if (response.destroyed || response.writableEnded) {
+        proxyResponse.destroy();
+        return;
+      }
       response.writeHead(proxyResponse.statusCode || 500, proxyResponse.headers);
-      pipeline(proxyResponse, response, (error) => {
-        if (error && !response.headersSent) {
-          response.writeHead(502).end('Bad gateway');
-        }
-      });
+      pipeline(proxyResponse, response, () => {});
     });
 
+    response.on('close', () => {
+      if (!response.writableFinished) proxyRequest.destroy();
+    });
+    request.on('error', () => proxyRequest.destroy());
     proxyRequest.on('error', () => {
+      if (response.destroyed || response.writableEnded) return;
+      if (response.headersSent) {
+        response.destroy();
+        return;
+      }
       response.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
       response.end('Backend unavailable');
     });

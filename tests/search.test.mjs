@@ -39,7 +39,7 @@ test.beforeEach(() => {
   window.history.replaceState({}, '', '/');
   app.innerHTML = header({});
   requests = [];
-  productResponse = () => Response.json({ products: [] });
+  productResponse = () => Response.json({ products: [], categories: [] });
 });
 
 function input(value) {
@@ -49,7 +49,7 @@ function input(value) {
   return field;
 }
 
-test('debounce, minimum length, errors and retry with cached categories', async (t) => {
+test('debounce, minimum length, errors and server suggestions', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   input('т');
   t.mock.timers.tick(400);
@@ -62,11 +62,13 @@ test('debounce, minimum length, errors and retry with cached categories', async 
   t.mock.timers.tick(400);
   await tick();
   assert.match(app.textContent, /Не удалось загрузить товары/);
-  assert.match(app.textContent, /Не удалось загрузить категории/);
-  assert.equal(requests[0].path, '/api/v1/products?query=%D1%82%D0%B5%D0%BB&limit=5');
+  assert.equal(app.querySelector('[aria-labelledby="search-categories-title"]').hidden, true);
+  assert.equal(requests[0].path, '/api/v1/search/suggestions?query=%D1%82%D0%B5%D0%BB&limit=5');
   assert.equal(requests[0].options.credentials, 'include');
-  categoriesFail = false;
-  productResponse = () => Response.json({ products: Array.from({ length: 7 }, (_, i) => ({ id: i + 1, name: '<img src=x>' })) });
+  productResponse = () => Response.json({
+    products: Array.from({ length: 7 }, (_, i) => ({ id: i + 1, name: '<img src=x>' })),
+    categories: ['Телефоны', 'Телевизоры', 'Телеаксессуары', 'Телекамеры'].map((name, i) => ({ id: i + 1, name })),
+  });
   input('теле');
   t.mock.timers.tick(400);
   await tick();
@@ -76,6 +78,13 @@ test('debounce, minimum length, errors and retry with cached categories', async 
   assert.equal(app.querySelector('.site-header__suggestions img'), null);
   assert.equal(app.querySelector('[data-product-link]').getAttribute('href'), '/products/1/img-src-x');
   assert.equal(app.querySelector('[data-category]').dataset.category, 'Телефоны');
+  assert.equal(requests.length, 2);
+  assert.equal(categoryRequests, 0);
+});
+
+test('category menu retries and caches independently of search', async () => {
+  await assert.rejects(getCategories());
+  categoriesFail = false;
   await getCategories();
   await getCategories();
   assert.equal(categoryRequests, 2);
@@ -88,12 +97,12 @@ test('late responses cannot replace a newer query or reopen a dismissed panel', 
   input('старый');
   t.mock.timers.tick(400);
   await tick();
-  productResponse = () => Response.json({ products: [{ id: 9, name: 'Новый' }] });
+  productResponse = () => Response.json({ products: [{ id: 9, name: 'Новый' }], categories: [] });
   const field = input('новый');
   assert.equal(requests[0].options.signal.aborted, true);
   t.mock.timers.tick(400);
   await tick();
-  resolveOld(Response.json({ products: [{ id: 1, name: 'Старый' }] }));
+  resolveOld(Response.json({ products: [{ id: 1, name: 'Старый' }], categories: [] }));
   await tick();
   assert.equal(app.querySelector('[data-product-link]').textContent, 'Новый');
   assert.equal(app.querySelector('[aria-labelledby="search-categories-title"]').hidden, true);
@@ -118,7 +127,7 @@ test('empty results and late response after Escape', async (t) => {
   const field = input('запрос');
   t.mock.timers.tick(400);
   field.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  resolvePending(Response.json({ products: [{ id: 1, name: 'Поздний' }] }));
+  resolvePending(Response.json({ products: [{ id: 1, name: 'Поздний' }], categories: [] }));
   await tick();
   assert.equal(app.querySelector('.site-header__suggestions').hidden, true);
   assert.equal(app.querySelector('[data-product-link]'), null);
@@ -149,7 +158,7 @@ test('catalog sends query with category, cursor and retry, without local filteri
 
 test('focus stays within suggestions, Escape preserves input, and a replaced header works', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
-  productResponse = () => Response.json({ products: [{ id: 9, name: 'Телефон' }] });
+  productResponse = () => Response.json({ products: [{ id: 9, name: 'Телефон' }], categories: [] });
   const field = input('тел');
   field.focus();
   t.mock.timers.tick(400);

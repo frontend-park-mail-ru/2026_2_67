@@ -1,5 +1,4 @@
 import { productUrl } from '../../shared/product-url.js';
-import { getCategories } from '../categories/categories.js';
 
 /** Подключается один раз к app и работает после замены шапки при SPA-переходах. */
 export function initSearch(app: HTMLElement): () => void {
@@ -41,12 +40,14 @@ export function initSearch(app: HTMLElement): () => void {
     timer = setTimeout(() => {
       if (!isCurrent()) return;
       const params = new URLSearchParams({ query, limit: '5' });
-      void fetch(`/api/v1/products?${params}`, { signal })
+      void fetch(`/api/v1/search/suggestions?${params}`, { signal, credentials: 'include' })
         .then(async (response) => {
           if (!response.ok) throw new Error('Не удалось загрузить товары.');
           const result: unknown = await response.json();
           if (!isCurrent()) return;
-          if (!result || typeof result !== 'object' || !('products' in result) || !Array.isArray(result.products)) {
+          if (!result || typeof result !== 'object'
+            || !('products' in result) || !Array.isArray(result.products)
+            || !('categories' in result) || !Array.isArray(result.categories)) {
             throw new Error('Неверный ответ поиска.');
           }
           for (const product of result.products.slice(0, 5)) {
@@ -62,32 +63,31 @@ export function initSearch(app: HTMLElement): () => void {
             item.append(link);
             products.append(item);
           }
+          for (const category of result.categories.slice(0, 3)) {
+            if (!category || !Number.isSafeInteger(category.id) || category.id <= 0 || typeof category.name !== 'string') {
+              throw new Error('Неверная категория в ответе поиска.');
+            }
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'site-header__suggestion';
+            button.textContent = category.name;
+            button.dataset.category = category.name;
+            const item = document.createElement('li');
+            item.append(button);
+            categories.append(item);
+          }
           productStatus.textContent = products.childElementCount ? '' : 'Товары не найдены.';
+          categorySection.hidden = categories.childElementCount === 0;
+          categoryStatus.textContent = '';
         })
         .catch(() => {
           if (!isCurrent()) return;
           products.replaceChildren();
+          categories.replaceChildren();
+          categorySection.hidden = true;
+          categoryStatus.textContent = '';
           productStatus.textContent = 'Не удалось загрузить товары. Измените запрос или повторно выберите поле поиска.';
         });
-
-      void getCategories().then((all) => {
-        if (!isCurrent()) return;
-        const matches = all.filter((item) => item.category.toLocaleLowerCase().includes(query.toLocaleLowerCase())).slice(0, 3);
-        for (const category of matches) {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'site-header__suggestion';
-          button.textContent = category.category;
-          button.dataset.category = category.category;
-          const item = document.createElement('li');
-          item.append(button);
-          categories.append(item);
-        }
-        categorySection.hidden = matches.length === 0;
-        categoryStatus.textContent = '';
-      }).catch(() => {
-        if (isCurrent()) categoryStatus.textContent = 'Не удалось загрузить категории. Измените запрос или повторно выберите поле поиска.';
-      });
     }, 400);
   }
 
