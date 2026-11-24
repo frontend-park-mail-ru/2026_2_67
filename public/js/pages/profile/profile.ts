@@ -26,6 +26,31 @@ function formatPhone(value: string): string {
   return ['+7', ...groups.filter(Boolean)].join(' ');
 }
 
+function formatDescription(value: string): string {
+  const maxLineLength = 50;
+  const maxLines = 5;
+  const lines: string[] = [];
+  let truncated = false;
+
+  value.split(/\r?\n/).forEach((line) => {
+    for (let start = 0; start < line.length; start += maxLineLength) {
+      lines.push(line.slice(start, start + maxLineLength));
+    }
+    if (line.length === 0) lines.push('');
+  });
+
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
+    truncated = true;
+  }
+  if (value.length > lines.join('\n').length) truncated = true;
+  if (truncated) {
+    const lastLine = lines[maxLines - 1] ?? '';
+    lines[maxLines - 1] = lastLine.slice(0, maxLineLength - 3) + '...';
+  }
+  return lines.join('\n');
+}
+
 function requireElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
   if (!(element instanceof HTMLElement)) throw new Error(`Не найден элемент профиля: ${selector}`);
@@ -55,7 +80,8 @@ export function renderProfilePage(app: HTMLElement): void {
   const birthDateDisplay = birthDate ? `${Number(day)} ${MONTH_NAMES[Number(month) - 1]} ${year}` : '';
   const avatarUrl = typeof user?.avatarSrc === 'string' ? user.avatarSrc : avatarSource(user?.avatarUrl);
   const displayedUser = user ? { ...user, avatarSrc: avatarUrl } : null;
-  app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl });
+  const descriptionDisplay = typeof user?.description === 'string' ? formatDescription(user.description) : '';
+  app.innerHTML = profileTemplate({ user: displayedUser, isProfile: true, fullName, birthDate, birthDateDisplay, avatarUrl, descriptionDisplay });
 
   const page = requireElement(app, '.profile-page');
   initCart(page, user?.userId);

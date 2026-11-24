@@ -25,7 +25,7 @@
                 </div>
                 <div>
                   <dt>О себе</dt>
-                  <dd>{{#if user.description}}{{user.description}}{{else}}Не указано{{/if}}</dd>
+                  <dd class="profile-page__description">{{#if descriptionDisplay}}{{descriptionDisplay}}{{else}}Не указано{{/if}}</dd>
                 </div>
                 {{!-- Пол скрыт до подключения данных профиля. --}}
                 {{!--

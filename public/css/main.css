@@ -1478,6 +1478,10 @@ a:focus-visible, button:focus-visible {
 .profile-page__account-facts dd {
   margin: 0;
 }
+.profile-page__description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
 .profile-page__account,
 .profile-page__security {
   margin-top: 32px;
