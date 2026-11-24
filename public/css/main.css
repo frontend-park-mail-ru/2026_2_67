@@ -1580,9 +1580,10 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-text);
 }
 .profile-edit-dialog__field textarea {
-  min-height: 100px;
-  height: 100px;
+  min-height: 120px;
+  height: 120px;
   padding-block: 10px;
+  overflow-y: auto;
   resize: vertical;
   line-height: 1.3;
 }
