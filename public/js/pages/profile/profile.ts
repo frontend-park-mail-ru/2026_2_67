@@ -47,7 +47,7 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
 /** Shows the profile information already loaded for the current session. */
 export function renderProfilePage(app: HTMLElement): void {
   const user = getCurrentUser();
-  const fullName = [user?.name, user?.surname].filter(Boolean).join(' ');
+  const fullName = [user?.name, user?.surname, user?.patronymic].filter(Boolean).join(' ');
   const savedBirthDate = typeof user?.birthDate === 'string' ? user.birthDate : '';
   const birthDate = /^\d{4}-\d{2}-\d{2}/.test(savedBirthDate)
     ? savedBirthDate.slice(0, 10) : '';
@@ -94,7 +94,7 @@ export function renderProfilePage(app: HTMLElement): void {
 
   const editableDialogs = [dialog, emailDialog, phoneDialog];
   const errorNames: Record<keyof ProfileFields, string> = {
-    name: 'nameErrMessage', surname: 'surnameErrMessage', telephone: 'telephoneErrMessage',
+    name: 'nameErrMessage', surname: 'surnameErrMessage', patronymic: 'patronymicErrMessage', telephone: 'telephoneErrMessage',
     email: 'emailErrMessage', birthDate: 'birthDateErrMessage', description: 'descriptionErrMessage',
   };
   let saved = profileFields(user ?? {});
@@ -110,8 +110,9 @@ export function renderProfilePage(app: HTMLElement): void {
     message.className = 'profile-edit-dialog__message';
     message.setAttribute('role', 'alert');
     editor.querySelector('.profile-edit-dialog__footer')?.before(message);
-    editor.querySelectorAll('input').forEach((input) => {
-      if (!(input instanceof HTMLInputElement) || !(input.name in errorNames || input.name === 'phoneNumber')) return;
+    editor.querySelectorAll('input, textarea').forEach((input) => {
+      if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
+        || !(input.name in errorNames || input.name === 'phoneNumber')) return;
       const error = document.createElement('span');
       error.className = 'profile-edit-dialog__error';
       error.setAttribute('data-profile-error', input.name === 'phoneNumber' ? 'telephone' : input.name);
@@ -131,8 +132,9 @@ export function renderProfilePage(app: HTMLElement): void {
       message.textContent = '';
       editor.querySelectorAll('[data-profile-error]').forEach((element) => { element.textContent = ''; });
       const fields = { ...saved };
-      editor.querySelectorAll('input').forEach((input) => {
-        if (!(input instanceof HTMLInputElement) || !(input.name in fields || input.name === 'phoneNumber')) return;
+      editor.querySelectorAll('input, textarea').forEach((input) => {
+        if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
+          || !(input.name in fields || input.name === 'phoneNumber')) return;
         const key = (input.name === 'phoneNumber' ? 'telephone' : input.name) as keyof ProfileFields;
         if (input.type !== 'date' || input.dataset.changed === 'true') {
           fields[key] = input.value;
@@ -141,6 +143,7 @@ export function renderProfilePage(app: HTMLElement): void {
       if (editor === dialog) {
         const invalidName = fields.name !== '' && !PERSON_NAME_PATTERN.test(fields.name.trim());
         const invalidSurname = fields.surname !== '' && !PERSON_NAME_PATTERN.test(fields.surname.trim());
+        const invalidPatronymic = fields.patronymic !== '' && !PERSON_NAME_PATTERN.test(fields.patronymic.trim());
         if (invalidName) {
           requireElement(editor, '[data-profile-error="name"]').textContent = 'Имя может содержать только буквы, пробелы, дефисы и апострофы.';
           requireInput(editor, 'input[name="name"]').setAttribute('aria-invalid', 'true');
@@ -149,7 +152,11 @@ export function renderProfilePage(app: HTMLElement): void {
           requireElement(editor, '[data-profile-error="surname"]').textContent = 'Фамилия может содержать только буквы, пробелы, дефисы и апострофы.';
           requireInput(editor, 'input[name="surname"]').setAttribute('aria-invalid', 'true');
         }
-        if (invalidName || invalidSurname) return;
+        if (invalidPatronymic) {
+          requireElement(editor, '[data-profile-error="patronymic"]').textContent = 'Отчество может содержать только буквы, пробелы, дефисы и апострофы.';
+          requireInput(editor, 'input[name="patronymic"]').setAttribute('aria-invalid', 'true');
+        }
+        if (invalidName || invalidSurname || invalidPatronymic) return;
 
         let dateError = '';
         if (birthDateInput.validity.badInput) {
@@ -417,8 +424,9 @@ export function renderProfilePage(app: HTMLElement): void {
     if (!(event.target instanceof Element)) return;
     const button = event.target.closest('[data-clear-input]');
     if (!button) return;
-    const input = button.parentElement?.querySelector('input');
-    if (!(input instanceof HTMLInputElement) || input.disabled || input.readOnly) return;
+    const input = button.parentElement?.querySelector('input, textarea');
+    if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
+      || input.disabled || input.readOnly) return;
     input.value = '';
     input.focus();
     input.dispatchEvent(new Event('input', { bubbles: true }));

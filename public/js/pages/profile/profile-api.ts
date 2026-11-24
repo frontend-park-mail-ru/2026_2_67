@@ -3,6 +3,7 @@ import { authorizedFetch } from '../../shared/auth.js';
 export interface ProfileFields {
   name: string;
   surname: string;
+  patronymic: string;
   telephone: string;
   email: string;
   birthDate: string;
@@ -28,7 +29,7 @@ export function profileFields(value: object): ProfileFields {
     const result: unknown = Reflect.get(value, name);
     return typeof result === 'string' ? result : '';
   };
-  return { name: field('name'), surname: field('surname'), telephone: field('telephone'),
+  return { name: field('name'), surname: field('surname'), patronymic: field('patronymic'), telephone: field('telephone'),
     email: field('email'), birthDate: field('birthDate'), description: field('description') };
 }
 
@@ -38,6 +39,7 @@ export async function updateProfile(userId: string, fields: ProfileFields, avata
   const body = new FormData();
   body.set('name', fields.name);
   body.set('surname', fields.surname);
+  body.set('patronymic', fields.patronymic);
   body.set('telephone', fields.telephone);
   body.set('email', fields.email);
   body.set('birthDate', birthDate);
@@ -50,7 +52,7 @@ export async function updateProfile(userId: string, fields: ProfileFields, avata
   const result: unknown = await response.json().catch(() => ({}));
   if (!response.ok) throw new ProfileRequestError(response.status, result);
   if (typeof result !== 'object' || result === null ||
-    !(['name', 'surname', 'telephone', 'email', 'birthDate', 'description', 'avatarUrl'] as const)
+    !(['name', 'surname', 'patronymic', 'telephone', 'email', 'birthDate', 'description', 'avatarUrl'] as const)
       .every((key) => typeof Reflect.get(result, key) === 'string')) {
     throw new Error('Сервер вернул профиль в неожиданном формате.');
   }

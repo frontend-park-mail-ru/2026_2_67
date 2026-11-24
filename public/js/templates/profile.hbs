@@ -23,6 +23,10 @@
                   <dt>Дата рождения</dt>
                   <dd>{{#if birthDateDisplay}}{{birthDateDisplay}}{{else}}Не указано{{/if}}</dd>
                 </div>
+                <div>
+                  <dt>О себе</dt>
+                  <dd>{{#if user.description}}{{user.description}}{{else}}Не указано{{/if}}</dd>
+                </div>
                 {{!-- Пол скрыт до подключения данных профиля. --}}
                 {{!--
                 <div>
@@ -85,17 +89,25 @@
             <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Имя"></button>
           </div>
         </div>
-        {{!--
-        <label class="profile-edit-dialog__field">
-          <span>Отчество</span>
-          <input type="text" name="patronymic" autocomplete="additional-name" />
-        </label>
-        --}}
+        <div class="profile-edit-dialog__field">
+          <label for="profile-patronymic">Отчество</label>
+          <div class="profile-edit-dialog__input-wrap">
+            <input id="profile-patronymic" type="text" name="patronymic" value="{{user.patronymic}}" autocomplete="additional-name" />
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Отчество"></button>
+          </div>
+        </div>
         <div class="profile-edit-dialog__field">
           <label for="profile-birthDate">Дата рождения</label>
           <div class="profile-edit-dialog__input-wrap">
             <input id="profile-birthDate" type="date" name="birthDate" value="{{birthDate}}" min="1909-01-01" />
             <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле Дата рождения"></button>
+          </div>
+        </div>
+        <div class="profile-edit-dialog__field profile-edit-dialog__field--wide">
+          <label for="profile-description">О себе</label>
+          <div class="profile-edit-dialog__input-wrap profile-edit-dialog__input-wrap--textarea">
+            <textarea id="profile-description" name="description" rows="4">{{user.description}}</textarea>
+            <button class="profile-edit-dialog__clear" type="button" data-clear-input aria-label="Очистить поле О себе"></button>
           </div>
         </div>
       </div>
