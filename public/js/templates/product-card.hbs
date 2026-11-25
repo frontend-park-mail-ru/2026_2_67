@@ -15,7 +15,7 @@
   <h2 class="product-card__title{{#if sellerName}} product-card__title--with-seller{{/if}}"><a href="{{productUrl id title}}" data-product-link>{{title}}</a></h2>
   {{#if sellerName}}<p class="product-card__seller">Продавец: {{sellerName}}</p>{{/if}}
   <p class="product-card__reviews">
-    <span class="product-card__rating"><span class="visually-hidden">Рейтинг: </span>{{rating}}</span>
+    <span class="product-card__rating" aria-label="Рейтинг {{rating}} из 5"><span class="product-card__star" aria-hidden="true">★</span> {{rating}}</span>
     <span class="product-card__reviews-count">{{reviewsText}}</span>
   </p>
   {{#if showAddToCartButton}}
