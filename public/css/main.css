@@ -909,7 +909,7 @@ a:focus-visible, button:focus-visible {
 .product-card__reviews-count { color: var(--vm-muted); }
 .product-card__cart-actions {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) max-content;
   grid-template-rows: minmax(16px, auto) minmax(42px, auto);
   align-items: center;
   gap: 4px 8px;
@@ -929,6 +929,8 @@ a:focus-visible, button:focus-visible {
 }
 .product-card__quantity-control {
   grid-row: 2;
+  min-width: 0;
+  min-height: 42px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -938,6 +940,7 @@ a:focus-visible, button:focus-visible {
 }
 .product-card__decrease,
 .product-card__increase {
+  flex: none;
   width: 28px;
   height: 28px;
   padding: 0;
@@ -948,14 +951,23 @@ a:focus-visible, button:focus-visible {
   line-height: 1;
 }
 .product-card__quantity {
+  flex: 1;
+  width: 32px;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
   border: 0;
   background: transparent;
   text-align: center;
   appearance: textfield;
-  min-width: 2ch;
+  font: inherit;
   font-weight: 700;
-  text-align: center;
   white-space: nowrap;
+}
+.product-card__quantity::-webkit-inner-spin-button,
+.product-card__quantity::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
 }
 .product-card__in-cart {
   grid-row: 2;
