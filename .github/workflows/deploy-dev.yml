@@ -20,27 +20,27 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           debug: true
           script: |
-            PROJECT_DIR="/home/ubuntu/frontend"
+            PROJECT_DIR=${{ secrets.PROJECT_PATH }}
             export PORT=80
             LOG_FILE="frontend.log"
             BRANCH="dev"
 
             echo "==> Переходим в директорию ${PROJECT_DIR}..."
-            cd "${PROJECT_DIR}"
+            sudo cd "${PROJECT_DIR}"
 
             echo "==> Обновление ветки ${BRANCH}"
-            git checkout ${BRANCH}
-            git pull
+            sudo git checkout ${BRANCH}
+            sudo git pull
             echo "==> Ветка ${BRANCH} актуализирована"
 
             echo "==> Проверка свободности порта ${PORT}..."
             if ss -tlnp | grep ":${PORT}\s"; then
               echo "==> Освобождение порта ${PORT}"
-              kill $(ss -tlnp | grep ":${PORT}\s" | grep -oP  'pid=\K[0-9]+') || true
+              sudo kill $(ss -tlnp | grep ":${PORT}\s" | grep -oP  'pid=\K[0-9]+') || true
             fi
             echo "==> Порт ${PORT} свободен"
 
             echo "==> Запуск frontend..."
-            nohup npm start > "${LOG_FILE}" 2>&1 &
+            sudo nohup npm start > "${LOG_FILE}" 2>&1 &
 
             echo "==> Деплой успешно завершен!"
