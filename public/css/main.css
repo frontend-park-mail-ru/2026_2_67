@@ -389,20 +389,20 @@ a:focus-visible, button:focus-visible {
   display: none;
 }
 .site-header__suggestions-status {
-  margin: 4px 8px;
+  margin: 2px 4px;
   color: var(--vm-muted);
 }
 .site-header__suggestions-status:empty {
   display: none;
 }
-.site-header__suggestions section + section {
-  margin-top: 12px;
-  padding-top: 12px;
+.site-header__suggestions section:not([hidden]) + section:not([hidden]) {
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--vm-border);
 }
 .site-header__suggestions-title {
-  margin: 0 0 4px;
-  padding: 0 8px;
+  margin: 0 0 2px;
+  padding: 0 4px;
   color: var(--vm-muted);
   font-size: 14px;
   font-weight: 600;
@@ -416,7 +416,7 @@ a:focus-visible, button:focus-visible {
   display: block;
   width: 100%;
   min-height: 44px;
-  padding: 10px 8px;
+  padding: 8px 4px;
   border: 0;
   border-radius: var(--button-radius);
   background: transparent;
@@ -427,6 +427,11 @@ a:focus-visible, button:focus-visible {
 .site-header__suggestion:hover,
 .site-header__suggestion:focus-visible {
   background: var(--vm-hover);
+}
+.site-header__suggestion mark {
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
 }
 .site-header__suggestion:focus-visible {
   outline-offset: -3px;

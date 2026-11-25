@@ -8,6 +8,14 @@ const dom = new JSDOM('<div id="app"></div>', { url: 'http://localhost:8081/' })
 for (const key of ['window', 'document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement',
   'Element', 'Node', 'localStorage', 'sessionStorage']) globalThis[key] = dom.window[key];
 globalThis.Handlebars = Handlebars;
+let catalogObserver;
+globalThis.IntersectionObserver = class {
+  constructor(callback) { this.callback = callback; catalogObserver = this; }
+  observe(target) { this.target = target; }
+  unobserve() { this.target = null; }
+  disconnect() { this.target = null; }
+  trigger() { this.callback([{ isIntersecting: true }]); }
+};
 const { initSearch } = await import('../public/js/components/search/search.ts');
 const { getCategories } = await import('../public/js/components/categories/categories.ts');
 const { loadTemplates } = await import('../public/js/templates/templates.ts');
@@ -124,6 +132,47 @@ test('empty results and late response after Escape', async (t) => {
   assert.equal(app.querySelector('[data-product-link]'), null);
 });
 
+test('pending search hides empty sections and categories can appear before products', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  categoriesFail = false;
+  let resolveProducts;
+  productResponse = () => new Promise((resolve) => { resolveProducts = resolve; });
+  input('тел');
+  const panel = app.querySelector('.site-header__suggestions');
+  assert.equal(panel.hidden, true);
+  assert.doesNotMatch(panel.textContent, /Загрузка товаров|Загрузка категорий/);
+  t.mock.timers.tick(400);
+  await tick();
+  assert.equal(panel.hidden, false);
+  assert.equal(app.querySelector('[aria-labelledby="search-products-title"]').hidden, true);
+  assert.equal(app.querySelector('[aria-labelledby="search-categories-title"]').hidden, false);
+  resolveProducts(Response.json({ products: [] }));
+  await tick();
+  assert.match(panel.textContent, /Товары не найдены/);
+});
+
+test('suggestions highlight text and keyboard navigation works across independent sections', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  categoriesFail = false;
+  productResponse = () => Response.json({ products: [{ id: 9, name: 'Телефон' }] });
+  const field = input('тел');
+  field.focus();
+  t.mock.timers.tick(400);
+  await tick();
+  const product = app.querySelector('[data-product-link]');
+  const category = app.querySelector('[data-category]');
+  assert.equal(product.querySelector('mark').textContent, 'Тел');
+  assert.equal(category.querySelector('mark').textContent, 'Тел');
+  field.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, product);
+  product.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, category);
+  category.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, product);
+  product.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, field);
+});
+
 test('catalog sends query with category, cursor and retry, without local filtering', async () => {
   window.history.replaceState({}, '', '/?query=телефон&category=Электроника');
   const product = { id: 9, name: 'Смартфон', pictureUrls: [], priceResult: 100, rating: 0, reviewsCount: 0 };
@@ -145,6 +194,24 @@ test('catalog sends query with category, cursor and retry, without local filteri
   await tick();
   assert.equal(new URL(requests.at(-1).path, window.location.origin).searchParams.get('query'), 'телефон');
   assert.match(app.querySelector('.catalog-page__grid').textContent, /По вашему запросу ничего не найдено/);
+});
+
+test('catalog observer appends once, deduplicates ids and stops at a repeated cursor', async () => {
+  const product = (id) => ({ id, name: `Товар ${id}`, pictureUrls: [], priceResult: 100, rating: 0, reviewsCount: 0 });
+  productResponse = (path) => Response.json(path.includes('cursor=')
+    ? { products: [product(1), product(2), product(2)], nextCursor: 'next' }
+    : { products: [product(1)], nextCursor: 'next' });
+  renderCatalogPage(app);
+  await tick();
+  catalogObserver.trigger();
+  catalogObserver.trigger();
+  await tick();
+  assert.equal(requests.filter((request) => request.path.includes('cursor=')).length, 1);
+  assert.equal(app.querySelectorAll('[data-product-card]').length, 2);
+  assert.equal(app.querySelector('.catalog-page__load-more-wrap').hidden, true);
+  catalogObserver.trigger();
+  await tick();
+  assert.equal(requests.filter((request) => request.path.includes('cursor=')).length, 1);
 });
 
 test('focus stays within suggestions, Escape preserves input, and a replaced header works', async (t) => {

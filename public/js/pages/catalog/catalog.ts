@@ -34,11 +34,14 @@ function requireInput(parent: Element, selector: string): HTMLInputElement {
   return element;
 }
 
-function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, isIncreaseDisabled: (productId: number) => boolean, getStockWarning: (productId: number) => string, canUseCart: boolean): void {
+function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuantity: (productId: number) => number, isIncreaseDisabled: (productId: number) => boolean, getStockWarning: (productId: number) => string, canUseCart: boolean, append = false): void {
   const showAddToCartButton = !getCurrentUser() || canUseCart;
-  grid.innerHTML = products.map((product) =>
+  const start = append ? grid.children.length : 0;
+  const markup = products.map((product) =>
     createProductCard(product, showAddToCartButton && Number.isInteger(product.id), getCartQuantity(product.id), isIncreaseDisabled(product.id), getStockWarning(product.id))).join('');
-  grid.querySelectorAll('[data-product-card]').forEach((card, index) => {
+  if (append) grid.insertAdjacentHTML('beforeend', markup);
+  else grid.innerHTML = markup;
+  Array.from(grid.querySelectorAll('[data-product-card]')).slice(start).forEach((card, index) => {
     if (card instanceof HTMLElement) initProductCard(card, products[index]);
   });
 }
@@ -69,8 +72,9 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
     // The existing API check covers the array only, not the item fields or cursor.
     const apiProducts: unknown[] = result.products;
     rememberProducts(apiProducts as ApiProduct[]);
-    const next = 'nextCursor' in result ? result.nextCursor : undefined;
-    onProducts(apiProducts.map((product) => mapApiProduct(product as ApiProduct)), (next || '') as string);
+    const next = 'nextCursor' in result ? result.nextCursor : '';
+    if (typeof next !== 'string') throw new Error('Products response has an invalid cursor.');
+    onProducts(apiProducts.map((product) => mapApiProduct(product as ApiProduct)), next);
     return true;
   } catch {
     if (!cursor && !signal.aborted && page.isConnected) {
@@ -136,6 +140,21 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   let products: ProductCard[] | null = null;
   let nextCursor: string = '';
   let requestController: AbortController | undefined;
+  let isLoading = false;
+  let failed = false;
+  const seenCursors = new Set<string>();
+  const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver((entries) => {
+    if (!page.isConnected) { observer?.disconnect(); return; }
+    if (entries.some((entry) => entry.isIntersecting) && nextCursor && !isLoading && !failed) void requestProducts(true);
+  }, { rootMargin: '300px' });
+  const removalObserver = new window.MutationObserver(() => {
+    if (!page.isConnected) {
+      observer?.disconnect();
+      requestController?.abort();
+      removalObserver.disconnect();
+    }
+  });
+  removalObserver.observe(app, { childList: true });
 
   const cart = initCart(
     page,
@@ -200,14 +219,25 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
 
   function appendProducts(loadedProducts: ProductCard[], cursor: string): void {
     if (products === null) throw new TypeError('Товары ещё не загружены.');
-    acceptProducts([...products, ...loadedProducts], cursor);
+    const ids = new Set(products.map((product) => product.id));
+    const unique = loadedProducts.filter((product) => !ids.has(product.id) && !!ids.add(product.id));
+    products.push(...unique);
+    nextCursor = cursor;
+    loadMoreWrap.hidden = !nextCursor;
+    if (unique.length) renderProducts(grid, unique, cart.getProductQuantity, cart.isIncreaseDisabled, getStockWarning, cart.canUseCart(), true);
   }
 
   async function requestProducts(append = false): Promise<void> {
+    if (append && (isLoading || !nextCursor || seenCursors.has(nextCursor))) return;
+    observer?.unobserve(loadMoreWrap);
+    isLoading = true;
+    failed = false;
     requestController?.abort();
     requestController = new AbortController();
     const { signal } = requestController;
+    const requestedCursor = nextCursor;
     if (!append) {
+      seenCursors.clear();
       products = null;
       nextCursor = '';
       loadMoreWrap.hidden = true;
@@ -218,10 +248,18 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     loadMoreButton.textContent = 'Загрузка…';
     const loaded = await loadProducts(grid, page, category, query, sortBy, nextCursor, signal,
       append ? appendProducts : acceptProducts);
-    if (signal.aborted || !page.isConnected) return;
+    if (signal.aborted || !page.isConnected) { if (!page.isConnected) observer?.disconnect(); return; }
+    if (loaded && append) seenCursors.add(requestedCursor);
+    if (loaded && nextCursor && seenCursors.has(nextCursor)) {
+      nextCursor = '';
+      loadMoreWrap.hidden = true;
+    }
+    failed = !loaded;
+    isLoading = false;
     grid.setAttribute('aria-busy', 'false');
     loadMoreButton.disabled = false;
     loadMoreButton.textContent = loaded ? 'Показать ещё' : 'Не удалось загрузить. Повторить';
+    if (loaded && nextCursor && !seenCursors.has(nextCursor)) observer?.observe(loadMoreWrap);
   }
 
   void requestProducts();
