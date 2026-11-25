@@ -22,7 +22,7 @@ jobs:
           script: |
             set -e 
 
-            PROJECT_DIR="/home/ubuntu/frontend" 
+            PROJECT_DIR="${{ secrets.PROJECT_PATH }}" 
             export PORT=80
             LOG_FILE="frontend.log"
             BRANCH="dev"
