@@ -8,6 +8,14 @@ const dom = new JSDOM('<div id="app"></div>', { url: 'http://localhost:8081/' })
 for (const key of ['window', 'document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement',
   'Element', 'Node', 'localStorage', 'sessionStorage']) globalThis[key] = dom.window[key];
 globalThis.Handlebars = Handlebars;
+let catalogObserver;
+globalThis.IntersectionObserver = class {
+  constructor(callback) { this.callback = callback; catalogObserver = this; }
+  observe(target) { this.target = target; }
+  unobserve() { this.target = null; }
+  disconnect() { this.target = null; }
+  trigger() { this.callback([{ isIntersecting: true }]); }
+};
 const { initSearch } = await import('../public/js/components/search/search.ts');
 const { getCategories } = await import('../public/js/components/categories/categories.ts');
 const { loadTemplates } = await import('../public/js/templates/templates.ts');
@@ -145,6 +153,24 @@ test('catalog sends query with category, cursor and retry, without local filteri
   await tick();
   assert.equal(new URL(requests.at(-1).path, window.location.origin).searchParams.get('query'), 'телефон');
   assert.match(app.querySelector('.catalog-page__grid').textContent, /По вашему запросу ничего не найдено/);
+});
+
+test('catalog observer appends once, deduplicates ids and stops at a repeated cursor', async () => {
+  const product = (id) => ({ id, name: `Товар ${id}`, pictureUrls: [], priceResult: 100, rating: 0, reviewsCount: 0 });
+  productResponse = (path) => Response.json(path.includes('cursor=')
+    ? { products: [product(1), product(2), product(2)], nextCursor: 'next' }
+    : { products: [product(1)], nextCursor: 'next' });
+  renderCatalogPage(app);
+  await tick();
+  catalogObserver.trigger();
+  catalogObserver.trigger();
+  await tick();
+  assert.equal(requests.filter((request) => request.path.includes('cursor=')).length, 1);
+  assert.equal(app.querySelectorAll('[data-product-card]').length, 2);
+  assert.equal(app.querySelector('.catalog-page__load-more-wrap').hidden, true);
+  catalogObserver.trigger();
+  await tick();
+  assert.equal(requests.filter((request) => request.path.includes('cursor=')).length, 1);
 });
 
 test('focus stays within suggestions, Escape preserves input, and a replaced header works', async (t) => {
