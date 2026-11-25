@@ -514,7 +514,8 @@ a:focus-visible, button:focus-visible {
 }
 .site-header__icon--cart,
 .site-header__icon--inactive,
-.site-header__icon--orders {
+.site-header__icon--orders,
+.site-header__icon--logged-in {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -604,7 +605,8 @@ a:focus-visible, button:focus-visible {
   }
   .site-header__icon--cart,
   .site-header__icon--inactive,
-  .site-header__icon--orders {
+  .site-header__icon--orders,
+  .site-header__icon--logged-in {
     width: 44px;
     height: 44px;
   }
