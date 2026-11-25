@@ -59,7 +59,7 @@
 .product-page__information h1 { margin: 0 0 20px; font-size: clamp(25px, 2vw, 34px); line-height: 1.25; overflow-wrap: anywhere; }
 .product-page__seller, .product-page__category { margin: 0 0 12px; color: var(--vm-muted); }
 .product-page__seller strong { color: var(--vm-text); font-weight: 600; }
-.product-page__description { margin-top: 36px; padding: 0; background: var(--vm-surface); }
+.product-page__description { margin-top: 36px; padding: 0; }
 .product-page__description h2 { margin: 0 0 10px; font-size: 20px; }
 .product-page__description p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .product-page__purchase { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 22px; border: 1px solid var(--vm-border); border-radius: var(--corner-radius); }
