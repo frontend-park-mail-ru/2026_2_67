@@ -41,7 +41,7 @@
           </span>
           <span class="site-header__icon-label visually-hidden">{{user.headerLabel}}</span>
         </a>
-        <button class="site-header__action site-header__action--logout" type="button" data-action="logout">Выйти</button>
+        <button class="site-header__icon site-header__icon--logout" type="button" data-action="logout" aria-label="Выйти"><span class="site-header__icon-image"><img src="/images/logout.png" alt="" /></span></button>
       </div>
       {{else}}
       <a class="site-header__icon site-header__icon--link" href="/login" data-page="login" aria-label="Войти в аккаунт"><span class="site-header__icon-image"><img src="/images/account-icon.png" alt="" /></span><span class="site-header__icon-label">Войти</span></a>

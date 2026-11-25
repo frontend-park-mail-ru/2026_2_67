@@ -152,9 +152,6 @@ a:focus-visible, button:focus-visible {
   background: var(--vm-hover);
   text-decoration: none;
 }
-.site-header__action--logout {
-  padding-inline: 18px;
-}
 .theme-toggle {
   flex: none;
   width: 44px;
@@ -515,7 +512,9 @@ a:focus-visible, button:focus-visible {
 .site-header__icon--cart,
 .site-header__icon--inactive,
 .site-header__icon--orders,
-.site-header__icon--logged-in {
+.site-header__icon--logged-in,
+.site-header__icon--logout,
+.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -533,6 +532,22 @@ a:focus-visible, button:focus-visible {
   width: 28px;
   height: 28px;
   overflow: visible;
+}
+.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) .site-header__icon-image {
+  width: 28px;
+  height: 28px;
+}
+.site-header__icon--logout .site-header__icon-image {
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+}
+.site-header__icon--logout img {
+  width: 84px;
+  height: 84px;
+}
+.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) .site-header__icon-label {
+  display: none;
 }
 .site-header__icon--cart img {
   width: 50px;
@@ -554,8 +569,14 @@ a:focus-visible, button:focus-visible {
 .site-header__icon--orders:hover {
   background: var(--vm-hover);
 }
+.site-header__icon--logout:hover {
+  background: var(--vm-hover);
+}
+.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in):hover {
+  background: var(--vm-hover);
+}
 
-.site-header__icon--link:not(.site-header__icon--orders):hover {
+.site-header__icon--logged-in:hover {
   border-radius: var(--button-radius);
   background: var(--vm-warm);
 }
@@ -606,13 +627,23 @@ a:focus-visible, button:focus-visible {
   .site-header__icon--cart,
   .site-header__icon--inactive,
   .site-header__icon--orders,
-  .site-header__icon--logged-in {
+  .site-header__icon--logged-in,
+  .site-header__icon--logout,
+  .site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) {
     width: 44px;
     height: 44px;
   }
   .site-header__icon--cart .site-header__icon-image,
   .site-header__icon--inactive .site-header__icon-image,
   .site-header__icon--orders .site-header__icon-image {
+    width: 28px;
+    height: 28px;
+  }
+  .site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) .site-header__icon-image {
+    width: 28px;
+    height: 28px;
+  }
+  .site-header__icon--logout .site-header__icon-image {
     width: 28px;
     height: 28px;
   }
@@ -630,10 +661,6 @@ a:focus-visible, button:focus-visible {
   }
   .site-header__section {
     width: 100px;
-  }
-  .site-header__action--logout {
-    padding-inline: 8px;
-    font-size: 13px;
   }
 }
 @media (min-width: 901px) and (max-width: 950px) {
