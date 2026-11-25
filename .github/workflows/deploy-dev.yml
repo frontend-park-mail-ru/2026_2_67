@@ -20,27 +20,45 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           debug: true
           script: |
-            PROJECT_DIR=${{ secrets.PROJECT_PATH }}
+          script: |
+            set -e 
+
+            PROJECT_DIR="/home/ubuntu/frontend" 
             export PORT=80
             LOG_FILE="frontend.log"
             BRANCH="dev"
 
             echo "==> Переходим в директорию ${PROJECT_DIR}..."
-            sudo cd "${PROJECT_DIR}"
+            cd "${PROJECT_DIR}" 
 
             echo "==> Обновление ветки ${BRANCH}"
-            sudo git checkout ${BRANCH}
-            sudo git pull
+            
+            git checkout "${BRANCH}"
+            git pull
             echo "==> Ветка ${BRANCH} актуализирована"
 
             echo "==> Проверка свободности порта ${PORT}..."
-            if ss -tlnp | grep ":${PORT}\s"; then
-              echo "==> Освобождение порта ${PORT}"
-              sudo kill $(ss -tlnp | grep ":${PORT}\s" | grep -oP  'pid=\K[0-9]+') || true
+            PID=$(ss -tlnp | grep ":${PORT}\s" | grep -oP 'pid=\K[0-9]+' || true)
+
+            if [ -n "${PID}" ]; then
+              echo "==> Освобождение порта ${PORT} (убиваем PID: ${PID})"
+              kill "${PID}" || true
+              sleep 2 
             fi
             echo "==> Порт ${PORT} свободен"
 
             echo "==> Запуск frontend..."
-            sudo nohup npm start > "${LOG_FILE}" 2>&1 &
+            nohup sudo npm start > "${LOG_FILE}" 2>&1 &
+            
+            echo "==> Ожидание запуска (5 секунд)..."
+            sleep 5
+            
+            if ss -tlnp | grep ":${PORT}\s" > /dev/null; then
+                echo "Frontend успешно запущен и слушает порт ${PORT}!"
+            else
+                echo "Frontend не смог запуститься. Логи:"
+                cat "${LOG_FILE}"
+                exit 1 
+            fi
 
             echo "==> Деплой успешно завершен!"
