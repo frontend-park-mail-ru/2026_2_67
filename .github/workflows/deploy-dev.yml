@@ -20,9 +20,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           debug: true
           script: |
-            sudo cd ${{ secrets.PROJECT_PATH }}
-            
-            sudo git checkout dev
-            sudo git pull
-            sudo npm run build
-            sudo npm start
+            sudo ./deploy_frontend.sh -b dev
