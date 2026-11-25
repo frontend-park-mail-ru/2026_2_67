@@ -391,8 +391,13 @@
 }
 
 .cart-page__products {
-  min-height: 140px;
   padding: 8px 16px;
+}
+
+@media (min-width: 781px) {
+  .cart-page__layout:has(.cart-item:only-child) {
+    align-items: stretch;
+  }
 }
 
 .cart-page__products .cart-list {

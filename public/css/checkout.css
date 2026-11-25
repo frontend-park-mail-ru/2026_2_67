@@ -206,7 +206,7 @@
 .checkout-page__basket {
   display: flex;
   flex-direction: column;
-  height: 400px;
+  max-height: 400px;
 }
 
 .checkout-page__basket-items {
