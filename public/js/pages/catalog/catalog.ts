@@ -46,11 +46,12 @@ function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuant
   });
 }
 
-async function loadProducts(grid: HTMLElement, page: HTMLElement, category: string | null, query: string, sortBy: string, cursor: string, signal: AbortSignal, onProducts: ProductsCallback): Promise<boolean> {
+async function loadProducts(grid: HTMLElement, page: HTMLElement, category: string | null, seller: string | null, query: string, sortBy: string, cursor: string, signal: AbortSignal, onProducts: ProductsCallback): Promise<boolean> {
   try {
     // При следующей загрузке сохраняем категорию и добавляем курсор из прошлого ответа.
     const params = new window.URLSearchParams();
     if (category) params.set('category', category);
+    if (seller) params.append('seller', seller);
     if (query) params.set('query', query);
     if (category) params.set('sortBy', sortBy);
     if (cursor) params.set('cursor', cursor);
@@ -89,9 +90,12 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
  * @param {HTMLElement} app Main application container.
  */
 export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
-  const category = new window.URLSearchParams(window.location.search).get('category');
-  const query = new window.URLSearchParams(window.location.search).get('query')?.trim() ?? '';
-  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, category, heading: category || 'Каталог товаров' });
+  const searchParams = new window.URLSearchParams(window.location.search);
+  const category = searchParams.get('category');
+  const seller = searchParams.get('seller')?.trim() || null;
+  const query = searchParams.get('query')?.trim() ?? '';
+  const heading = category || (seller ? `Товары продавца: ${seller}` : 'Каталог товаров');
+  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, category, heading });
   const page = requireHTMLElement(app, '.catalog-page');
   const sort = page.querySelector<HTMLDetailsElement>('.catalog-page__sort');
   if (sort) {
@@ -246,7 +250,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     grid.setAttribute('aria-busy', 'true');
     loadMoreButton.disabled = true;
     loadMoreButton.textContent = 'Загрузка…';
-    const loaded = await loadProducts(grid, page, category, query, sortBy, nextCursor, signal,
+    const loaded = await loadProducts(grid, page, category, seller, query, sortBy, nextCursor, signal,
       append ? appendProducts : acceptProducts);
     if (signal.aborted || !page.isConnected) { if (!page.isConnected) observer?.disconnect(); return; }
     if (loaded && append) seenCursors.add(requestedCursor);
