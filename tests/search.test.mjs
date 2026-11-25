@@ -124,6 +124,47 @@ test('empty results and late response after Escape', async (t) => {
   assert.equal(app.querySelector('[data-product-link]'), null);
 });
 
+test('pending search hides empty sections and categories can appear before products', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  categoriesFail = false;
+  let resolveProducts;
+  productResponse = () => new Promise((resolve) => { resolveProducts = resolve; });
+  input('тел');
+  const panel = app.querySelector('.site-header__suggestions');
+  assert.equal(panel.hidden, true);
+  assert.doesNotMatch(panel.textContent, /Загрузка товаров|Загрузка категорий/);
+  t.mock.timers.tick(400);
+  await tick();
+  assert.equal(panel.hidden, false);
+  assert.equal(app.querySelector('[aria-labelledby="search-products-title"]').hidden, true);
+  assert.equal(app.querySelector('[aria-labelledby="search-categories-title"]').hidden, false);
+  resolveProducts(Response.json({ products: [] }));
+  await tick();
+  assert.match(panel.textContent, /Товары не найдены/);
+});
+
+test('suggestions highlight text and keyboard navigation works across independent sections', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  categoriesFail = false;
+  productResponse = () => Response.json({ products: [{ id: 9, name: 'Телефон' }] });
+  const field = input('тел');
+  field.focus();
+  t.mock.timers.tick(400);
+  await tick();
+  const product = app.querySelector('[data-product-link]');
+  const category = app.querySelector('[data-category]');
+  assert.equal(product.querySelector('mark').textContent, 'Тел');
+  assert.equal(category.querySelector('mark').textContent, 'Тел');
+  field.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, product);
+  product.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, category);
+  category.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, product);
+  product.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  assert.equal(document.activeElement, field);
+});
+
 test('catalog sends query with category, cursor and retry, without local filtering', async () => {
   window.history.replaceState({}, '', '/?query=телефон&category=Электроника');
   const product = { id: 9, name: 'Смартфон', pictureUrls: [], priceResult: 100, rating: 0, reviewsCount: 0 };
