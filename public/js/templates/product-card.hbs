@@ -22,10 +22,13 @@
     <div class="product-card__cart-actions" data-cart-controls>
       <span class="product-card__stock-warning" role="status" tabindex="-1">{{#if stockWarning}}{{stockWarning}}{{else}}{{#if stockLimited}}{{#unless quantity}}Нет в наличии{{/unless}}{{/if}}{{/if}}</span>
       {{#if quantity}}
-        <div class="product-card__quantity-control">
-          <button class="product-card__decrease" type="button" aria-label="Уменьшить количество товара {{title}}">−</button>
-          <input class="product-card__quantity" type="number" min="1" max="99" value="{{quantity}}" aria-label="Количество товара {{title}}" />
-          <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if stockLimited}} disabled{{/if}}>+</button>
+        <div class="product-card__quantity-group">
+          {{#if availableCountLabel}}<span class="product-card__available-count">{{availableCountLabel}}</span>{{/if}}
+          <div class="product-card__quantity-control">
+            <button class="product-card__decrease" type="button" aria-label="Уменьшить количество товара {{title}}">−</button>
+            <input class="product-card__quantity" type="number" min="1" max="99" value="{{quantity}}" aria-label="Количество товара {{title}}" />
+            <button class="product-card__increase" type="button" aria-label="Увеличить количество товара {{title}}"{{#if stockLimited}} disabled{{/if}}>+</button>
+          </div>
         </div>
         <span class="product-card__in-cart">В корзине</span>
       {{else}}

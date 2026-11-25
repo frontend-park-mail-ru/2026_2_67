@@ -25,6 +25,8 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
     reviewsText: `${reviewsCount} ${reviewWords[reviewPluralRules.select(reviewsCount)]}`,
     showAddToCartButton,
     quantity,
+    availableCountLabel: Number.isInteger(product.availableCount) && Number(product.availableCount) >= 0
+      ? `В наличии: ${product.availableCount} шт.` : '',
     stockLimited,
     stockWarning,
     dots: product.images.map((image, index) => ({ index, isActive: index === 0 })),
