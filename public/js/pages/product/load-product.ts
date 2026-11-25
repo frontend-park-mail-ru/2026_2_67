@@ -12,24 +12,27 @@ function isProduct(value: unknown, id: number): value is ApiProduct {
     && (product.description === undefined || product.description === null || typeof product.description === 'string');
 }
 
-/** Prefer an actual item response; the current Go route still returns a catalog page here. */
+export async function fetchProduct(id: number): Promise<ApiProduct | null> {
+  const response = await authorizedFetch(`/products/${id}`, { cache: 'no-store' });
+  if (!response.ok) return null;
+  const result: unknown = await response.json();
+  const item = typeof result === 'object' && result !== null && 'product' in result ? result.product : result;
+  return isProduct(item, id) ? item : null;
+}
+
 export async function loadProduct(id: number): Promise<ApiProduct | null> {
   try {
-    const response = await authorizedFetch(`/products/${id}`);
-    if (response.ok) {
-      const result: unknown = await response.json();
-      const item = typeof result === 'object' && result !== null && 'product' in result ? result.product : result;
-      if (isProduct(item, id)) {
-        rememberProducts([item]);
-        return item;
-      }
+    const item = await fetchProduct(id);
+    if (item) {
+      rememberProducts([item]);
+      return item;
     }
   } catch {
     // A usable catalog snapshot can still open the product.
   }
 
   const remembered = rememberedProduct(id);
-  if (remembered) return remembered;
+  if (remembered) return { ...remembered, canReview: false, wasReview: false };
 
   const seenCursors = new Set<string>();
   let cursor = '';

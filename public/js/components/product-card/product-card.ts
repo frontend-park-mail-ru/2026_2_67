@@ -21,7 +21,7 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
     price: product.price,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
-    rating: Number.isFinite(product.rating) && product.rating >= 0 && product.rating <= 5 ? ratingFormatter.format(product.rating) : '—',
+    rating: Number.isFinite(product.rating) && product.rating > 0 && product.rating <= 5 ? `${ratingFormatter.format(product.rating)}/5` : '—',
     reviewsText: `${reviewsCount} ${reviewWords[reviewPluralRules.select(reviewsCount)]}`,
     showAddToCartButton,
     quantity,

@@ -893,7 +893,6 @@ a:focus-visible, button:focus-visible {
   line-height: 1.4;
 }
 .product-card__rating { white-space: nowrap; }
-.product-card__star { color: #b87500; }
 .product-card__reviews-count { color: var(--vm-muted); }
 .product-card__cart-actions {
   display: grid;

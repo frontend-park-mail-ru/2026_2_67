@@ -11,6 +11,13 @@ export interface ApiProduct {
   rating: number;
   raiting?: number;
   marksCount?: number;
+  rating1Count?: number;
+  rating2Count?: number;
+  rating3Count?: number;
+  rating4Count?: number;
+  rating5Count?: number;
+  canReview?: boolean;
+  wasReview?: boolean;
   reviewsCount: number;
 }
 
