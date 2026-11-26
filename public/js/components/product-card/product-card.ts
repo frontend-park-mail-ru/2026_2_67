@@ -3,7 +3,7 @@ import type { ProductCard } from '../../data/map-api-product.js';
 
 const ratingFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 const reviewPluralRules = new Intl.PluralRules('ru-RU');
-const reviewWords: Record<string, string> = { one: 'оценка', few: 'оценки', many: 'оценок', other: 'оценок' };
+const reviewWords: Record<string, string> = { one: 'отзыв', few: 'отзыва', many: 'отзывов', other: 'отзывов' };
 
 /**
  * Creates product-card HTML from product data.
@@ -21,12 +21,10 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
     price: product.price,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
-    rating: Number.isFinite(product.rating) && product.rating > 0 && product.rating <= 5 ? ratingFormatter.format(product.rating) : '—',
+    rating: Number.isFinite(product.rating) && product.rating > 0 && product.rating <= 5 ? `${ratingFormatter.format(product.rating)}/5` : '—',
     reviewsText: `${reviewsCount} ${reviewWords[reviewPluralRules.select(reviewsCount)]}`,
     showAddToCartButton,
     quantity,
-    availableCountLabel: Number.isInteger(product.availableCount) && Number(product.availableCount) >= 0
-      ? `В наличии: ${product.availableCount} шт.` : '',
     stockLimited,
     stockWarning,
     dots: product.images.map((image, index) => ({ index, isActive: index === 0 })),

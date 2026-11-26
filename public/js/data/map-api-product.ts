@@ -27,7 +27,6 @@ export interface ProductCard {
   sellerName: string;
   images: string[];
   price: string;
-  availableCount?: number;
   rating: number;
   reviewsCount: number;
 }
@@ -40,8 +39,6 @@ export function mapApiProduct(product: ApiProduct): ProductCard {
     sellerName: typeof product.sellerName === 'string' ? product.sellerName : '',
     images: product.pictureUrls,
     price: formatMoney(product.priceResult),
-    availableCount: Number.isInteger(product.availableCount) && Number(product.availableCount) >= 0
-      ? product.availableCount : undefined,
     rating: product.rating,
     reviewsCount: product.reviewsCount,
   };

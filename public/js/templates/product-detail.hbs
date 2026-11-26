@@ -31,13 +31,11 @@
       <p>Войдите, чтобы добавить товар в корзину.</p>
       <a class="product-page__primary" href="/login" data-page="login">Войти</a>
     {{else}}
-      <div class="product-page__quantity-field">
-        {{#if availableCountLabel}}<p class="product-page__available-count">{{availableCountLabel}}</p>{{/if}}
-        <div class="product-page__quantity">
-          <button type="button" data-quantity-minus aria-label="Уменьшить количество">−</button>
-          <input id="product-quantity" data-quantity type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Количество товара" />
-          <button type="button" data-quantity-plus aria-label="Увеличить количество">+</button>
-        </div>
+      <label for="product-quantity">Количество</label>
+      <div class="product-page__quantity">
+        <button type="button" data-quantity-minus aria-label="Уменьшить количество">−</button>
+        <input id="product-quantity" data-quantity type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Количество товара" />
+        <button type="button" data-quantity-plus aria-label="Увеличить количество">+</button>
       </div>
       <button type="button" class="product-page__primary" data-detail-add disabled>В корзину</button>
       <p class="product-page__message" data-detail-message role="status"></p>

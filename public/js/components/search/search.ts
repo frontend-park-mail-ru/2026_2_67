@@ -1,36 +1,5 @@
 import { productUrl } from '../../shared/product-url.js';
-
-type SearchProduct = { id: number; name: string };
-type SearchCategory = { category: string };
-type SearchSeller = { name: string };
-
-async function fetchSuggestions<T>(resource: string, key: string, query: string, limit: number, signal: AbortSignal, isItem: (item: unknown) => item is T): Promise<T[]> {
-  const params = new URLSearchParams({ query, limit: String(limit) });
-  const response = await fetch(`/api/v1/${resource}/search?${params}`, { signal, credentials: 'include' });
-  if (!response.ok) throw new Error(`Не удалось загрузить ${resource}.`);
-  const result: unknown = await response.json();
-  if (!result || typeof result !== 'object' || !(key in result)) {
-    throw new Error(`Неверный ответ поиска ${resource}.`);
-  }
-  const values = (result as Record<string, unknown>)[key];
-  if (!Array.isArray(values)) throw new Error(`Неверный ответ поиска ${resource}.`);
-  const items: unknown[] = values;
-  if (!items.every(isItem)) throw new Error(`Неверные данные поиска ${resource}.`);
-  return items.slice(0, limit);
-}
-
-function isSearchProduct(item: unknown): item is SearchProduct {
-  if (!item || typeof item !== 'object' || !('id' in item) || !('name' in item)) return false;
-  return Number.isSafeInteger(item.id) && Number(item.id) > 0 && typeof item.name === 'string';
-}
-
-function isSearchCategory(item: unknown): item is SearchCategory {
-  return Boolean(item && typeof item === 'object' && 'category' in item && typeof item.category === 'string');
-}
-
-function isSearchSeller(item: unknown): item is SearchSeller {
-  return Boolean(item && typeof item === 'object' && 'name' in item && typeof item.name === 'string');
-}
+import { getCategories } from '../categories/categories.js';
 
 function highlight(element: HTMLElement, name: string, query: string): void {
   const index = name.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
@@ -64,13 +33,10 @@ export function initSearch(app: HTMLElement): () => void {
     const panel = form?.querySelector<HTMLElement>('.site-header__suggestions');
     const products = panel?.querySelector<HTMLUListElement>('[aria-labelledby="search-products-title"] ul');
     const categories = panel?.querySelector<HTMLUListElement>('[aria-labelledby="search-categories-title"] ul');
-    const sellers = panel?.querySelector<HTMLUListElement>('[aria-labelledby="search-sellers-title"] ul');
     const categorySection = categories?.closest('section');
-    const sellerSection = sellers?.closest('section');
     const productStatus = panel?.querySelector<HTMLElement>('[data-search-products-status]');
     const categoryStatus = panel?.querySelector<HTMLElement>('[data-search-categories-status]');
-    const sellerStatus = panel?.querySelector<HTMLElement>('[data-search-sellers-status]');
-    if (!panel || !products || !categories || !sellers || !categorySection || !sellerSection || !productStatus || !categoryStatus || !sellerStatus) return;
+    if (!panel || !products || !categories || !categorySection || !productStatus || !categoryStatus) return;
     const productSection = productStatus.closest('section');
     if (!(productSection instanceof HTMLElement)) return;
 
@@ -78,21 +44,27 @@ export function initSearch(app: HTMLElement): () => void {
     panel.hidden = true;
     products.replaceChildren();
     categories.replaceChildren();
-    sellers.replaceChildren();
     productSection.hidden = true;
     categorySection.hidden = true;
-    sellerSection.hidden = true;
     productStatus.textContent = '';
     categoryStatus.textContent = '';
-    sellerStatus.textContent = '';
     const isCurrent = () => !signal.aborted && input.isConnected && input.value.trim() === query;
 
     timer = setTimeout(() => {
       if (!isCurrent()) return;
-      void fetchSuggestions('products', 'products', query, 5, signal, isSearchProduct)
-        .then((items) => {
+      const params = new URLSearchParams({ query, limit: '5' });
+      void fetch(`/api/v1/products?${params}`, { signal, credentials: 'include' })
+        .then(async (response) => {
+          if (!response.ok) throw new Error('Не удалось загрузить товары.');
+          const result: unknown = await response.json();
           if (!isCurrent()) return;
-          for (const product of items) {
+          if (!result || typeof result !== 'object' || !('products' in result) || !Array.isArray(result.products)) {
+            throw new Error('Неверный ответ поиска.');
+          }
+          for (const product of result.products.slice(0, 5)) {
+            if (!product || !Number.isSafeInteger(product.id) || product.id <= 0 || typeof product.name !== 'string') {
+              throw new Error('Неверный товар в ответе поиска.');
+            }
             const link = document.createElement('a');
             link.className = 'site-header__suggestion';
             highlight(link, product.name, query);
@@ -114,8 +86,9 @@ export function initSearch(app: HTMLElement): () => void {
           panel.hidden = false;
         });
 
-      void fetchSuggestions('categories', 'categories', query, 3, signal, isSearchCategory).then((matches) => {
+      void getCategories().then((all) => {
         if (!isCurrent()) return;
+        const matches = all.filter((item) => item.category.toLocaleLowerCase().includes(query.toLocaleLowerCase())).slice(0, 3);
         for (const category of matches) {
           const button = document.createElement('button');
           button.type = 'button';
@@ -131,31 +104,7 @@ export function initSearch(app: HTMLElement): () => void {
         if (matches.length) panel.hidden = false;
       }).catch(() => {
         if (isCurrent()) {
-          categorySection.hidden = false;
           categoryStatus.textContent = 'Не удалось загрузить категории. Измените запрос или повторно выберите поле поиска.';
-          panel.hidden = false;
-        }
-      });
-
-      void fetchSuggestions('sellers', 'sellers', query, 3, signal, isSearchSeller).then((matches) => {
-        if (!isCurrent()) return;
-        for (const seller of matches) {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'site-header__suggestion';
-          highlight(button, seller.name, query);
-          button.dataset.seller = seller.name;
-          const item = document.createElement('li');
-          item.append(button);
-          sellers.append(item);
-        }
-        sellerSection.hidden = matches.length === 0;
-        sellerStatus.textContent = '';
-        if (matches.length) panel.hidden = false;
-      }).catch(() => {
-        if (isCurrent()) {
-          sellerSection.hidden = false;
-          sellerStatus.textContent = 'Не удалось загрузить продавцов. Измените запрос или повторно выберите поле поиска.';
           panel.hidden = false;
         }
       });

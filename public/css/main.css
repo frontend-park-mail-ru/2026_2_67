@@ -127,15 +127,13 @@ a:focus-visible, button:focus-visible {
   flex: none;
   align-items: center;
   justify-content: flex-end;
+  gap: 16px;
   margin-left: auto;
-  gap: 12px;
-  max-width: 100%;
-  flex-wrap: wrap;
 }
 .site-header__profile-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 .site-header__action {
   display: inline-flex;
@@ -153,6 +151,9 @@ a:focus-visible, button:focus-visible {
 .site-header__action:hover {
   background: var(--vm-hover);
   text-decoration: none;
+}
+.site-header__action--logout {
+  padding-inline: 18px;
 }
 .theme-toggle {
   flex: none;
@@ -179,6 +180,7 @@ a:focus-visible, button:focus-visible {
   align-items: center;
   gap: 12px;
   min-width: 292px;
+  max-width: 970px;
 }
 .site-header__section {
   width: 120px;
@@ -513,9 +515,7 @@ a:focus-visible, button:focus-visible {
 .site-header__icon--cart,
 .site-header__icon--inactive,
 .site-header__icon--orders,
-.site-header__icon--logged-in,
-.site-header__icon--logout,
-.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) {
+.site-header__icon--logged-in {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -533,22 +533,6 @@ a:focus-visible, button:focus-visible {
   width: 28px;
   height: 28px;
   overflow: visible;
-}
-.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) .site-header__icon-image {
-  width: 28px;
-  height: 28px;
-}
-.site-header__icon--logout .site-header__icon-image {
-  width: 28px;
-  height: 28px;
-  overflow: hidden;
-}
-.site-header__icon--logout img {
-  width: 84px;
-  height: 84px;
-}
-.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) .site-header__icon-label {
-  display: none;
 }
 .site-header__icon--cart img {
   width: 50px;
@@ -570,14 +554,8 @@ a:focus-visible, button:focus-visible {
 .site-header__icon--orders:hover {
   background: var(--vm-hover);
 }
-.site-header__icon--logout:hover {
-  background: var(--vm-hover);
-}
-.site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in):hover {
-  background: var(--vm-hover);
-}
 
-.site-header__icon--logged-in:hover {
+.site-header__icon--link:not(.site-header__icon--orders):hover {
   border-radius: var(--button-radius);
   background: var(--vm-warm);
 }
@@ -628,9 +606,7 @@ a:focus-visible, button:focus-visible {
   .site-header__icon--cart,
   .site-header__icon--inactive,
   .site-header__icon--orders,
-  .site-header__icon--logged-in,
-  .site-header__icon--logout,
-  .site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) {
+  .site-header__icon--logged-in {
     width: 44px;
     height: 44px;
   }
@@ -640,13 +616,11 @@ a:focus-visible, button:focus-visible {
     width: 28px;
     height: 28px;
   }
-  .site-header__icon--link:not(.site-header__icon--orders):not(.site-header__icon--logged-in) .site-header__icon-image {
-    width: 28px;
-    height: 28px;
+  .site-header__nav {
+    gap: 4px;
   }
-  .site-header__icon--logout .site-header__icon-image {
-    width: 28px;
-    height: 28px;
+  .site-header__profile-wrap {
+    gap: 4px;
   }
   .site-header__controls {
     order: 3;
@@ -657,10 +631,27 @@ a:focus-visible, button:focus-visible {
   .site-header__section {
     width: 100px;
   }
+  .site-header__action--logout {
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+}
+@media (min-width: 901px) and (max-width: 950px) {
+  .site-header__inner {
+    gap: 8px;
+    padding-inline: 28px;
+  }
+  .site-header__nav,
+  .site-header__profile-wrap {
+    gap: 8px;
+  }
 }
 @media (max-width: 360px) {
   .site-header__inner {
     padding-inline: 8px;
+  }
+  .site-header__nav {
+    gap: 2px;
   }
 }
 
@@ -914,11 +905,10 @@ a:focus-visible, button:focus-visible {
   line-height: 1.4;
 }
 .product-card__rating { white-space: nowrap; }
-.product-card__star { color: #b87500; }
 .product-card__reviews-count { color: var(--vm-muted); }
 .product-card__cart-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: minmax(16px, auto) minmax(42px, auto);
   align-items: center;
   gap: 4px 8px;
@@ -936,24 +926,8 @@ a:focus-visible, button:focus-visible {
   color: var(--vm-surface);
   font-size: 16px;
 }
-.product-card__quantity-group {
-  grid-row: 2;
-  display: flex;
-  max-width: 100%;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-.product-card__available-count {
-  max-width: 100%;
-  color: var(--vm-muted);
-  font-size: 11px;
-  line-height: 1.2;
-}
 .product-card__quantity-control {
-  min-width: 0;
-  min-height: 42px;
+  grid-row: 2;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -963,7 +937,6 @@ a:focus-visible, button:focus-visible {
 }
 .product-card__decrease,
 .product-card__increase {
-  flex: none;
   width: 28px;
   height: 28px;
   padding: 0;
@@ -974,23 +947,14 @@ a:focus-visible, button:focus-visible {
   line-height: 1;
 }
 .product-card__quantity {
-  flex: 1;
-  width: 32px;
-  min-width: 0;
-  height: 28px;
-  padding: 0;
   border: 0;
   background: transparent;
   text-align: center;
   appearance: textfield;
-  font: inherit;
+  min-width: 2ch;
   font-weight: 700;
+  text-align: center;
   white-space: nowrap;
-}
-.product-card__quantity::-webkit-inner-spin-button,
-.product-card__quantity::-webkit-outer-spin-button {
-  margin: 0;
-  -webkit-appearance: none;
 }
 .product-card__in-cart {
   grid-row: 2;
@@ -2084,26 +2048,4 @@ a:focus-visible, button:focus-visible {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
-}
-.site-header__nav :is(.theme-toggle, .site-header__icon, .site-header__icon-image) {
-  background: var(--header-icon-background, transparent) !important;
-  border-color: transparent !important;
-}
-.site-header__nav :is(.theme-toggle, .site-header__icon):is(:hover, :active, :focus-visible, [aria-expanded="true"], [aria-current="page"]),
-:root[data-theme="dark"] .site-header__nav .theme-toggle {
-  --header-icon-background: var(--vm-hover);
-}
-.site-header__nav .site-header__icon-image,
-.site-header__nav [data-page="login"].site-header__icon--link .site-header__icon-image,
-.site-header__nav .site-header__icon-image img {
-  width: 32px;
-  height: 32px;
-}
-.site-header__nav .site-header__icon-image img {
-  position: static;
-  transform: none;
-}
-.site-header__nav .theme-toggle {
-  display: grid;
-  place-items: center;
 }
