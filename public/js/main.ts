@@ -29,7 +29,7 @@ function applyTheme(theme: 'light' | 'dark'): void {
   document.documentElement.dataset.theme = theme;
   const button = app.querySelector('[data-theme-toggle]');
   if (!(button instanceof HTMLButtonElement)) return;
-  button.textContent = theme === 'dark' ? '☀' : '☾';
+  if (!button.querySelector('img')) button.textContent = theme === 'dark' ? '☀' : '☾';
   button.setAttribute('aria-label', theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему');
 }
 
@@ -83,10 +83,13 @@ function renderCurrentRoute(): void {
     if (window.location.pathname === '/') {
       const params = new URLSearchParams(window.location.search);
       const category = params.get('category')?.trim();
+      const seller = params.get('seller')?.trim();
       const query = params.get('query')?.trim();
       if (category) title = category;
+      if (seller) title = `Продавец: ${seller}`;
       if (query) title = `Поиск: ${query}`;
       if (category && query) title = `${category} — поиск: ${query}`;
+      if (seller && query) title = `Продавец: ${seller} — поиск: ${query}`;
     }
     document.title = `VibeMarket — ${title}`;
     renderPage();
@@ -175,6 +178,12 @@ async function startApplication(): Promise<void> {
       const categoryButton = event.target.closest('[data-category]');
       if (categoryButton) {
         navigate(`/?${new window.URLSearchParams({ category: categoryButton.getAttribute('data-category') ?? '' })}`);
+        return;
+      }
+
+      const sellerButton = event.target.closest('[data-seller]');
+      if (sellerButton) {
+        navigate(`/?${new window.URLSearchParams({ seller: sellerButton.getAttribute('data-seller') ?? '' })}`);
         return;
       }
 
