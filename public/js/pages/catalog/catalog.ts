@@ -163,26 +163,31 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   const cart = initCart(
     page,
     getCurrentUser()?.userId,
-    updateVisibleProductCard,
+    updateCartControls,
   );
 
   function getStockWarning(productId: number): string {
     return cart.getDisplayItems().find((item) => item.id === productId)?.stockWarning ?? '';
   }
 
-  function updateVisibleProductCard(productId: number | null): void {
-    if (productId === null) {
-      showProducts();
-      return;
-    }
-    const product = products?.find((item) => item.id === productId);
-    const card = grid.querySelector(`[data-product-id="${productId}"]`);
-    if (!product || !card) {
-      return;
-    }
+  function updateCartControls(changedProductId: number | null): void {
+    if (!products) return;
 
+    const cards = grid.querySelectorAll('[data-product-card]');
+    for (const [index, product] of products.entries()) {
+      // При общей проверке обновляем все товары, при изменении количества — один.
+      if (changedProductId !== null && product.id !== changedProductId) continue;
+
+      const card = cards[index];
+      if (card) updateProductControls(card, product);
+    }
+  }
+
+  function updateProductControls(card: Element, product: ProductCard): void {
+    const productId = product.id;
     const oldControls = card.querySelector('[data-cart-controls]');
-    if (!oldControls) {
+    if (!Number.isInteger(productId) || (getCurrentUser() && !cart.canUseCart())) {
+      oldControls?.remove();
       return;
     }
 
@@ -191,6 +196,10 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     template.innerHTML = createProductCard(product, true, quantity, cart.isIncreaseDisabled(productId), getStockWarning(productId));
     const newControls = template.content.querySelector('[data-cart-controls]');
     if (!newControls) throw new Error('Не найдены элементы управления корзиной.');
+    if (!oldControls) {
+      card.append(newControls);
+      return;
+    }
     const hadFocus = oldControls.contains(document.activeElement);
     updateCartMarkup(oldControls, newControls.innerHTML);
     oldControls.setAttribute('aria-busy', String(cart.isUpdating()));
