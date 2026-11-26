@@ -97,15 +97,41 @@ export function initProductReviews(container: HTMLElement, product: ApiProduct):
   let loading = false;
   let productRequest = 0;
   let productFailed = false;
+  let observer: IntersectionObserver | undefined;
+
+  function onScroll(entries: IntersectionObserverEntry[]): void {
+    for (const entry of entries) {
+      if (entry.isIntersecting && entry.target.isConnected) {
+        void load(true);
+        return;
+      }
+    }
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    observer = new IntersectionObserver(onScroll, { rootMargin: '300px' });
+  }
+
   function render(): void {
+    observer?.disconnect();
     if (!container.isConnected) return;
     const sortFocused = document.activeElement?.matches('[data-review-sort]') && container.contains(document.activeElement);
     container.innerHTML = productReviewsTemplate({
       reviews: { ...productReviewsView(product, data, failed, sortBy), loading, more: data?.nextCursor, productFailed },
     });
     if (sortFocused) container.querySelector<HTMLInputElement>('[data-review-sort]:checked')?.focus({ preventScroll: true });
+
+    if (loading || failed || !data?.nextCursor) return;
+
+    const loadMoreButton = container.querySelector('[data-reviews-load]');
+    if (loadMoreButton) {
+      observer?.observe(loadMoreButton);
+    }
   }
   async function load(append = false): Promise<void> {
+    if (append && (loading || !data?.nextCursor)) {
+      return;
+    }
     const current = ++request;
     const cursor = append ? data?.nextCursor : '';
     if (!append) data = undefined;
