@@ -30,26 +30,26 @@
       </form>
     </div>
     <nav class="site-header__nav" aria-label="Действия и аккаунт">
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Включить тёмную тему">☾</button>
-      <button class="site-header__icon site-header__icon--cart" type="button" aria-label="Корзина" aria-controls="cart-panel" aria-expanded="false"><span class="site-header__icon-image"><img src="/images/cart-icon.png" alt="" /><span class="site-header__cart-count" aria-hidden="true" hidden></span></span></button>
-      <button class="site-header__icon site-header__icon--inactive" type="button" aria-label="Уведомления"><span class="site-header__icon-image"><img src="/images/notifications-icon.png" alt="" /></span></button>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Включить тёмную тему"><span class="site-header__icon-image"><img src="/images/01-moon (1).svg" alt="" /></span></button>
+      <button class="site-header__icon site-header__icon--cart" type="button" aria-label="Корзина" aria-controls="cart-panel" aria-expanded="false"><span class="site-header__icon-image"><img src="/images/02-cart (1).svg" alt="" /><span class="site-header__cart-count" aria-hidden="true" hidden></span></span></button>
+      <button class="site-header__icon site-header__icon--inactive" type="button" aria-label="Уведомления"><span class="site-header__icon-image"><img src="/images/03-bell (1).svg" alt="" /></span></button>
       {{#if user}}
-      <a class="site-header__icon site-header__icon--link site-header__icon--orders" href="/orders" data-page="orders" aria-label="Заказы"{{#if isOrders}} aria-current="page"{{/if}}><span class="site-header__icon-image"><img src="/images/orders-icon.svg" alt="" /></span></a>
+      <a class="site-header__icon site-header__icon--link site-header__icon--orders" href="/orders" data-page="orders" aria-label="Заказы"{{#if isOrders}} aria-current="page"{{/if}}><span class="site-header__icon-image"><img src="/images/04-orders (1).svg" alt="" /></span></a>
       <div class="site-header__profile-wrap">
         <a class="site-header__icon site-header__icon--link site-header__icon--logged-in" href="/profile" data-page="profile" aria-label="Личный профиль: {{user.headerName}}" title="{{user.headerName}}"{{#if isProfile}} aria-current="page"{{/if}}>
           <span class="site-header__icon-image">
             {{#if user.avatarSrc}}
               <img class="site-header__avatar" src="{{user.avatarSrc}}" alt="" />
             {{else}}
-              <img src="/images/account-icon.png" alt="" />
+              <img src="/images/05-profile (1).svg" alt="" />
             {{/if}}
           </span>
           <span class="site-header__icon-label visually-hidden">{{user.headerLabel}}</span>
         </a>
-        <button class="site-header__icon site-header__icon--logout" type="button" data-action="logout" aria-label="Выйти"><span class="site-header__icon-image"><img src="/images/logout.png" alt="" /></span></button>
+        <button class="site-header__icon site-header__icon--logout" type="button" data-action="logout" aria-label="Выйти"><span class="site-header__icon-image"><img src="/images/06-logout (1).svg" alt="" /></span></button>
       </div>
       {{else}}
-      <a class="site-header__icon site-header__icon--link" href="/login" data-page="login" aria-label="Войти в аккаунт"><span class="site-header__icon-image"><img src="/images/account-icon.png" alt="" /></span><span class="site-header__icon-label">Войти</span></a>
+      <a class="site-header__icon site-header__icon--link" href="/login" data-page="login" aria-label="Войти в аккаунт"><span class="site-header__icon-image"><img src="/images/05-profile (1).svg" alt="" /></span><span class="site-header__icon-label">Войти</span></a>
       {{/if}}
     </nav>
   </div>

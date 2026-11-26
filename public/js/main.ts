@@ -29,7 +29,7 @@ function applyTheme(theme: 'light' | 'dark'): void {
   document.documentElement.dataset.theme = theme;
   const button = app.querySelector('[data-theme-toggle]');
   if (!(button instanceof HTMLButtonElement)) return;
-  button.textContent = theme === 'dark' ? '☀' : '☾';
+  if (!button.querySelector('img')) button.textContent = theme === 'dark' ? '☀' : '☾';
   button.setAttribute('aria-label', theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему');
 }
 

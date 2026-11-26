@@ -127,13 +127,15 @@ a:focus-visible, button:focus-visible {
   flex: none;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
   margin-left: auto;
+  gap: 12px;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 .site-header__profile-wrap {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 .site-header__action {
   display: inline-flex;
@@ -177,7 +179,6 @@ a:focus-visible, button:focus-visible {
   align-items: center;
   gap: 12px;
   min-width: 292px;
-  max-width: 970px;
 }
 .site-header__section {
   width: 120px;
@@ -647,12 +648,6 @@ a:focus-visible, button:focus-visible {
     width: 28px;
     height: 28px;
   }
-  .site-header__nav {
-    gap: 4px;
-  }
-  .site-header__profile-wrap {
-    gap: 4px;
-  }
   .site-header__controls {
     order: 3;
     flex-basis: 100%;
@@ -663,22 +658,9 @@ a:focus-visible, button:focus-visible {
     width: 100px;
   }
 }
-@media (min-width: 901px) and (max-width: 950px) {
-  .site-header__inner {
-    gap: 8px;
-    padding-inline: 28px;
-  }
-  .site-header__nav,
-  .site-header__profile-wrap {
-    gap: 8px;
-  }
-}
 @media (max-width: 360px) {
   .site-header__inner {
     padding-inline: 8px;
-  }
-  .site-header__nav {
-    gap: 2px;
   }
 }
 
@@ -2102,4 +2084,26 @@ a:focus-visible, button:focus-visible {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+.site-header__nav :is(.theme-toggle, .site-header__icon, .site-header__icon-image) {
+  background: var(--header-icon-background, transparent) !important;
+  border-color: transparent !important;
+}
+.site-header__nav :is(.theme-toggle, .site-header__icon):is(:hover, :active, :focus-visible, [aria-expanded="true"], [aria-current="page"]),
+:root[data-theme="dark"] .site-header__nav .theme-toggle {
+  --header-icon-background: var(--vm-hover);
+}
+.site-header__nav .site-header__icon-image,
+.site-header__nav [data-page="login"].site-header__icon--link .site-header__icon-image,
+.site-header__nav .site-header__icon-image img {
+  width: 32px;
+  height: 32px;
+}
+.site-header__nav .site-header__icon-image img {
+  position: static;
+  transform: none;
+}
+.site-header__nav .theme-toggle {
+  display: grid;
+  place-items: center;
 }
