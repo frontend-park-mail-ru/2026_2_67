@@ -2,22 +2,12 @@
   {{> siteHeader}}
   <main class="catalog-page__content">
     <div class="catalog-page__content-inner">
-      <h1>{{heading}}</h1>
-      {{#if advancedCatalog}}
-      <div class="catalog-page__toolbar">
-        <p class="catalog-page__count" data-product-count role="status">Загрузка товаров…</p>
-        <details class="catalog-page__sort">
-          <summary class="catalog-page__sort-toggle" aria-label="Сортировка: Сначала новые">Сначала новые</summary>
-          <div class="catalog-page__sort-options" role="group" aria-label="Варианты сортировки">
-            <button type="button" data-sort-by="new" aria-pressed="true">Сначала новые</button>
-            <button type="button" data-sort-by="buy-count" aria-pressed="false">По количеству покупок</button>
-            <button type="button" data-sort-by="asc-price" aria-pressed="false">Сначала дешёвые</button>
-            <button type="button" data-sort-by="desc-price" aria-pressed="false">Сначала дорогие</button>
-            <button type="button" data-sort-by="desc-rating" aria-pressed="false">Сначала с высоким рейтингом</button>
-          </div>
-        </details>
+      <div class="catalog-page__heading">
+        <h1>{{heading}}</h1>
+        {{#if advancedCatalog}}
+          <p class="catalog-page__count" data-product-count role="status">Загрузка товаров…</p>
+        {{/if}}
       </div>
-      {{/if}}
       <div class="catalog-page__layout{{#if advancedCatalog}} catalog-page__layout--category{{/if}}">
         {{#if advancedCatalog}}
         <aside class="catalog-page__filters" aria-label="Фильтры товаров">
@@ -47,6 +37,18 @@
         </aside>
         {{/if}}
         <div class="catalog-page__results">
+          {{#if advancedCatalog}}
+          <details class="catalog-page__sort">
+            <summary class="catalog-page__sort-toggle" aria-label="Сортировка: Сначала новые">Сначала новые</summary>
+            <div class="catalog-page__sort-options" role="group" aria-label="Варианты сортировки">
+              <button type="button" data-sort-by="new" aria-pressed="true">Сначала новые</button>
+              <button type="button" data-sort-by="buy-count" aria-pressed="false">По количеству покупок</button>
+              <button type="button" data-sort-by="asc-price" aria-pressed="false">Сначала дешёвые</button>
+              <button type="button" data-sort-by="desc-price" aria-pressed="false">Сначала дорогие</button>
+              <button type="button" data-sort-by="desc-rating" aria-pressed="false">Сначала с высоким рейтингом</button>
+            </div>
+          </details>
+          {{/if}}
           <div class="catalog-page__grid">{{{productsHtml}}}</div>
           <div class="catalog-page__load-more-wrap" hidden>
             <button class="catalog-page__load-more" type="button">Показать ещё</button>
