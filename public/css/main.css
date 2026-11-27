@@ -836,16 +836,7 @@ a:focus-visible, button:focus-visible {
   position: relative;
   padding-bottom: 12px;
 }
-.product-card__discount {
-  position: absolute;
-  z-index: 1;
-  top: 8px;
-  right: 8px;
-  color: #d95c4f;
-  font-size: 14px;
-  font-weight: 700;
-  pointer-events: none;
-}
+.product-card__discount { position: absolute; z-index: 1; top: 8px; right: 8px; padding: 6px 10px; border-radius: var(--corner-radius); background: #d95c4f; color: #fff; font-size: 14px; font-weight: 700; pointer-events: none; }
 .product-card__image {
   display: block;
   width: 100%;
