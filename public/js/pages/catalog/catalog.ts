@@ -163,12 +163,21 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   let appliedFilters = new URLSearchParams();
   for (const key of advancedCatalog ? ['priceMin', 'priceMax'] : []) {
     const value = searchParams.get(key);
-    if (value && /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) % 1000 === 0) appliedFilters.set(key, value);
+    if (value && /^\d+$/.test(value) && Number.isSafeInteger(Number(value))) appliedFilters.set(key, value);
   }
   if (appliedFilters.has('priceMin') && appliedFilters.has('priceMax')
     && Number(appliedFilters.get('priceMin')) > Number(appliedFilters.get('priceMax'))) {
     appliedFilters.delete('priceMin');
     appliedFilters.delete('priceMax');
+  }
+  for (const key of advancedCatalog ? ['ratingMin', 'ratingMax'] : []) {
+    const value = searchParams.get(key);
+    const number = Number(value);
+    if (value && /^\d+(\.\d)?$/.test(value) && number >= 0 && number <= 5) appliedFilters.set(key, value);
+  }
+  if (Number(appliedFilters.get('ratingMin') ?? 0) > Number(appliedFilters.get('ratingMax') ?? 5)) {
+    appliedFilters.delete('ratingMin');
+    appliedFilters.delete('ratingMax');
   }
   if (advancedCatalog) searchParams.getAll('seller').filter(Boolean).forEach((value) => appliedFilters.append('seller', value));
   selectedCategories.forEach((value) => appliedFilters.append('category', value));
@@ -177,7 +186,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   let loadedUrl = '';
   function updateUrl(): void {
     const url = new URL(window.location.href);
-    for (const key of ['priceMin', 'priceMax', 'seller', 'category', 'sortBy']) url.searchParams.delete(key);
+    for (const key of ['priceMin', 'priceMax', 'ratingMin', 'ratingMax', 'seller', 'category', 'sortBy']) url.searchParams.delete(key);
     appliedFilters.forEach((value, key) => url.searchParams.append(key, value));
     if (advancedCatalog && sortBy !== 'new') url.searchParams.set('sortBy', sortBy);
     if (url.href !== window.location.href) window.history.pushState({}, '', url);

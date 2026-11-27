@@ -39,7 +39,7 @@ test('home catalog has no filters or category sorting', async () => {
   assert.equal(new URL(requests.at(-1), 'http://localhost').searchParams.has('priceMin'), false);
 });
 
-test('catalog filters send cents, retain selections when collapsed, and reset', async () => {
+test('catalog filters send rubles, retain selections when collapsed, and reset', async () => {
   renderCatalogPage(app);
   await tick();
   const form = app.querySelector('[data-catalog-filters]');
@@ -68,12 +68,12 @@ test('catalog filters send cents, retain selections when collapsed, and reset', 
   assert.equal(app.querySelector('.site-header'), header);
   await tick();
   const filtered = new URL(requests.at(-1), 'http://localhost');
-  assert.equal(filtered.searchParams.get('priceMin'), '2000');
-  assert.equal(filtered.searchParams.get('priceMax'), '90000');
+  assert.equal(filtered.searchParams.get('priceMin'), '20');
+  assert.equal(filtered.searchParams.get('priceMax'), '900');
   assert.equal(filtered.searchParams.get('seller'), 'Seller 9');
   assert.equal(app.querySelector('[data-price-max-range]').max, '2000');
   assert.match(app.querySelector('[data-product-count]').textContent, /Показано 1 товар/);
-  assert.match(window.location.search, /priceMin=2000/);
+  assert.match(window.location.search, /priceMin=20/);
   assert.ok(app.querySelector('.catalog-page__sort'));
   form.reset();
   assert.equal(app.querySelector('.catalog-page__layout'), layout);
@@ -115,7 +115,7 @@ test('category change recalculates the unfiltered price scale', async () => {
 
 test('search without category keeps filters, sorting, query and unfiltered bounds', async () => {
   requests.length = 0;
-  window.history.replaceState({}, '', '/?query=Book&priceMin=2000&seller=Seller+9');
+  window.history.replaceState({}, '', '/?query=Book&priceMin=20&seller=Seller+9');
   renderCatalogPage(app);
   await tick();
   const form = app.querySelector('[data-catalog-filters]');

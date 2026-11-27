@@ -14,6 +14,39 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
   if (!form || !(min instanceof HTMLInputElement) || !(max instanceof HTMLInputElement)
     || !minRange || !maxRange || !track || !error || !sellers || !toggle) throw new Error('Не найдены фильтры каталога.');
 
+  const ratingMin = form.querySelector<HTMLInputElement>('[name="ratingMin"]');
+  const ratingMax = form.querySelector<HTMLInputElement>('[name="ratingMax"]');
+  const ratingMinRange = form.querySelector<HTMLInputElement>('[data-rating-min-range]');
+  const ratingMaxRange = form.querySelector<HTMLInputElement>('[data-rating-max-range]');
+  const ratingTrack = form.querySelector<HTMLElement>('[data-rating-track]');
+  const ratingError = form.querySelector<HTMLElement>('[data-rating-error]');
+  if (!ratingMin || !ratingMax || !ratingMinRange || !ratingMaxRange || !ratingTrack || !ratingError) {
+    throw new Error('Не найдены фильтры рейтинга.');
+  }
+  ratingMin.value = initial.get('ratingMin') ?? '';
+  ratingMax.value = initial.get('ratingMax') ?? '';
+
+  const updateRating = (): boolean => {
+    ratingMinRange.value = ratingMin.value || '0';
+    ratingMaxRange.value = ratingMax.value || '5';
+    ratingTrack.style.setProperty('--start', Number(ratingMinRange.value) / 5 * 100 + '%');
+    ratingTrack.style.setProperty('--end', Number(ratingMaxRange.value) / 5 * 100 + '%');
+    const invalid = !ratingMin.validity.valid || !ratingMax.validity.valid
+      || Number(ratingMin.value || 0) > Number(ratingMax.value || 5);
+    ratingError.textContent = invalid ? 'Укажите рейтинг от 0 до 5. Значение «От» должно быть не больше «До».' : '';
+    ratingError.hidden = !invalid;
+    return !invalid;
+  };
+
+  for (const [field, range] of [[ratingMin, ratingMinRange], [ratingMax, ratingMaxRange]]) {
+    field.addEventListener('input', updateRating);
+    range.addEventListener('input', () => {
+      field.value = range.value;
+      updateRating();
+    });
+  }
+  updateRating();
+
   const categoryList = form.querySelector<HTMLElement>('[data-filter-categories]');
   if (categoryList) {
     categoryList.textContent = 'Загрузка категорий…';
@@ -37,8 +70,8 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
 
   let scaleMax = 300000;
   let expanded = false;
-  min.value = initial.has('priceMin') ? String(Number(initial.get('priceMin')) / 100) : '';
-  max.value = initial.has('priceMax') ? String(Number(initial.get('priceMax')) / 100) : '';
+  min.value = initial.get('priceMin') ?? '';
+  max.value = initial.get('priceMax') ?? '';
   const updateTrack = () => {
     track.style.setProperty('--start', `${Number(minRange.value) / scaleMax * 100}%`);
     track.style.setProperty('--end', `${Number(maxRange.value) / scaleMax * 100}%`);
@@ -49,7 +82,7 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
     if (fields.some((field) => field.validity.badInput || (field.value && !Number.isFinite(Number(field.value))))) message = 'Введите корректную цену.';
     else if (fields.some((field) => field.value && Number(field.value) < 0)) message = 'Цена не может быть отрицательной.';
     else if (fields.some((field) => field.value && Number(field.value) > Number.MAX_SAFE_INTEGER / 100)) message = 'Цена слишком велика.';
-    else if (fields.some((field) => field.value && Number(field.value) % 10 !== 0)) message = 'Укажите цену с шагом 10 ₽.';
+    else if (fields.some((field) => field.value && !Number.isInteger(Number(field.value)))) message = 'Укажите цену в целых рублях.';
     else if (min.value && max.value && Number(min.value) > Number(max.value)) message = 'Цена «От» не может превышать цену «До».';
     error.textContent = message;
     error.hidden = !message;
@@ -57,7 +90,7 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
   };
   const syncRange = (field: HTMLInputElement, range: HTMLInputElement) => {
     if (!field.value || field.validity.badInput) range.value = field === min ? '0' : String(scaleMax);
-    else range.value = String(Math.min(scaleMax, Math.max(0, Math.round(Number(field.value) / 10) * 10)));
+    else range.value = String(Math.min(scaleMax, Math.max(0, Math.round(Number(field.value)))));
     if (Number(minRange.value) > Number(maxRange.value)) range.value = field === min ? maxRange.value : minRange.value;
     updateTrack();
     validate();
@@ -74,10 +107,12 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
   }
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    if (!validate() || !form.reportValidity()) return;
+    if (!validate() || !updateRating() || !form.reportValidity()) return;
     const filters = new URLSearchParams();
-    if (min.value) filters.set('priceMin', String(Number(min.value) * 100));
-    if (max.value) filters.set('priceMax', String(Number(max.value) * 100));
+    if (ratingMin.value) filters.set('ratingMin', ratingMin.value);
+    if (ratingMax.value) filters.set('ratingMax', ratingMax.value);
+    if (min.value) filters.set('priceMin', min.value);
+    if (max.value) filters.set('priceMax', max.value);
     form.querySelectorAll<HTMLInputElement>('input[name=category]:checked, input[name=seller]:checked').forEach((input) => {
       filters.append(input.name, input.value);
     });
@@ -85,7 +120,7 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
   });
   form.addEventListener('reset', () => {
     onApply(new URLSearchParams());
-    queueMicrotask(() => { syncRange(min, minRange); syncRange(max, maxRange); });
+    queueMicrotask(() => { updateRating(); syncRange(min, minRange); syncRange(max, maxRange); });
   });
   toggle.addEventListener('click', () => {
     expanded = !expanded;

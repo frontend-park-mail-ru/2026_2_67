@@ -15,14 +15,26 @@
             <fieldset>
               <legend>Цена, ₽</legend>
               <div class="catalog-page__price-fields">
-                <label>От<input name="priceMin" type="number" min="0" step="10" placeholder="От"></label>
-                <label>До<input name="priceMax" type="number" min="0" step="10" placeholder="До"></label>
+                <label>От<input name="priceMin" type="number" min="0" step="1" placeholder="От"></label>
+                <label>До<input name="priceMax" type="number" min="0" step="1" placeholder="До"></label>
               </div>
               <div class="catalog-page__price-sliders">
-                <input type="range" min="0" max="300000" step="10" value="0" aria-label="Цена от" data-price-min-range>
-                <input type="range" min="0" max="300000" step="10" value="300000" aria-label="Цена до" data-price-max-range>
+                <input type="range" min="0" max="300000" step="1" value="0" aria-label="Цена от" data-price-min-range>
+                <input type="range" min="0" max="300000" step="1" value="300000" aria-label="Цена до" data-price-max-range>
               </div>
               <p class="catalog-page__price-error" data-price-error role="alert" hidden></p>
+            </fieldset>
+            <fieldset>
+              <legend>Рейтинг</legend>
+              <div class="catalog-page__price-fields">
+                <label>От<input name="ratingMin" type="number" min="0" max="5" step="0.1" placeholder="0"></label>
+                <label>До<input name="ratingMax" type="number" min="0" max="5" step="0.1" placeholder="5"></label>
+              </div>
+              <div class="catalog-page__price-sliders" data-rating-track>
+                <input type="range" min="0" max="5" step="0.1" value="0" aria-label="Рейтинг от" data-rating-min-range>
+                <input type="range" min="0" max="5" step="0.1" value="5" aria-label="Рейтинг до" data-rating-max-range>
+              </div>
+              <p class="catalog-page__price-error" data-rating-error role="alert" hidden></p>
             </fieldset>
             <fieldset>
               <legend>Категории</legend>
