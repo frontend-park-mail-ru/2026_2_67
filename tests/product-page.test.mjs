@@ -10,9 +10,7 @@ for (const key of ['window', 'document', 'HTMLElement', 'HTMLButtonElement', 'HT
   globalThis[key] = dom.window[key];
 }
 globalThis.Handlebars = Handlebars;
-const token = `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.x`;
-localStorage.setItem('accessToken', token);
-localStorage.setItem('userId', '42');
+const token = `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, UserID: 42 })).toString('base64url')}.x`;
 
 let basket = [];
 let basketFails = false;
@@ -30,6 +28,7 @@ globalThis.fetch = async (url, options = {}) => {
   const path = String(url);
   if (path.startsWith('file:')) return new Response(readFileSync(new URL(path), 'utf8'));
   requests.push({ path, options });
+  if (path.endsWith('/auth/login')) return Response.json({ accessToken: token, userId: 42 });
   if (path.endsWith('/profile')) return Response.json({ name: 'Покупатель' });
   if (path.endsWith('/basket/is_valid')) {
     if (validityFails) return new Response(null, { status: 503 });
@@ -75,6 +74,8 @@ const { getProfileEmailError } = await import('../public/js/shared/forms/validat
 const cartItemsTemplate = Handlebars.compile(readFileSync(new URL('../public/js/templates/cart-items.hbs', import.meta.url), 'utf8'));
 const ordersListTemplate = Handlebars.compile(readFileSync(new URL('../public/js/templates/orders-list.hbs', import.meta.url), 'utf8'));
 await loadTemplates();
+const { login } = await import('../public/js/shared/auth.ts');
+await login('buyer@example.com', 'password');
 const app = document.querySelector('#app');
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 

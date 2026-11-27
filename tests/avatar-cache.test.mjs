@@ -4,9 +4,12 @@ import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('', { url: 'http://localhost:8081/' });
 globalThis.localStorage = dom.window.localStorage;
-localStorage.setItem('accessToken', 'test-token');
-localStorage.setItem('userId', '42');
-const { getCurrentUser, loadCurrentUser, setCurrentUserProfile } = await import('../public/js/shared/auth.ts');
+globalThis.sessionStorage = dom.window.sessionStorage;
+const { getCurrentUser, loadCurrentUser, setCurrentUserProfile, login } = await import('../public/js/shared/auth.ts');
+const token = `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, UserID: 42 })).toString('base64url')}.x`;
+globalThis.fetch = async (url) => String(url).endsWith('/auth/login')
+  ? Response.json({ accessToken: token, userId: 42 }) : Response.json({ avatarUrl: '/media/media/avatar.png', name: 'Buyer' });
+await login('buyer@example.com', 'password');
 
 test('profile and header avatar URLs are refreshed after upload and profile reload', async () => {
   setCurrentUserProfile({ avatarUrl: '/media/media/avatar.png', telephone: '' }, '42');

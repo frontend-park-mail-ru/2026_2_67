@@ -32,6 +32,14 @@ worker.addEventListener('fetch', (event: FetchEvent) => {
       return cached ?? Response.error();
     }));
   } else if (!url.search && assets.has(url.pathname)) {
-    event.respondWith(caches.open(cacheName).then(async (cache) => (await cache.match(request)) ?? fetch(request)));
+    event.respondWith(caches.open(cacheName).then(async (cache) => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch {
+        return (await cache.match(request)) ?? Response.error();
+      }
+    }));
   }
 });

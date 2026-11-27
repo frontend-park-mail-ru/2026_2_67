@@ -41,6 +41,10 @@ const server = createServer((request, response) => {
         host: upstreamUrl.host,
       },
     }, (proxyResponse) => {
+      if (response.destroyed) {
+        proxyResponse.resume();
+        return;
+      }
       response.writeHead(proxyResponse.statusCode || 500, proxyResponse.headers);
       pipeline(proxyResponse, response, (error) => {
         if (error && !response.headersSent) {
@@ -50,10 +54,12 @@ const server = createServer((request, response) => {
     });
 
     proxyRequest.on('error', () => {
+      if (response.destroyed) return;
       response.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
       response.end('Backend unavailable');
     });
 
+    request.on('aborted', () => proxyRequest.destroy());
     request.pipe(proxyRequest);
     return;
   }

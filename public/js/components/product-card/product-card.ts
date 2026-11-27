@@ -19,6 +19,8 @@ export function createProductCard(product: ProductCard, showAddToCartButton: boo
     title: product.title,
     sellerName: product.sellerName,
     price: product.price,
+    oldPrice: product.oldPrice,
+    discountPercent: product.discountPercent,
     currentImage: product.images[0],
     hasMultipleImages: product.images.length > 1,
     rating: Number.isFinite(product.rating) && product.rating > 0 && product.rating <= 5 ? ratingFormatter.format(product.rating) : '—',

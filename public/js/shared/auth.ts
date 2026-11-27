@@ -32,8 +32,14 @@ export type AuthResult =
 
 type Credentials = { email: string; password: string };
 
-let accessToken: string | null = localStorage.getItem(ACCESS_TOKEN_KEY);
-let userId = localStorage.getItem(USER_ID_KEY);
+localStorage.removeItem(ACCESS_TOKEN_KEY);
+localStorage.removeItem(USER_ID_KEY);
+if (typeof sessionStorage !== 'undefined') {
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(USER_ID_KEY);
+}
+let accessToken: string | null = null;
+let userId: string | null = null;
 let currentUser: UserProfile | null = null;
 let avatarCacheVersion = Date.now();
 
@@ -41,6 +47,7 @@ function refreshAvatarCacheVersion(): void {
   avatarCacheVersion = Math.max(Date.now(), avatarCacheVersion + 1);
 }
 let refreshPromise: Promise<boolean> | null = null;
+let refreshController: AbortController | null = null;
 let sessionGeneration = 0;
 
 function tokenExpiresAt(token: string): number | null {
@@ -54,6 +61,14 @@ function tokenExpiresAt(token: string): number | null {
   }
 }
 
+function tokenUserId(token: string): string | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { UserID?: unknown };
+    return typeof payload.UserID === 'number' && Number.isSafeInteger(payload.UserID) && payload.UserID > 0
+      ? String(payload.UserID) : null;
+  } catch { return null; }
+}
+
 function tokenIsExpired(token: string): boolean {
   const expiresAt = tokenExpiresAt(token);
   return expiresAt !== null && Date.now() >= expiresAt;
@@ -63,25 +78,28 @@ function saveSession(session: AuthSession): void {
   if (typeof session.accessToken !== 'string' || tokenExpiresAt(session.accessToken) === null) {
     throw new TypeError('Access token has no valid expiration.');
   }
+  const nextUserId = session.userId === undefined ? tokenUserId(session.accessToken) : String(session.userId);
+  if (!nextUserId || !/^\d+$/.test(nextUserId)) throw new TypeError('Access token has no valid user ID.');
   accessToken = session.accessToken;
-  userId = session.userId === undefined ? userId : String(session.userId);
+  userId = nextUserId;
   sessionGeneration += 1;
-  localStorage.setItem(ACCESS_TOKEN_KEY, String(accessToken));
-
-  if (userId !== null) {
-    localStorage.setItem(USER_ID_KEY, userId);
-  }
 }
 
 function clearSession(): void {
   clearStockState();
   sessionGeneration += 1;
+  refreshController?.abort();
+  refreshPromise = null;
   accessToken = null;
   userId = null;
   currentUser = null;
   refreshAvatarCacheVersion();
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(USER_ID_KEY);
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(USER_ID_KEY);
+  }
 }
 
 async function readResponse(response: Response): Promise<unknown> {
@@ -97,10 +115,14 @@ function readField(value: unknown, key: string): unknown {
 
 async function refreshAccessToken(): Promise<boolean> {
   const generation = sessionGeneration;
+  const controller = new AbortController();
+  refreshController = controller;
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
+      cache: 'no-store',
+      signal: controller.signal,
     });
     if (generation !== sessionGeneration) return false;
     if (!response.ok) {
@@ -115,19 +137,22 @@ async function refreshAccessToken(): Promise<boolean> {
       clearSession();
       return false;
     }
-    saveSession({ accessToken: token, userId: readField(result, 'userId') });
+    saveSession({ accessToken: token, userId: undefined });
     return true;
   } catch {
     if (generation === sessionGeneration) clearSession();
     return false;
+  } finally {
+    if (refreshController === controller) refreshController = null;
   }
 }
 
 function refreshOnce(): Promise<boolean> {
   if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => {
-      refreshPromise = null;
+    const pending = refreshAccessToken().finally(() => {
+      if (refreshPromise === pending) refreshPromise = null;
     });
+    refreshPromise = pending;
   }
   return refreshPromise;
 }
@@ -150,16 +175,18 @@ export async function authorizedFetch(path: string, options: RequestInit = {}): 
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: 'include',
+    cache: 'no-store',
   });
 
   const sentToken = accessToken;
   const response = await send(sentToken);
-  if (response.status !== 401 || !sentToken || !accessToken) return response;
+  if ((response.status !== 401 && response.status !== 403) || !sentToken || !accessToken) return response;
+  if (response.status === 403 && !tokenIsExpired(accessToken)) return response;
 
   if (accessToken !== sentToken && !tokenIsExpired(accessToken)) {
     return send(accessToken);
   }
-  if (tokenIsExpired(accessToken) && await refreshOnce() && accessToken) {
+  if (await refreshOnce() && accessToken) {
     return send(accessToken);
   }
   return response;
@@ -175,7 +202,9 @@ export async function loadCurrentUser(): Promise<UserProfile | null> {
     return null;
   }
 
+  const requestedUserId = userId;
   const response = await authorizedFetch(`/buyers/${encodeURIComponent(userId)}/profile`);
+  if (requestedUserId !== userId || !accessToken) return null;
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
@@ -186,27 +215,19 @@ export async function loadCurrentUser(): Promise<UserProfile | null> {
   }
 
   const profile = await readResponse(response);
+  if (requestedUserId !== userId || !accessToken) return null;
   currentUser = { ...Object(profile), phoneNumber: readField(profile, 'telephone') };
   refreshAvatarCacheVersion();
   return currentUser;
 }
 
 /**
- * Restores a session with the saved access token, refreshing only after expiration.
+ * Restores a session from the HttpOnly refresh cookie.
  * @returns {Promise<Object|null>} Profile or null if restoration fails.
  */
 export async function restoreSession(): Promise<UserProfile | null> {
-  if (!userId || !accessToken) {
-    if (userId || accessToken) clearSession();
-    return null;
-  }
-
   try {
-    if (tokenExpiresAt(accessToken) === null) {
-      clearSession();
-      return null;
-    }
-    if (tokenIsExpired(accessToken) && !await refreshOnce()) return null;
+    if (!await refreshOnce()) return null;
     return await loadCurrentUser();
   } catch {
     return null;
@@ -214,13 +235,19 @@ export async function restoreSession(): Promise<UserProfile | null> {
 }
 
 async function submitCredentials(endpoint: 'login' | 'register', payload: Credentials): Promise<AuthResult> {
+  refreshController?.abort();
+  sessionGeneration += 1;
+  const generation = sessionGeneration;
   const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
+    cache: 'no-store',
     body: JSON.stringify(payload),
   });
   const result = await readResponse(response);
+
+  if (generation !== sessionGeneration) return { ok: false, errors: {} };
 
   if (!response.ok) {
     return { ok: false, status: response.status, errors: result };
@@ -263,13 +290,16 @@ export function register(email: string, password: string): Promise<AuthResult> {
  * @returns {Promise<void>}
  */
 export async function logout(): Promise<void> {
+  if (accessToken && tokenIsExpired(accessToken)) await refreshOnce();
+  const token = accessToken;
+  clearSession();
   try {
-    if (accessToken) {
-      await authorizedFetch('/auth/logout', { method: 'POST' });
+    if (token) {
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include',
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` } });
     }
-  } finally {
-    clearSession();
-  }
+  } catch { /* The local session is already cleared. */ }
 }
 
 /**

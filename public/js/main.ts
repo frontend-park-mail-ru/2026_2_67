@@ -86,10 +86,10 @@ function renderCurrentRoute(): void {
       const seller = params.get('seller')?.trim();
       const query = params.get('query')?.trim();
       if (category) title = category;
-      if (seller) title = `Продавец: ${seller}`;
+      if (seller && !category) title = `Продавец: ${seller}`;
       if (query) title = `Поиск: ${query}`;
       if (category && query) title = `${category} — поиск: ${query}`;
-      if (seller && query) title = `Продавец: ${seller} — поиск: ${query}`;
+      if (seller && query && !category) title = `Продавец: ${seller} — поиск: ${query}`;
     }
     document.title = `VibeMarket — ${title}`;
     renderPage();

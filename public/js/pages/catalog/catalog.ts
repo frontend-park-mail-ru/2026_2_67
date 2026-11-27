@@ -8,13 +8,14 @@ import { rememberProducts } from '../../data/product-session.js';
 import type { ApiProduct, ProductCard } from '../../data/map-api-product.js';
 import { initCart } from '../../components/cart/cart.js';
 import { updateCartMarkup } from '../../components/cart/cart-dom.js';
+import { initCatalogFilters } from '../../components/catalog-filters/catalog-filters.js';
 import {
   authorizedFetch,
   getCurrentUser,
   loadCurrentUser,
 } from '../../shared/auth.js';
 
-type ProductsCallback = (products: ProductCard[], cursor: string) => void;
+type ProductsCallback = (products: ProductCard[], cursor: string, maxPrice: number | null) => void;
 
 function requireHTMLElement(parent: Element, selector: string): HTMLElement {
   const element = parent.querySelector(selector);
@@ -46,12 +47,12 @@ function renderProducts(grid: HTMLElement, products: ProductCard[], getCartQuant
   });
 }
 
-async function loadProducts(grid: HTMLElement, page: HTMLElement, category: string | null, seller: string | null, query: string, sortBy: string, cursor: string, signal: AbortSignal, onProducts: ProductsCallback): Promise<boolean> {
+async function loadProducts(page: HTMLElement, category: string | null, seller: string | null, query: string, sortBy: string, filters: URLSearchParams, cursor: string, signal: AbortSignal, onProducts: ProductsCallback): Promise<boolean> {
   try {
     // При следующей загрузке сохраняем категорию и добавляем курсор из прошлого ответа.
-    const params = new window.URLSearchParams();
+    const params = new window.URLSearchParams(filters);
     if (category) params.set('category', category);
-    if (seller) params.append('seller', seller);
+    if (seller && !category && !params.has('seller')) params.append('seller', seller);
     if (query) params.set('query', query);
     if (category) params.set('sortBy', sortBy);
     if (cursor) params.set('cursor', cursor);
@@ -75,12 +76,11 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
     rememberProducts(apiProducts as ApiProduct[]);
     const next = 'nextCursor' in result ? result.nextCursor : '';
     if (typeof next !== 'string') throw new Error('Products response has an invalid cursor.');
-    onProducts(apiProducts.map((product) => mapApiProduct(product as ApiProduct)), next);
+    const maxPrice = 'priceResultMax' in result && typeof result.priceResultMax === 'number'
+      && Number.isFinite(result.priceResultMax) && result.priceResultMax >= 0 ? result.priceResultMax : null;
+    onProducts(apiProducts.map((product) => mapApiProduct(product as ApiProduct)), next, maxPrice);
     return true;
   } catch {
-    if (!cursor && !signal.aborted && page.isConnected) {
-      grid.innerHTML = '<p class="catalog-page__message" role="alert">Не удалось загрузить товары. <button type="button" data-retry-products>Повторить</button></p>';
-    }
     return false;
   }
 }
@@ -91,6 +91,8 @@ async function loadProducts(grid: HTMLElement, page: HTMLElement, category: stri
  */
 export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   const searchParams = new window.URLSearchParams(window.location.search);
+  const savedSort = searchParams.get('sortBy');
+  if (savedSort && ['new', 'buy-count', 'asc-price', 'desc-price', 'desc-rating'].includes(savedSort)) sortBy = savedSort;
   const category = searchParams.get('category');
   const seller = searchParams.get('seller')?.trim() || null;
   const query = searchParams.get('query')?.trim() ?? '';
@@ -117,6 +119,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
         const selectedSort = option.dataset.sortBy;
         if (!selectedSort || selectedSort === sortBy) return;
         sortBy = selectedSort;
+        updateUrl();
         void requestProducts();
       });
     });
@@ -136,16 +139,63 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     });
   }
   const grid = requireHTMLElement(page, '.catalog-page__grid');
+  const countLabel = page.querySelector<HTMLElement>('[data-product-count]');
   const loadMoreWrap = requireHTMLElement(page, '.catalog-page__load-more-wrap');
   const loadMoreButton = requireButton(loadMoreWrap, 'button');
   const searchForm = requireHTMLElement(page, '[data-catalog-search]');
   const searchInput = requireInput(searchForm, 'input[name="query"]');
   searchInput.value = query;
+  let appliedFilters = new URLSearchParams();
+  for (const key of category ? ['priceMin', 'priceMax'] : []) {
+    const value = searchParams.get(key);
+    if (value && /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) % 1000 === 0) appliedFilters.set(key, value);
+  }
+  if (appliedFilters.has('priceMin') && appliedFilters.has('priceMax')
+    && Number(appliedFilters.get('priceMin')) > Number(appliedFilters.get('priceMax'))) {
+    appliedFilters.delete('priceMin');
+    appliedFilters.delete('priceMax');
+  }
+  if (category) searchParams.getAll('seller').filter(Boolean).forEach((value) => appliedFilters.append('seller', value));
+  const initialFilters = appliedFilters.toString();
+  let priceBoundsReady = false;
+  function updateUrl(): void {
+    const url = new URL(window.location.href);
+    for (const key of ['priceMin', 'priceMax', 'seller', 'sortBy']) url.searchParams.delete(key);
+    appliedFilters.forEach((value, key) => url.searchParams.append(key, value));
+    if (category && sortBy !== 'new') url.searchParams.set('sortBy', sortBy);
+    if (url.href !== window.location.href) window.history.pushState({}, '', url);
+  }
+  const setPriceMax = category ? initCatalogFilters(page, category, query, appliedFilters, (filters) => {
+    appliedFilters = filters;
+    updateUrl();
+    void requestProducts();
+  }) : null;
+  if (category && initialFilters) {
+    void (async () => {
+      try {
+        const params = new URLSearchParams({ category, limit: '1' });
+        if (query) params.set('query', query);
+        const response = await authorizedFetch(`/products?${params}`);
+        if (!response.ok) return;
+        const data: unknown = await response.json();
+        if (page.isConnected && typeof data === 'object' && data !== null && 'priceResultMax' in data
+          && typeof data.priceResultMax === 'number' && Number.isFinite(data.priceResultMax)) {
+          setPriceMax?.(data.priceResultMax);
+          priceBoundsReady = true;
+        }
+      } catch { /* The product request still shows the catalog. */ }
+    })();
+  }
   let products: ProductCard[] | null = null;
   let nextCursor: string = '';
   let requestController: AbortController | undefined;
   let isLoading = false;
   let failed = false;
+  const countWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товаров' };
+  const plurals = new Intl.PluralRules('ru-RU');
+  function updateProductCount(): void {
+    if (countLabel && products) countLabel.textContent = `Показано ${products.length} ${countWords[plurals.select(products.length)]}`;
+  }
   const seenCursors = new Set<string>();
   const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver((entries) => {
     if (!page.isConnected) { observer?.disconnect(); return; }
@@ -223,11 +273,13 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     renderProducts(grid, products, cart.getProductQuantity, cart.isIncreaseDisabled, getStockWarning, cart.canUseCart());
   }
 
-  function acceptProducts(loadedProducts: ProductCard[], cursor: string): void {
+  function acceptProducts(loadedProducts: ProductCard[], cursor: string, maxPrice: number | null): void {
+    if (!initialFilters && maxPrice !== null && !priceBoundsReady) { setPriceMax?.(maxPrice); priceBoundsReady = true; }
     products = loadedProducts;
     nextCursor = cursor;
     loadMoreWrap.hidden = !nextCursor;
     showProducts();
+    updateProductCount();
   }
 
   function appendProducts(loadedProducts: ProductCard[], cursor: string): void {
@@ -238,6 +290,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     nextCursor = cursor;
     loadMoreWrap.hidden = !nextCursor;
     if (unique.length) renderProducts(grid, unique, cart.getProductQuantity, cart.isIncreaseDisabled, getStockWarning, cart.canUseCart(), true);
+    updateProductCount();
   }
 
   async function requestProducts(append = false): Promise<void> {
@@ -249,23 +302,31 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     requestController = new AbortController();
     const { signal } = requestController;
     const requestedCursor = nextCursor;
+    const hadProducts = products !== null;
     if (!append) {
       seenCursors.clear();
-      products = null;
       nextCursor = '';
       loadMoreWrap.hidden = true;
-      grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
+      if (!hadProducts) grid.innerHTML = '<p class="catalog-page__message" role="status">Загрузка товаров…</p>';
     }
     grid.setAttribute('aria-busy', 'true');
     loadMoreButton.disabled = true;
     loadMoreButton.textContent = 'Загрузка…';
-    const loaded = await loadProducts(grid, page, category, seller, query, sortBy, nextCursor, signal,
+    const loaded = await loadProducts(page, category, seller, query, sortBy, appliedFilters, nextCursor, signal,
       append ? appendProducts : acceptProducts);
     if (signal.aborted || !page.isConnected) { if (!page.isConnected) observer?.disconnect(); return; }
+    if (!loaded && !append) {
+      if (hadProducts) {
+        if (countLabel) countLabel.textContent = 'Не удалось обновить товары';
+      } else {
+        grid.innerHTML = '<p class="catalog-page__message" role="alert">Не удалось загрузить товары. <button type="button" data-retry-products>Повторить</button></p>';
+      }
+    }
     if (loaded && append) seenCursors.add(requestedCursor);
     if (loaded && nextCursor && seenCursors.has(nextCursor)) {
       nextCursor = '';
       loadMoreWrap.hidden = true;
+      updateProductCount();
     }
     failed = !loaded;
     isLoading = false;

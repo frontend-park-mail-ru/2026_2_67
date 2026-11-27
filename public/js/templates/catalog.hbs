@@ -4,20 +4,54 @@
     <div class="catalog-page__content-inner">
       <h1>{{heading}}</h1>
       {{#if category}}
-      <details class="catalog-page__sort">
-        <summary class="catalog-page__sort-toggle" aria-label="Сортировка: Сначала новые">Сначала новые</summary>
-        <div class="catalog-page__sort-options" role="group" aria-label="Варианты сортировки">
-          <button type="button" data-sort-by="new" aria-pressed="true">Сначала новые</button>
-          <button type="button" data-sort-by="buy-count" aria-pressed="false">По количеству покупок</button>
-          <button type="button" data-sort-by="asc-price" aria-pressed="false">Сначала дешёвые</button>
-          <button type="button" data-sort-by="desc-price" aria-pressed="false">Сначала дорогие</button>
-          <button type="button" data-sort-by="high-rating" aria-pressed="false">Сначала с высоким рейтингом</button>
-        </div>
-      </details>
+      <div class="catalog-page__toolbar">
+        <p class="catalog-page__count" data-product-count role="status">Загрузка товаров…</p>
+        <details class="catalog-page__sort">
+          <summary class="catalog-page__sort-toggle" aria-label="Сортировка: Сначала новые">Сначала новые</summary>
+          <div class="catalog-page__sort-options" role="group" aria-label="Варианты сортировки">
+            <button type="button" data-sort-by="new" aria-pressed="true">Сначала новые</button>
+            <button type="button" data-sort-by="buy-count" aria-pressed="false">По количеству покупок</button>
+            <button type="button" data-sort-by="asc-price" aria-pressed="false">Сначала дешёвые</button>
+            <button type="button" data-sort-by="desc-price" aria-pressed="false">Сначала дорогие</button>
+            <button type="button" data-sort-by="desc-rating" aria-pressed="false">Сначала с высоким рейтингом</button>
+          </div>
+        </details>
+      </div>
       {{/if}}
-      <div class="catalog-page__grid">{{{productsHtml}}}</div>
-      <div class="catalog-page__load-more-wrap" hidden>
-        <button class="catalog-page__load-more" type="button">Показать ещё</button>
+      <div class="catalog-page__layout{{#if category}} catalog-page__layout--category{{/if}}">
+        {{#if category}}
+        <aside class="catalog-page__filters" aria-label="Фильтры товаров">
+          <form data-catalog-filters>
+            <fieldset>
+              <legend>Цена, ₽</legend>
+              <div class="catalog-page__price-fields">
+                <label>От<input name="priceMin" type="number" min="0" step="10" placeholder="От"></label>
+                <label>До<input name="priceMax" type="number" min="0" step="10" placeholder="До"></label>
+              </div>
+              <div class="catalog-page__price-sliders">
+                <input type="range" min="0" max="300000" step="10" value="0" aria-label="Цена от" data-price-min-range>
+                <input type="range" min="0" max="300000" step="10" value="300000" aria-label="Цена до" data-price-max-range>
+              </div>
+              <p class="catalog-page__price-error" data-price-error role="alert" hidden></p>
+            </fieldset>
+            <fieldset>
+              <legend>Продавцы</legend>
+              <div class="catalog-page__sellers" data-sellers role="group" aria-label="Продавцы"></div>
+              <button class="catalog-page__seller-toggle" type="button" data-seller-toggle hidden>Показать ещё</button>
+            </fieldset>
+            <div class="catalog-page__filter-actions">
+              <button class="catalog-page__apply" type="submit">Применить фильтры</button>
+              <button class="catalog-page__reset" type="reset">Сбросить фильтры</button>
+            </div>
+          </form>
+        </aside>
+        {{/if}}
+        <div class="catalog-page__results">
+          <div class="catalog-page__grid">{{{productsHtml}}}</div>
+          <div class="catalog-page__load-more-wrap" hidden>
+            <button class="catalog-page__load-more" type="button">Показать ещё</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
