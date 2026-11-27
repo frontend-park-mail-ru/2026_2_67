@@ -1,3 +1,4 @@
+import { getCategories } from '../categories/categories.js';
 import { authorizedFetch } from '../../shared/auth.js';
 
 export function initCatalogFilters(page: HTMLElement, category: string | null, query: string, initial: URLSearchParams, onApply: (filters: URLSearchParams) => void): (maxPrice: number) => void {
@@ -12,6 +13,27 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
   const toggle = form?.querySelector<HTMLButtonElement>('[data-seller-toggle]');
   if (!form || !(min instanceof HTMLInputElement) || !(max instanceof HTMLInputElement)
     || !minRange || !maxRange || !track || !error || !sellers || !toggle) throw new Error('Не найдены фильтры каталога.');
+
+  const categoryList = form.querySelector<HTMLElement>('[data-filter-categories]');
+  if (categoryList) {
+    categoryList.textContent = 'Загрузка категорий…';
+    getCategories().then((categories) => {
+      if (!page.isConnected) return;
+      categoryList.textContent = '';
+      for (const item of categories) {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'category';
+        checkbox.value = item.category;
+        checkbox.checked = initial.getAll('category').includes(item.category);
+        label.append(checkbox, document.createTextNode(item.category));
+        categoryList.append(label);
+      }
+    }).catch(() => {
+      if (page.isConnected) categoryList.textContent = 'Не удалось загрузить категории.';
+    });
+  }
 
   let scaleMax = 300000;
   let expanded = false;
@@ -56,7 +78,9 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
     const filters = new URLSearchParams();
     if (min.value) filters.set('priceMin', String(Number(min.value) * 100));
     if (max.value) filters.set('priceMax', String(Number(max.value) * 100));
-    sellers.querySelectorAll<HTMLInputElement>('input:checked').forEach((input) => filters.append('seller', input.value));
+    form.querySelectorAll<HTMLInputElement>('input[name=category]:checked, input[name=seller]:checked').forEach((input) => {
+      filters.append(input.name, input.value);
+    });
     onApply(filters);
   });
   form.addEventListener('reset', () => {
@@ -74,7 +98,7 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
       const found: { id: number; name: string }[] = [];
       for (let offset = 0; page.isConnected; offset += 30) {
         const params = new URLSearchParams({ limit: '30', offset: String(offset) });
-        if (category) params.set('category', category);
+
         if (query) params.set('query', query);
         const response = await authorizedFetch(`/sellers?${params}`);
         if (!response.ok) throw new Error('Sellers request failed');
@@ -89,7 +113,7 @@ export function initCatalogFilters(page: HTMLElement, category: string | null, q
       if (!page.isConnected) return;
       found.forEach((item, index) => {
         const label = document.createElement('label');
-        if (index >= 8) { label.dataset.extraSeller = ''; label.hidden = true; }
+        if (index >= 8 && !initial.getAll('seller').includes(item.name)) { label.dataset.extraSeller = ''; label.hidden = true; }
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.name = 'seller';

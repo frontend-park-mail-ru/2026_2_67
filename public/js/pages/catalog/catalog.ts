@@ -64,10 +64,10 @@ async function loadProducts(page: HTMLElement, category: string | null, seller: 
   try {
     // При следующей загрузке сохраняем категорию и добавляем курсор из прошлого ответа.
     const params = new window.URLSearchParams(filters);
-    if (category) params.set('category', category);
-    if (seller && !category && !query && !params.has('seller')) params.append('seller', seller);
+
+
     if (query) params.set('query', query);
-    if (category || query) params.set('sortBy', sortBy);
+    if (category || query || seller) params.set('sortBy', sortBy);
     if (cursor) params.set('cursor', cursor);
     const path = params.size ? `/products?${params}` : '/products';
     const response = await authorizedFetch(path, { signal });
@@ -106,10 +106,11 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   const searchParams = new window.URLSearchParams(window.location.search);
   const savedSort = searchParams.get('sortBy');
   if (savedSort && ['new', 'buy-count', 'asc-price', 'desc-price', 'desc-rating'].includes(savedSort)) sortBy = savedSort;
-  const category = searchParams.get('category')?.trim() || null;
+  const selectedCategories = searchParams.getAll('category').filter(Boolean);
+  const category = selectedCategories.length === 1 ? selectedCategories[0] : null;
   const seller = searchParams.get('seller')?.trim() || null;
   const query = searchParams.get('query')?.trim() ?? '';
-  const advancedCatalog = Boolean(category || query);
+  const advancedCatalog = Boolean(selectedCategories.length || query || seller);
   const heading = category || (seller ? `Товары продавца: ${seller}` : 'Каталог товаров');
   app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, advancedCatalog, heading });
   const page = requireHTMLElement(app, '.catalog-page');
@@ -170,12 +171,13 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     appliedFilters.delete('priceMax');
   }
   if (advancedCatalog) searchParams.getAll('seller').filter(Boolean).forEach((value) => appliedFilters.append('seller', value));
+  selectedCategories.forEach((value) => appliedFilters.append('category', value));
   const initialFilters = appliedFilters.toString();
   let maxPriceForFilters: number | null = null;
   let loadedUrl = '';
   function updateUrl(): void {
     const url = new URL(window.location.href);
-    for (const key of ['priceMin', 'priceMax', 'seller', 'sortBy']) url.searchParams.delete(key);
+    for (const key of ['priceMin', 'priceMax', 'seller', 'category', 'sortBy']) url.searchParams.delete(key);
     appliedFilters.forEach((value, key) => url.searchParams.append(key, value));
     if (advancedCatalog && sortBy !== 'new') url.searchParams.set('sortBy', sortBy);
     if (url.href !== window.location.href) window.history.pushState({}, '', url);
@@ -217,6 +219,11 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     if (!page.isConnected) { observer?.disconnect(); return; }
     if (entries.some((entry) => entry.isIntersecting) && nextCursor && !isLoading && !failed) void requestProducts(true);
   }, { rootMargin: '300px' });
+  const header = page.querySelector<HTMLElement>('.site-header');
+  const headerObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+    if (header) page.style.setProperty('--catalog-header-height', header.getBoundingClientRect().height + 'px');
+  });
+  if (header) headerObserver?.observe(header);
   const filters = page.querySelector<HTMLElement>('.catalog-page__filters');
   const filterSizeObserver = filters && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
     const card = grid.firstElementChild;
@@ -229,6 +236,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     if (!page.isConnected) {
       observer?.disconnect();
       requestController?.abort();
+      headerObserver?.disconnect();
       filterSizeObserver?.disconnect();
       removalObserver.disconnect();
     }
