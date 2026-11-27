@@ -114,7 +114,7 @@ a:focus-visible, button:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: min(100%, 1300px);
+  width: min(100%, 1220px);
   min-height: 73px;
   margin: 0 auto;
   padding: 4px 28px;
@@ -610,7 +610,7 @@ a:focus-visible, button:focus-visible {
   .site-header__inner {
     flex-wrap: wrap;
     gap: 4px 8px;
-    padding: 8px 12px 10px;
+    padding: 8px 28px 10px;
   }
   .site-header__icon {
     width: 52px;
@@ -656,11 +656,6 @@ a:focus-visible, button:focus-visible {
   }
   .site-header__section {
     width: 100px;
-  }
-}
-@media (max-width: 360px) {
-  .site-header__inner {
-    padding-inline: 8px;
   }
 }
 
@@ -841,7 +836,7 @@ a:focus-visible, button:focus-visible {
   position: relative;
   padding-bottom: 12px;
 }
-.product-card__discount { position: absolute; z-index: 1; top: 8px; left: 8px; padding: 6px 10px; border-radius: var(--corner-radius); background: #d95c4f; color: #fff; font-size: 14px; font-weight: 700; pointer-events: none; }
+.product-card__discount { position: absolute; z-index: 1; top: 8px; right: 8px; padding: 6px 10px; border-radius: var(--corner-radius); background: #d95c4f; color: #fff; font-size: 14px; font-weight: 700; pointer-events: none; }
 .product-card__image {
   display: block;
   width: 100%;
@@ -2123,6 +2118,7 @@ a:focus-visible, button:focus-visible {
   .profile-page__account-facts {
     grid-template-columns: 1fr;
   }
+  .site-header__inner,
   .catalog-page__content-inner {
     padding-inline: 18px;
   }
