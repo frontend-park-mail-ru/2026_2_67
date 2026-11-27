@@ -15,6 +15,19 @@ import {
   loadCurrentUser,
 } from '../../shared/auth.js';
 
+interface SavedCatalog {
+  entryId: number;
+  url: string;
+  products: ProductCard[];
+  nextCursor: string;
+  seenCursors: string[];
+  maxPrice: number | null;
+  productId: string;
+  cardTop: number;
+}
+
+let savedCatalog: SavedCatalog | undefined;
+
 type ProductsCallback = (products: ProductCard[], cursor: string, maxPrice: number | null) => void;
 
 function requireHTMLElement(parent: Element, selector: string): HTMLElement {
@@ -158,7 +171,8 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   }
   if (advancedCatalog) searchParams.getAll('seller').filter(Boolean).forEach((value) => appliedFilters.append('seller', value));
   const initialFilters = appliedFilters.toString();
-  let priceBoundsReady = false;
+  let maxPriceForFilters: number | null = null;
+  let loadedUrl = '';
   function updateUrl(): void {
     const url = new URL(window.location.href);
     for (const key of ['priceMin', 'priceMax', 'seller', 'sortBy']) url.searchParams.delete(key);
@@ -183,7 +197,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
         if (page.isConnected && typeof data === 'object' && data !== null && 'priceResultMax' in data
           && typeof data.priceResultMax === 'number' && Number.isFinite(data.priceResultMax)) {
           setPriceMax?.(data.priceResultMax);
-          priceBoundsReady = true;
+          maxPriceForFilters = data.priceResultMax;
         }
       } catch { /* The product request still shows the catalog. */ }
     })();
@@ -276,7 +290,11 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   }
 
   function acceptProducts(loadedProducts: ProductCard[], cursor: string, maxPrice: number | null): void {
-    if (!initialFilters && maxPrice !== null && !priceBoundsReady) { setPriceMax?.(maxPrice); priceBoundsReady = true; }
+    loadedUrl = window.location.href;
+    if (!initialFilters && maxPrice !== null && maxPriceForFilters === null) {
+      maxPriceForFilters = maxPrice;
+      setPriceMax?.(maxPrice);
+    }
     products = loadedProducts;
     nextCursor = cursor;
     loadMoreWrap.hidden = !nextCursor;
@@ -338,16 +356,68 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     if (loaded && nextCursor && !seenCursors.has(nextCursor)) observer?.observe(loadMoreWrap);
   }
 
-  void requestProducts();
+  function restoreCatalog(saved: SavedCatalog): void {
+    acceptProducts([...saved.products], saved.nextCursor, saved.maxPrice);
+    for (const cursor of saved.seenCursors) {
+      seenCursors.add(cursor);
+    }
+
+    window.requestAnimationFrame(() => {
+      if (!page.isConnected) return;
+
+      const card = grid.querySelector(`[data-product-id="${saved.productId}"]`);
+      if (card) {
+        const currentTop = card.getBoundingClientRect().top;
+        const distance = currentTop - saved.cardTop;
+        window.scrollBy(0, distance);
+      }
+
+      if (nextCursor) observer?.observe(loadMoreWrap);
+    });
+  }
+
+  const entryId = window.history.state?.catalogEntry;
+  if (savedCatalog && savedCatalog.entryId === entryId && savedCatalog.url === window.location.href) {
+    restoreCatalog(savedCatalog);
+  } else {
+    void requestProducts();
+  }
 
   loadMoreButton.addEventListener('click', () => {
     if (!loadMoreButton.disabled && nextCursor) void requestProducts(true);
   });
 
   grid.addEventListener('click', (event) => {
-    if (event.target instanceof Element && event.target.closest('[data-retry-products]')) {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('[data-retry-products]')) {
       void requestProducts();
+      return;
     }
+
+    const link = event.target.closest<HTMLAnchorElement>('a[data-product-link]');
+    if (!link || event.defaultPrevented || event.button !== 0) return;
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (link.target === '_blank' || link.origin !== window.location.origin) return;
+
+    const card = link.closest<HTMLElement>('[data-product-id]');
+    if (!card?.dataset.productId) return;
+    if (!products || loadedUrl !== window.location.href) return;
+
+    const entryId = (savedCatalog?.entryId ?? 0) + 1;
+    savedCatalog = {
+      entryId,
+      url: loadedUrl,
+      products: [...products],
+      nextCursor,
+      seenCursors: [...seenCursors],
+      maxPrice: maxPriceForFilters,
+      productId: card.dataset.productId,
+      cardTop: card.getBoundingClientRect().top,
+    };
+
+    const historyState = { ...window.history.state, catalogEntry: entryId };
+    window.history.replaceState(historyState, '');
+    window.history.scrollRestoration = 'manual';
   });
 
   const currentUser = getCurrentUser();
