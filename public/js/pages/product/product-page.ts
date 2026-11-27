@@ -6,27 +6,40 @@ import { loadProduct } from './load-product.js';
 import { initProductReviews, productReviewsView } from './product-reviews.js';
 
 function initProductBar(app: HTMLElement, header: HTMLElement, bar: HTMLElement, reviews: HTMLElement): void {
-  function update(): void {
-    const height = header.getBoundingClientRect().height;
-    bar.style.setProperty('--header-height', `${height}px`);
+  let headerHeight = 0;
+
+  function updateVisibility(): void {
     const reviewsTop = reviews.getBoundingClientRect().top;
-    const visible = window.scrollY > 0 && reviewsTop <= height;
-    bar.inert = !visible;
-    bar.classList.toggle('product-bar--visible', visible);
+    const showBar = window.scrollY > 0 && reviewsTop <= headerHeight;
+
+    bar.inert = !showBar;
+    bar.classList.toggle('product-bar--visible', showBar);
   }
 
-  window.addEventListener('scroll', update, { passive: true });
-  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
-  resize?.observe(header);
-  if (reviews.previousElementSibling) resize?.observe(reviews.previousElementSibling);
+  function updatePosition(): void {
+    headerHeight = header.getBoundingClientRect().height;
+    bar.style.setProperty('--header-height', headerHeight + 'px');
+    updateVisibility();
+  }
+
+  updatePosition();
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+
+  let resize: ResizeObserver | undefined;
+  if (typeof ResizeObserver !== 'undefined') {
+    resize = new ResizeObserver(updatePosition);
+    resize.observe(header);
+    const productLayout = reviews.previousElementSibling;
+    if (productLayout) resize.observe(productLayout);
+  }
   const removal = new window.MutationObserver(() => {
     if (bar.isConnected) return;
-    window.removeEventListener('scroll', update);
+    window.removeEventListener('scroll', updateVisibility);
     resize?.disconnect();
     removal.disconnect();
   });
   removal.observe(app, { childList: true });
-  update();
+
 }
 
 export async function renderProductPage(app: HTMLElement, id: number, navigate: (path: string) => void): Promise<void> {

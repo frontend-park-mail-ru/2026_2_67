@@ -699,7 +699,7 @@ a:focus-visible, button:focus-visible {
 .catalog-page__sort-toggle {
   border: 1px solid var(--vm-border);
   border-radius: var(--button-radius);
-  background: var(--vm-subtle);
+  background: var(--vm-surface);
 }
 .catalog-page__sort-options {
   position: absolute;
