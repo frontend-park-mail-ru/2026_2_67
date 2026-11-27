@@ -217,10 +217,19 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     if (!page.isConnected) { observer?.disconnect(); return; }
     if (entries.some((entry) => entry.isIntersecting) && nextCursor && !isLoading && !failed) void requestProducts(true);
   }, { rootMargin: '300px' });
+  const filters = page.querySelector<HTMLElement>('.catalog-page__filters');
+  const filterSizeObserver = filters && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
+    const card = grid.firstElementChild;
+    if (!card?.matches('[data-product-card]') || !sort) return;
+    const height = card.getBoundingClientRect().bottom - sort.getBoundingClientRect().top;
+    filters.style.setProperty('--first-row-bottom', `${height}px`);
+  }) : null;
+
   const removalObserver = new window.MutationObserver(() => {
     if (!page.isConnected) {
       observer?.disconnect();
       requestController?.abort();
+      filterSizeObserver?.disconnect();
       removalObserver.disconnect();
     }
   });
@@ -281,12 +290,18 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
       return;
     }
 
+    filterSizeObserver?.disconnect();
+    filters?.style.removeProperty('--first-row-bottom');
     if (products.length === 0) {
       grid.textContent = query ? 'По вашему запросу ничего не найдено.' : category ? 'В этой категории пока нет товаров.' : 'Товары пока не добавлены.';
       return;
     }
 
     renderProducts(grid, products, cart.getProductQuantity, cart.isIncreaseDisabled, getStockWarning, cart.canUseCart());
+    if (grid.firstElementChild && sort) {
+      filterSizeObserver?.observe(grid.firstElementChild);
+      filterSizeObserver?.observe(sort);
+    }
   }
 
   function acceptProducts(loadedProducts: ProductCard[], cursor: string, maxPrice: number | null): void {

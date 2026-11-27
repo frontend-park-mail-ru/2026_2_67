@@ -1,7 +1,8 @@
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
+import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { initCart } from '../../components/cart/cart.js';
 import { mapApiProduct } from '../../data/map-api-product.js';
-import { productDetailTemplate, productPageTemplate } from '../../templates/templates.js';
+import { productCartControlsTemplate, productDetailTemplate, productPageTemplate } from '../../templates/templates.js';
 import { loadProduct } from './load-product.js';
 import { initProductReviews, productReviewsView } from './product-reviews.js';
 
@@ -70,6 +71,7 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   document.title = `VibeMarket — ${mapped.title}`;
   const photos = Array.isArray(mapped.images) ? mapped.images.filter((url) => typeof url === 'string' && url.trim()) : [];
   body.innerHTML = productDetailTemplate({
+    id,
     title: mapped.title,
     price: mapped.price,
     oldPrice: mapped.oldPrice,
@@ -93,8 +95,8 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   const header = page.querySelector<HTMLElement>('.site-header');
   if (bar && header && reviewsSection) initProductBar(app, header, bar, reviewsSection);
   const barRating = bar?.querySelector('[data-bar-rating]');
-  const reloadReviews = reviewsSection ? initProductReviews(reviewsSection, product, (rating, count) => {
-    if (barRating) barRating.textContent = `Рейтинг: ${rating} · Отзывы: ${count ?? '—'}`;
+  const reloadReviews = reviewsSection ? initProductReviews(reviewsSection, product, (label) => {
+    if (barRating) barRating.textContent = label;
   }) : null;
 
   const dialog = body.querySelector<HTMLDialogElement>('.review-dialog');
@@ -243,14 +245,29 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   const plus = body.querySelector<HTMLButtonElement>('[data-quantity-plus]');
   const message = body.querySelector<HTMLElement>('[data-detail-message]');
   const retry = body.querySelector<HTMLButtonElement>('[data-detail-retry]');
-  const barAdd = bar?.querySelector<HTMLButtonElement>('[data-bar-add]');
-  const barMessage = bar?.querySelector<HTMLElement>('[data-bar-message]');
+  const barCart = bar?.querySelector<HTMLElement>('.product-bar__cart');
+  function updateBarCart(): void {
+    if (!barCart) return;
+    if (user && !cart.canUseCart()) {
+      barCart.textContent = cart.getErrorMessage();
+      return;
+    }
+    const item = cart.getDisplayItems().find((item) => item.id === id);
+    updateCartMarkup(barCart, productCartControlsTemplate({
+      title: mapped.title,
+      quantity: cart.getProductQuantity(id),
+      stockLimited: cart.isIncreaseDisabled(id),
+      stockWarning: item?.stockWarning,
+      availableCountLabel: mapped.availableCount === undefined ? '' : `В наличии: ${mapped.availableCount} шт.`,
+    }));
+  }
   let quantitySynced = false;
   function selectedCount(): number {
     const count = Number(quantity?.value);
     return Number.isInteger(count) && count >= 1 && count <= 99 ? count : 0;
   }
   function updateCartState(changedProductId: number | null = null): void {
+    updateBarCart();
     if (!add || !message) return;
     if (quantity && cart.canUseCart() && !cart.getErrorMessage() && (!quantitySynced || changedProductId === id)) {
       const savedCount = cart.getProductQuantity(id);
@@ -261,12 +278,10 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     const count = selectedCount();
     const stockLimited = count > 0 && cart.isRequestedCountRejected(id, count);
     add.disabled = !cart.canUseCart() || !count || stockLimited;
-    if (barAdd) barAdd.disabled = add.disabled;
     if (plus) plus.disabled = !count || count >= 99 || cart.isRequestedCountRejected(id, count + 1);
     const cartError = cart.getErrorMessage();
     if (stockLimited) message.textContent = count === 1 ? 'Товара сейчас нет в наличии.' : 'Выбранного количества нет в наличии.';
     else if (cartError && !cartError.includes('наличии')) message.textContent = cartError;
-    if (barMessage) barMessage.textContent = message.textContent;
     if (retry) retry.hidden = !cart.getErrorMessage().startsWith('Не удалось');
   }
   onCartChange = updateCartState;
@@ -297,7 +312,6 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     if (message) message.textContent = 'Повторная загрузка корзины…';
     void cart.reloadCart().finally(() => { retry.disabled = false; updateCartState(); });
   });
-  barAdd?.addEventListener('click', addToCart);
   add?.addEventListener('click', () => { void addToCart(); });
   updateCartState();
 }

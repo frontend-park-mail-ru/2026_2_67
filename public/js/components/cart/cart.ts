@@ -45,7 +45,6 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   const cartButton = requireCartElement(page, '.site-header__icon--cart');
   const cartCount = requireCartElement(cartButton, '.site-header__cart-count');
   const cartPanel = requireCartElement(page, '#cart-panel');
-  const productGrid = page.querySelector('.catalog-page__grid');
   let cart: CartModel | null = null;
   let activeRequests = 0;
   let errorMessage = '';
@@ -471,7 +470,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       void checkValidity();
     }, VALIDITY_INTERVAL_MS);
   }
-  productGrid?.addEventListener('click', handleProductButtonClick);
+  page.addEventListener('click', handleProductButtonClick);
   page.addEventListener('change', (event) => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || !input.matches('.cart-item__quantity, .product-card__quantity')) return;

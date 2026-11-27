@@ -25,7 +25,12 @@
             {{#each stars}}<span class="product-reviews__star" aria-hidden="true">★<span style="width: {{fill}}%">★</span></span>{{/each}}
           </div>
         </header>
-        {{#if text}}<p class="product-review__text">{{text}}</p>{{/if}}
+        {{#if long}}
+          <p class="product-review__text" id="review-text-{{buyerId}}">{{#if expanded}}{{text}}{{else}}{{preview}}…{{/if}}</p>
+          <button type="button" class="product-page__retry" data-toggle-review="{{buyerId}}" data-preview="{{preview}}" aria-controls="review-text-{{buyerId}}" aria-expanded="{{#if expanded}}true{{else}}false{{/if}}">{{#if expanded}}Свернуть{{else}}Читать полностью{{/if}}</button>
+        {{else}}
+          <p class="product-review__text">{{text}}</p>
+        {{/if}}
       </article>
     {{else}}
       <p class="product-reviews__empty" role="status">{{reviews.emptyMessage}}</p>

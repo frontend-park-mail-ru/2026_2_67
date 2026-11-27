@@ -4,7 +4,7 @@ export type Template = (context?: unknown) => string;
 
 declare const Handlebars: {
   compile(source: string): Template;
-  registerPartial(name: string, source: string): void;
+  registerPartial(name: string, source: string | Template): void;
   registerHelper(name: string, helper: (id: number, name: string) => string): void;
 };
 
@@ -17,6 +17,7 @@ export let checkoutPageTemplate: Template;
 export let ordersPageTemplate: Template;
 export let ordersListTemplate: Template;
 export let loginTemplate: Template;
+export let productCartControlsTemplate: Template;
 export let productCardTemplate: Template;
 export let productPageTemplate: Template;
 export let productDetailTemplate: Template;
@@ -62,6 +63,9 @@ export async function loadTemplates() {
   const cartItemsSource = await cartItemsResponse.text();
   Handlebars.registerPartial('cartItems', cartItemsSource);
   cartItemsTemplate = Handlebars.compile(cartItemsSource);
+
+  productCartControlsTemplate = await loadTemplate('product-cart-controls');
+  Handlebars.registerPartial('productCartControls', productCartControlsTemplate);
 
   const reviewsResponse = await fetch(new URL('./product-reviews.hbs', import.meta.url));
   if (!reviewsResponse.ok) throw new Error(`Не удалось загрузить шаблон отзывов: ${reviewsResponse.status}`);

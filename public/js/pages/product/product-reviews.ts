@@ -38,19 +38,21 @@ function stars(rating: number) {
 }
 
 /** Prepares API data and the initial loading or failed request state. */
-export function productReviewsView(product: ApiProduct, data?: ProductReviews, failed = false, sortBy = 'desc-date') {
+export function productReviewsView(product: ApiProduct, data?: ProductReviews, failed = false, sortBy = 'desc-date', expandedReviews?: Set<number>) {
   const distribution = [product.rating5Count, product.rating4Count, product.rating3Count, product.rating2Count, product.rating1Count];
   const marksCount = product.marksCount;
   const rating = product.rating ?? product.raiting ?? 0;
   const hasRating = Number.isFinite(rating) && rating > 0;
+  const ratingValue = hasRating ? numberFormatter.format(rating) : '—';
   return {
+    barRating: `Рейтинг: ${ratingValue} · Оценок: ${marksCount ?? '—'}`,
     sortOptions: sortOptions.map((option) => ({ ...option, selected: option.value === sortBy })),
     loading: !data && !failed,
     failed,
     wasReview: product.wasReview === true,
     canReview: product.canReview === true,
     textCount: product.reviewsCount,
-    rating: hasRating ? `${numberFormatter.format(rating)}/5` : '—',
+    rating: hasRating ? `${ratingValue}/5` : '—',
     basis: marksCount === undefined ? 'Количество оценок пока недоступно' : `На основе ${marksCount} ${ratingWords[pluralRules.select(marksCount)]}`,
     distribution: distribution.map((count, index) => ({
       rating: 5 - index,
@@ -59,6 +61,9 @@ export function productReviewsView(product: ApiProduct, data?: ProductReviews, f
     })),
     emptyMessage: data ? 'Отзывов пока нет.' : failed ? 'Не удалось загрузить отзывы.' : 'Загрузка отзывов…',
     items: (data?.reviews ?? []).filter((review) => review.review.trim()).map((review) => {
+      const text = review.review.trim();
+      const firstLines = text.split(/\r?\n/, 4).join('\n');
+      const preview = Array.from(firstLines).slice(0, 300).join('').trimEnd();
       const date = new Date(review.createdAt);
       return {
         name: [review.buyerName, review.buyerPatronymic, review.buyerSurname].filter(Boolean).join(' '),
@@ -67,7 +72,11 @@ export function productReviewsView(product: ApiProduct, data?: ProductReviews, f
         dateTime: Number.isNaN(date.getTime()) ? '' : date.toISOString(),
         ratingLabel: `${review.rating} из 5`,
         stars: stars(review.rating),
-        text: review.review.trim(),
+        text,
+        preview,
+        long: preview !== text.replace(/\r\n/g, '\n'),
+        buyerId: review.buyerId,
+        expanded: expandedReviews?.has(review.buyerId),
       };
     }),
   };
@@ -89,7 +98,8 @@ function isProductReviews(value: unknown): value is ProductReviews {
     });
 }
 
-export function initProductReviews(container: HTMLElement, product: ApiProduct, onRatingChange?: (rating: string, count?: number) => void): () => Promise<void> {
+export function initProductReviews(container: HTMLElement, product: ApiProduct, onRatingChange?: (label: string) => void): () => Promise<void> {
+  const expandedReviews = new Set<number>();
   let request = 0;
   let sortBy = 'desc-date';
   let data: ProductReviews | undefined;
@@ -116,8 +126,8 @@ export function initProductReviews(container: HTMLElement, product: ApiProduct, 
     observer?.disconnect();
     if (!container.isConnected) return;
     const sortFocused = document.activeElement?.matches('[data-review-sort]') && container.contains(document.activeElement);
-    const view = productReviewsView(product, data, failed, sortBy);
-    onRatingChange?.(view.rating, view.textCount);
+    const view = productReviewsView(product, data, failed, sortBy, expandedReviews);
+    onRatingChange?.(view.barRating);
     container.innerHTML = productReviewsTemplate({
       reviews: { ...view, loading, more: data?.nextCursor, productFailed },
     });
@@ -180,6 +190,20 @@ export function initProductReviews(container: HTMLElement, product: ApiProduct, 
   });
   container.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
+    const toggle = event.target.closest<HTMLButtonElement>('[data-toggle-review]');
+    if (toggle) {
+      const buyerId = Number(toggle.dataset.toggleReview);
+      const item = data?.reviews.find((review) => review.buyerId === buyerId);
+      const paragraph = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+      if (!item || !paragraph) return;
+      const expand = !expandedReviews.has(buyerId);
+      if (expand) expandedReviews.add(buyerId);
+      else expandedReviews.delete(buyerId);
+      paragraph.textContent = expand ? item.review.trim() : toggle.dataset.preview + '…';
+      toggle.setAttribute('aria-expanded', String(expand));
+      toggle.textContent = expand ? 'Свернуть' : 'Читать полностью';
+      return;
+    }
     if (event.target.closest('[data-product-refresh]')) void refreshProduct();
     if (!loading && event.target.closest('[data-reviews-load]')) void load(Boolean(data?.nextCursor));
   });

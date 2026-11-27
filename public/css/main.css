@@ -755,6 +755,9 @@ a:focus-visible, button:focus-visible {
   background: var(--vm-surface);
   color: var(--vm-text);
 }
+@media (min-width: 781px) {
+  .catalog-page__filters { min-height: var(--first-row-bottom, auto); }
+}
 .catalog-page__filters form { display: grid; gap: 24px; }
 .catalog-page__filters fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .catalog-page__filters legend { margin-bottom: 12px; font-weight: 700; }
