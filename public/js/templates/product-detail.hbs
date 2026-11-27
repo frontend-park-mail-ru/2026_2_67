@@ -30,22 +30,9 @@
       <div><span>{{price}}</span></div>
       {{#if oldPrice}}<div class="product-page__price-details"><del class="product-card__old-price">{{oldPrice}}</del><span class="product-page__discount">−{{discountPercent}}%</span></div>{{/if}}
     </div>
-    {{#if isGuest}}
-      <p>Войдите, чтобы добавить товар в корзину.</p>
-      <a class="product-page__primary" href="/login" data-page="login">Войти</a>
-    {{else}}
-      <div class="product-page__quantity-field">
-        {{#if availableCountLabel}}<p class="product-page__available-count">{{availableCountLabel}}</p>{{/if}}
-        <div class="product-page__quantity">
-          <button type="button" data-quantity-minus aria-label="Уменьшить количество">−</button>
-          <input id="product-quantity" data-quantity type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Количество товара" />
-          <button type="button" data-quantity-plus aria-label="Увеличить количество">+</button>
-        </div>
-      </div>
-      <button type="button" class="product-page__primary" data-detail-add disabled>В корзину</button>
-      <p class="product-page__message" data-detail-message role="status"></p>
-      <button type="button" class="product-page__retry" data-detail-retry hidden>Повторить загрузку корзины</button>
-    {{/if}}
+    <div class="product-card__cart-actions" data-product-cart data-product-id="{{id}}"></div>
+    <p class="product-page__message" data-detail-message role="status"></p>
+    <button type="button" class="product-page__retry" data-detail-retry hidden>Повторить загрузку корзины</button>
   </aside>
 </div>
 <div data-product-reviews>{{> productReviews}}</div>
@@ -86,6 +73,6 @@
       </div>
     </div>
     <span class="product-bar__seller" title="{{sellerName}}">{{sellerName}}</span>
-    <div class="product-card__cart-actions product-bar__cart" data-product-id="{{id}}"></div>
+    <div class="product-card__cart-actions product-bar__cart" data-product-cart data-product-id="{{id}}"></div>
   </div>
 </aside>

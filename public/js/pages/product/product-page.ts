@@ -240,78 +240,38 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   body.querySelector('[data-detail-next]')?.addEventListener('click', () => showImage(imageIndex + 1));
   thumbs.forEach((thumb) => thumb.addEventListener('click', () => showImage(Number(thumb.dataset.detailThumbnail))));
 
-  const quantity = body.querySelector<HTMLInputElement>('[data-quantity]');
-  const add = body.querySelector<HTMLButtonElement>('[data-detail-add]');
-  const plus = body.querySelector<HTMLButtonElement>('[data-quantity-plus]');
+  const cartControls = body.querySelectorAll<HTMLElement>('[data-product-cart]');
   const message = body.querySelector<HTMLElement>('[data-detail-message]');
   const retry = body.querySelector<HTMLButtonElement>('[data-detail-retry]');
-  const barCart = bar?.querySelector<HTMLElement>('.product-bar__cart');
-  function updateBarCart(): void {
-    if (!barCart) return;
-    if (user && !cart.canUseCart()) {
-      barCart.textContent = cart.getErrorMessage();
-      return;
+
+  function updateCartState(): void {
+    const error = cart.getErrorMessage();
+    if (message) message.textContent = error;
+    if (retry) retry.hidden = !error.startsWith('Не удалось');
+
+    for (const controls of cartControls) {
+      if (user && !cart.canUseCart()) {
+        controls.textContent = cart.isLoading() ? 'Загрузка корзины…' : '';
+        continue;
+      }
+      const item = cart.getDisplayItems().find((item) => item.id === id);
+      updateCartMarkup(controls, productCartControlsTemplate({
+        title: mapped.title,
+        quantity: cart.getProductQuantity(id),
+        stockLimited: cart.isIncreaseDisabled(id),
+        stockWarning: item?.stockWarning,
+        availableCountLabel: mapped.availableCount === undefined ? '' : `В наличии: ${mapped.availableCount} шт.`,
+      }));
     }
-    const item = cart.getDisplayItems().find((item) => item.id === id);
-    updateCartMarkup(barCart, productCartControlsTemplate({
-      title: mapped.title,
-      quantity: cart.getProductQuantity(id),
-      stockLimited: cart.isIncreaseDisabled(id),
-      stockWarning: item?.stockWarning,
-      availableCountLabel: mapped.availableCount === undefined ? '' : `В наличии: ${mapped.availableCount} шт.`,
-    }));
   }
-  let quantitySynced = false;
-  function selectedCount(): number {
-    const count = Number(quantity?.value);
-    return Number.isInteger(count) && count >= 1 && count <= 99 ? count : 0;
-  }
-  function updateCartState(changedProductId: number | null = null): void {
-    updateBarCart();
-    if (!add || !message) return;
-    if (quantity && cart.canUseCart() && !cart.getErrorMessage() && (!quantitySynced || changedProductId === id)) {
-      const savedCount = cart.getProductQuantity(id);
-      if (savedCount) quantity.value = String(savedCount);
-      else if (changedProductId === id) quantity.value = '1';
-      quantitySynced = true;
-    }
-    const count = selectedCount();
-    const stockLimited = count > 0 && cart.isRequestedCountRejected(id, count);
-    add.disabled = !cart.canUseCart() || !count || stockLimited;
-    if (plus) plus.disabled = !count || count >= 99 || cart.isRequestedCountRejected(id, count + 1);
-    const cartError = cart.getErrorMessage();
-    if (stockLimited) message.textContent = count === 1 ? 'Товара сейчас нет в наличии.' : 'Выбранного количества нет в наличии.';
-    else if (cartError && !cartError.includes('наличии')) message.textContent = cartError;
-    if (retry) retry.hidden = !cart.getErrorMessage().startsWith('Не удалось');
-  }
+
   onCartChange = updateCartState;
-  quantity?.addEventListener('input', () => {
-    if (message) message.textContent = '';
-    updateCartState();
-  });
-  body.querySelector('[data-quantity-minus]')?.addEventListener('click', () => {
-    if (quantity) quantity.value = String(Math.max(1, selectedCount() - 1));
-    if (message) message.textContent = '';
-    updateCartState();
-  });
-  plus?.addEventListener('click', () => {
-    if (quantity) quantity.value = String(Math.min(99, selectedCount() + 1));
-    if (message) message.textContent = '';
-    updateCartState();
-  });
-  async function addToCart(): Promise<void> {
-    const count = selectedCount();
-    if (!count || !cart.canUseCart() || cart.isRequestedCountRejected(id, count)) return;
-    if (message) message.textContent = '';
-    const success = await cart.setProductQuantity(id, count);
-    if (success && message) message.textContent = 'Товар добавлен в корзину.';
-    updateCartState();
-  }
   retry?.addEventListener('click', () => {
     retry.disabled = true;
-    if (message) message.textContent = 'Повторная загрузка корзины…';
-    void cart.reloadCart().finally(() => { retry.disabled = false; updateCartState(); });
+    void cart.reloadCart().finally(() => {
+      retry.disabled = false;
+      updateCartState();
+    });
   });
-  add?.addEventListener('click', () => { void addToCart(); });
   updateCartState();
 }
