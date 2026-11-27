@@ -76,3 +76,21 @@
     </div>
   </form>
 </dialog>
+<aside class="product-bar" aria-label="Панель товара" inert>
+  <div class="product-bar__inner">
+    <div class="product-bar__item">
+      {{#if firstPhoto}}<img src="{{firstPhoto}}" alt="" />{{/if}}
+      <div class="product-bar__description">
+        <strong>{{title}}</strong>
+        <small data-bar-rating>Рейтинг: {{reviews.rating}} · Отзывы: {{reviews.textCount}}</small>
+      </div>
+    </div>
+    <span class="product-bar__seller" title="{{sellerName}}">{{sellerName}}</span>
+    {{#if isGuest}}
+      <a class="product-page__primary" href="/login" data-page="login" aria-label="Войти, чтобы добавить товар в корзину">В корзину</a>
+    {{else}}
+      <button class="product-page__primary" type="button" data-bar-add disabled>В корзину</button>
+    {{/if}}
+  </div>
+  <span class="product-bar__message" data-bar-message role="status"></span>
+</aside>

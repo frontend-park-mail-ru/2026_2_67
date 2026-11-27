@@ -89,7 +89,7 @@ function isProductReviews(value: unknown): value is ProductReviews {
     });
 }
 
-export function initProductReviews(container: HTMLElement, product: ApiProduct): () => Promise<void> {
+export function initProductReviews(container: HTMLElement, product: ApiProduct, onRatingChange?: (rating: string, count?: number) => void): () => Promise<void> {
   let request = 0;
   let sortBy = 'desc-date';
   let data: ProductReviews | undefined;
@@ -116,8 +116,10 @@ export function initProductReviews(container: HTMLElement, product: ApiProduct):
     observer?.disconnect();
     if (!container.isConnected) return;
     const sortFocused = document.activeElement?.matches('[data-review-sort]') && container.contains(document.activeElement);
+    const view = productReviewsView(product, data, failed, sortBy);
+    onRatingChange?.(view.rating, view.textCount);
     container.innerHTML = productReviewsTemplate({
-      reviews: { ...productReviewsView(product, data, failed, sortBy), loading, more: data?.nextCursor, productFailed },
+      reviews: { ...view, loading, more: data?.nextCursor, productFailed },
     });
     if (sortFocused) container.querySelector<HTMLInputElement>('[data-review-sort]:checked')?.focus({ preventScroll: true });
 

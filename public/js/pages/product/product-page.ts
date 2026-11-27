@@ -5,6 +5,30 @@ import { productDetailTemplate, productPageTemplate } from '../../templates/temp
 import { loadProduct } from './load-product.js';
 import { initProductReviews, productReviewsView } from './product-reviews.js';
 
+function initProductBar(app: HTMLElement, header: HTMLElement, bar: HTMLElement, reviews: HTMLElement): void {
+  function update(): void {
+    const height = header.getBoundingClientRect().height;
+    bar.style.setProperty('--header-height', `${height}px`);
+    const reviewsTop = reviews.getBoundingClientRect().top;
+    const visible = window.scrollY > 0 && reviewsTop <= height;
+    bar.inert = !visible;
+    bar.classList.toggle('product-bar--visible', visible);
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+  resize?.observe(header);
+  if (reviews.previousElementSibling) resize?.observe(reviews.previousElementSibling);
+  const removal = new window.MutationObserver(() => {
+    if (bar.isConnected) return;
+    window.removeEventListener('scroll', update);
+    resize?.disconnect();
+    removal.disconnect();
+  });
+  removal.observe(app, { childList: true });
+  update();
+}
+
 export async function renderProductPage(app: HTMLElement, id: number, navigate: (path: string) => void): Promise<void> {
   const user = getCurrentUser();
   app.innerHTML = productPageTemplate({ user });
@@ -52,7 +76,13 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   body.setAttribute('aria-busy', 'false');
 
   const reviewsSection = body.querySelector<HTMLElement>('[data-product-reviews]');
-  const reloadReviews = reviewsSection ? initProductReviews(reviewsSection, product) : null;
+  const bar = body.querySelector<HTMLElement>('.product-bar');
+  const header = page.querySelector<HTMLElement>('.site-header');
+  if (bar && header && reviewsSection) initProductBar(app, header, bar, reviewsSection);
+  const barRating = bar?.querySelector('[data-bar-rating]');
+  const reloadReviews = reviewsSection ? initProductReviews(reviewsSection, product, (rating, count) => {
+    if (barRating) barRating.textContent = `Рейтинг: ${rating} · Отзывы: ${count ?? '—'}`;
+  }) : null;
 
   const dialog = body.querySelector<HTMLDialogElement>('.review-dialog');
   const rating = dialog?.querySelector<HTMLElement>('.review-dialog__stars');
@@ -200,6 +230,8 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   const plus = body.querySelector<HTMLButtonElement>('[data-quantity-plus]');
   const message = body.querySelector<HTMLElement>('[data-detail-message]');
   const retry = body.querySelector<HTMLButtonElement>('[data-detail-retry]');
+  const barAdd = bar?.querySelector<HTMLButtonElement>('[data-bar-add]');
+  const barMessage = bar?.querySelector<HTMLElement>('[data-bar-message]');
   let quantitySynced = false;
   function selectedCount(): number {
     const count = Number(quantity?.value);
@@ -216,10 +248,12 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     const count = selectedCount();
     const stockLimited = count > 0 && cart.isRequestedCountRejected(id, count);
     add.disabled = !cart.canUseCart() || !count || stockLimited;
+    if (barAdd) barAdd.disabled = add.disabled;
     if (plus) plus.disabled = !count || count >= 99 || cart.isRequestedCountRejected(id, count + 1);
     const cartError = cart.getErrorMessage();
     if (stockLimited) message.textContent = count === 1 ? 'Товара сейчас нет в наличии.' : 'Выбранного количества нет в наличии.';
     else if (cartError && !cartError.includes('наличии')) message.textContent = cartError;
+    if (barMessage) barMessage.textContent = message.textContent;
     if (retry) retry.hidden = !cart.getErrorMessage().startsWith('Не удалось');
   }
   onCartChange = updateCartState;
@@ -250,6 +284,7 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     if (message) message.textContent = 'Повторная загрузка корзины…';
     void cart.reloadCart().finally(() => { retry.disabled = false; updateCartState(); });
   });
+  barAdd?.addEventListener('click', addToCart);
   add?.addEventListener('click', () => { void addToCart(); });
   updateCartState();
 }
