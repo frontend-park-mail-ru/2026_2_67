@@ -26,7 +26,7 @@
     <div class="product-page__description"><h2>Описание товара</h2><p>{{#if description}}{{description}}{{else}}Описание пока не добавлено{{/if}}</p></div>
   </section>
   <aside class="product-page__purchase" aria-label="Покупка товара">
-    <p class="product-page__price" aria-live="polite">{{price}}</p>
+    <p class="product-page__price" aria-live="polite"><span>{{price}}</span>{{#if oldPrice}}<del class="product-card__old-price">{{oldPrice}}</del><span class="product-page__discount">−{{discountPercent}}%</span>{{/if}}</p>
     {{#if isGuest}}
       <p>Войдите, чтобы добавить товар в корзину.</p>
       <a class="product-page__primary" href="/login" data-page="login">Войти</a>

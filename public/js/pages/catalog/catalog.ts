@@ -52,9 +52,9 @@ async function loadProducts(page: HTMLElement, category: string | null, seller: 
     // При следующей загрузке сохраняем категорию и добавляем курсор из прошлого ответа.
     const params = new window.URLSearchParams(filters);
     if (category) params.set('category', category);
-    if (seller && !category && !params.has('seller')) params.append('seller', seller);
+    if (seller && !category && !query && !params.has('seller')) params.append('seller', seller);
     if (query) params.set('query', query);
-    if (category) params.set('sortBy', sortBy);
+    if (category || query) params.set('sortBy', sortBy);
     if (cursor) params.set('cursor', cursor);
     const path = params.size ? `/products?${params}` : '/products';
     const response = await authorizedFetch(path, { signal });
@@ -93,11 +93,12 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   const searchParams = new window.URLSearchParams(window.location.search);
   const savedSort = searchParams.get('sortBy');
   if (savedSort && ['new', 'buy-count', 'asc-price', 'desc-price', 'desc-rating'].includes(savedSort)) sortBy = savedSort;
-  const category = searchParams.get('category');
+  const category = searchParams.get('category')?.trim() || null;
   const seller = searchParams.get('seller')?.trim() || null;
   const query = searchParams.get('query')?.trim() ?? '';
+  const advancedCatalog = Boolean(category || query);
   const heading = category || (seller ? `Товары продавца: ${seller}` : 'Каталог товаров');
-  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, category, heading });
+  app.innerHTML = catalogTemplate({ productsHtml: '', user: getCurrentUser(), isCatalog: true, advancedCatalog, heading });
   const page = requireHTMLElement(app, '.catalog-page');
   const sort = page.querySelector<HTMLDetailsElement>('.catalog-page__sort');
   if (sort) {
@@ -146,7 +147,7 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
   const searchInput = requireInput(searchForm, 'input[name="query"]');
   searchInput.value = query;
   let appliedFilters = new URLSearchParams();
-  for (const key of category ? ['priceMin', 'priceMax'] : []) {
+  for (const key of advancedCatalog ? ['priceMin', 'priceMax'] : []) {
     const value = searchParams.get(key);
     if (value && /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) % 1000 === 0) appliedFilters.set(key, value);
   }
@@ -155,25 +156,26 @@ export function renderCatalogPage(app: HTMLElement, sortBy = 'new'): void {
     appliedFilters.delete('priceMin');
     appliedFilters.delete('priceMax');
   }
-  if (category) searchParams.getAll('seller').filter(Boolean).forEach((value) => appliedFilters.append('seller', value));
+  if (advancedCatalog) searchParams.getAll('seller').filter(Boolean).forEach((value) => appliedFilters.append('seller', value));
   const initialFilters = appliedFilters.toString();
   let priceBoundsReady = false;
   function updateUrl(): void {
     const url = new URL(window.location.href);
     for (const key of ['priceMin', 'priceMax', 'seller', 'sortBy']) url.searchParams.delete(key);
     appliedFilters.forEach((value, key) => url.searchParams.append(key, value));
-    if (category && sortBy !== 'new') url.searchParams.set('sortBy', sortBy);
+    if (advancedCatalog && sortBy !== 'new') url.searchParams.set('sortBy', sortBy);
     if (url.href !== window.location.href) window.history.pushState({}, '', url);
   }
-  const setPriceMax = category ? initCatalogFilters(page, category, query, appliedFilters, (filters) => {
+  const setPriceMax = advancedCatalog ? initCatalogFilters(page, category, query, appliedFilters, (filters) => {
     appliedFilters = filters;
     updateUrl();
     void requestProducts();
   }) : null;
-  if (category && initialFilters) {
+  if (advancedCatalog && initialFilters) {
     void (async () => {
       try {
-        const params = new URLSearchParams({ category, limit: '1' });
+        const params = new URLSearchParams({ limit: '1' });
+        if (category) params.set('category', category);
         if (query) params.set('query', query);
         const response = await authorizedFetch(`/products?${params}`);
         if (!response.ok) return;

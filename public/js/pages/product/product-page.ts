@@ -35,6 +35,8 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
   body.innerHTML = productDetailTemplate({
     title: mapped.title,
     price: mapped.price,
+    oldPrice: mapped.oldPrice,
+    discountPercent: mapped.discountPercent,
     availableCountLabel: mapped.availableCount !== undefined ? `В наличии: ${mapped.availableCount} шт.` : '',
     sellerName: mapped.sellerName,
     description: typeof product.description === 'string' ? product.description.trim() : '',

@@ -117,6 +117,23 @@ test('gallery and price use the real catalog response', async () => {
   assert.match(document.querySelector('.product-page__empty').textContent, /недоступны/);
 });
 
+test('product detail shows backend discount and keeps plain price without sale markup', async () => {
+  detailProduct = { ...product, price: 100, priceResult: 85, discount: 15 };
+  try {
+    await renderProductPage(app, 9, () => {});
+    assert.match(document.querySelector('.product-page__price span').textContent, /85/);
+    assert.match(document.querySelector('.product-page__price del').textContent, /100/);
+    assert.equal(document.querySelector('.product-page__discount').textContent, '−15%');
+    detailProduct = { ...product, price: 85.49, discount: 0 };
+    await renderProductPage(app, 9, () => {});
+    assert.equal(document.querySelector('.product-page__price del'), null);
+    assert.equal(document.querySelector('.product-page__discount'), null);
+    assert.match(document.querySelector('.product-page__price').textContent, /85,49/);
+  } finally {
+    detailProduct = null;
+  }
+});
+
 test('price stays at the backend unit price when quantity changes', async () => {
   await renderProductPage(app, 9, () => {});
   await tick();

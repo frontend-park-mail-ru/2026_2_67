@@ -113,6 +113,49 @@ test('category change recalculates the unfiltered price scale', async () => {
   assert.equal(app.querySelector('[data-price-max-range]').max, '280000');
 });
 
+test('search without category keeps filters, sorting, query and unfiltered bounds', async () => {
+  requests.length = 0;
+  window.history.replaceState({}, '', '/?query=Book&priceMin=2000&seller=Seller+9');
+  renderCatalogPage(app);
+  await tick();
+  const form = app.querySelector('[data-catalog-filters]');
+  assert.ok(form);
+  assert.ok(app.querySelector('.catalog-page__layout--category'));
+  assert.equal(form.elements.namedItem('priceMin').value, '20');
+  assert.equal(app.querySelector('[data-price-max-range]').max, '2000');
+  assert.equal(form.querySelectorAll('input[type="range"]').length, 2);
+  assert.equal(form.querySelector('input[value="Seller 9"]').checked, true);
+  const paths = requests.map((path) => new URL(path, 'http://localhost'));
+  for (const url of paths) {
+    assert.equal(url.searchParams.get('query'), 'Book');
+    assert.equal(url.searchParams.has('category'), false);
+  }
+  assert.ok(paths.some((url) => url.pathname.endsWith('/sellers')));
+  assert.ok(paths.some((url) => url.pathname.endsWith('/products') && url.searchParams.get('limit') === '1'
+    && !url.searchParams.has('priceMin') && !url.searchParams.has('seller')));
+  app.querySelector('[data-sort-by="asc-price"]').click();
+  await tick();
+  assert.equal(new URL(requests.at(-1), 'http://localhost').searchParams.get('sortBy'), 'asc-price');
+  assert.equal(new URL(window.location.href).searchParams.get('sortBy'), 'asc-price');
+  form.reset();
+  await tick();
+  const reset = new URL(requests.at(-1), 'http://localhost');
+  assert.equal(reset.searchParams.get('query'), 'Book');
+  assert.equal(reset.searchParams.has('seller'), false);
+  assert.equal(reset.searchParams.has('priceMin'), false);
+  assert.equal(new URL(window.location.href).searchParams.get('query'), 'Book');
+});
+
+test('search inside category keeps category in product and seller requests', async () => {
+  requests.length = 0;
+  window.history.replaceState({}, '', '/?category=Books&query=Book');
+  renderCatalogPage(app);
+  await tick();
+  assert.ok(app.querySelector('[data-catalog-filters]'));
+  assert.ok(requests.filter((path) => path.includes('/products') || path.includes('/sellers'))
+    .every((path) => new URL(path, 'http://localhost').searchParams.get('category') === 'Books'));
+});
+
 test('discount card uses backend prices and plain card has no sale markup', async () => {
   renderCatalogPage(app);
   await tick();

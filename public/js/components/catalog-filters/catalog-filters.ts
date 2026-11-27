@@ -1,6 +1,6 @@
 import { authorizedFetch } from '../../shared/auth.js';
 
-export function initCatalogFilters(page: HTMLElement, category: string, query: string, initial: URLSearchParams, onApply: (filters: URLSearchParams) => void): (maxPrice: number) => void {
+export function initCatalogFilters(page: HTMLElement, category: string | null, query: string, initial: URLSearchParams, onApply: (filters: URLSearchParams) => void): (maxPrice: number) => void {
   const form = page.querySelector<HTMLFormElement>('[data-catalog-filters]');
   const min = form?.elements.namedItem('priceMin');
   const max = form?.elements.namedItem('priceMax');
@@ -73,7 +73,8 @@ export function initCatalogFilters(page: HTMLElement, category: string, query: s
     try {
       const found: { id: number; name: string }[] = [];
       for (let offset = 0; page.isConnected; offset += 30) {
-        const params = new URLSearchParams({ category, limit: '30', offset: String(offset) });
+        const params = new URLSearchParams({ limit: '30', offset: String(offset) });
+        if (category) params.set('category', category);
         if (query) params.set('query', query);
         const response = await authorizedFetch(`/sellers?${params}`);
         if (!response.ok) throw new Error('Sellers request failed');

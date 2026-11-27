@@ -3,7 +3,7 @@
   <main class="catalog-page__content">
     <div class="catalog-page__content-inner">
       <h1>{{heading}}</h1>
-      {{#if category}}
+      {{#if advancedCatalog}}
       <div class="catalog-page__toolbar">
         <p class="catalog-page__count" data-product-count role="status">Загрузка товаров…</p>
         <details class="catalog-page__sort">
@@ -18,8 +18,8 @@
         </details>
       </div>
       {{/if}}
-      <div class="catalog-page__layout{{#if category}} catalog-page__layout--category{{/if}}">
-        {{#if category}}
+      <div class="catalog-page__layout{{#if advancedCatalog}} catalog-page__layout--category{{/if}}">
+        {{#if advancedCatalog}}
         <aside class="catalog-page__filters" aria-label="Фильтры товаров">
           <form data-catalog-filters>
             <fieldset>
