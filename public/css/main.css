@@ -2174,6 +2174,15 @@ a:focus-visible, button:focus-visible {
   .catalog-page__filters {
     position: sticky;
     top: var(--catalog-header-height, 74px);
+    max-height: calc(100dvh - var(--catalog-header-height, 74px) - 12px);
+    overflow-y: auto;
+    scrollbar-width: none;
     min-height: 0;
+  }
+}
+
+@media (min-width: 781px) {
+  .catalog-page__filters::-webkit-scrollbar {
+    display: none;
   }
 }
