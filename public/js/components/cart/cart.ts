@@ -1,4 +1,4 @@
-﻿import { cartTemplate } from '../../templates/templates.js';
+import { cartTemplate } from '../../templates/templates.js';
 import { addBasketProduct, BasketRequestError, getBasket, getBasketValidity, setBasketProductCount } from './cart-api.js';
 import { mapBasket } from './cart-model.js';
 import type { CartItem, CartModel } from './cart-model.js';
@@ -6,7 +6,8 @@ import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isReques
 import { updateCartMarkup } from './cart-dom.js';
 import { formatMoney } from '../../shared/format-money.js';
 import { rememberedProduct } from '../../data/product-session.js';
-import { MIN_ORDER_AMOUNT, minOrderRemaining } from '../../shared/min-order.js';
+import { minOrderRemaining } from '../../shared/min-order.js';
+import { settings, watchSettings } from '../../shared/onlineconf.js';
 
 const itemCountRules = new Intl.PluralRules('ru-RU');
 const itemCountWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
@@ -91,7 +92,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   }
 
   function canCheckout(): boolean {
-    return hasItems() && getMinOrderRemaining() === 0 && !isBusy();
+    return settings.checkoutEnabled && hasItems() && getMinOrderRemaining() === 0 && !isBusy();
   }
 
   function getMinOrderRemaining(): number {
@@ -141,7 +142,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       canUseCart: Boolean(cart),
       itemCountText: getDisplayCount(),
       totalPrice: getDisplayTotal(),
-      minOrderAmount: formatMoney(MIN_ORDER_AMOUNT),
+      minOrderAmount: formatMoney(settings.minOrderAmount),
       minOrderRemaining: cart && getMinOrderRemaining() ? formatMoney(getMinOrderRemaining()) : '',
     }));
   }
@@ -466,6 +467,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     }
   }
 
+  watchSettings(page, () => updatePage(null));
   if (userId) {
     renderCart();
     loadCart();

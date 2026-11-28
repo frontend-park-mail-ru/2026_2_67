@@ -1,3 +1,4 @@
+import { settings, watchSettings } from '../../shared/onlineconf.js';
 import { authorizedFetch, getCurrentUser } from '../../shared/auth.js';
 import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { initCart } from '../../components/cart/cart.js';
@@ -117,6 +118,11 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
     let editing = false;
     let saving = false;
     let opened = 0;
+    watchSettings(dialog, () => {
+      if (editing || !dialog.open || saving || !publish || !error) return;
+      publish.disabled = !settings.reviewsEnabled;
+      error.textContent = settings.reviewsEnabled ? '' : 'Публикация отзывов временно недоступна.';
+    });
     reviewsSection?.addEventListener('click', async (event) => {
       if (!(event.target instanceof Element) || !event.target.closest('[data-write-review], [data-own-review]')) return;
       if (!form || !error || !text || !publish || saving) return;
@@ -129,10 +135,15 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
       highlightStars(0);
       title.textContent = editing ? 'Ваш отзыв' : 'Написать отзыв';
       publish.textContent = editing ? 'Сохранить изменения' : 'Опубликовать отзыв';
-      publish.disabled = editing;
+      publish.disabled = editing || !settings.reviewsEnabled;
       text.disabled = editing;
       rating.querySelectorAll('input').forEach((input) => { input.disabled = editing; });
-      error.textContent = editing ? 'Загрузка отзыва…' : '';
+      error.textContent = '';
+      if (editing) {
+        error.textContent = 'Загрузка отзыва…';
+      } else if (!settings.reviewsEnabled) {
+        error.textContent = 'Публикация отзывов временно недоступна.';
+      }
       dialog.showModal();
       if (!editing || !user) return;
       try {
@@ -165,6 +176,10 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
       if (event.submitter !== publish) return;
       event.preventDefault();
       if (!publish || !text || !error || publish.disabled) return;
+      if (!editing && !settings.reviewsEnabled) {
+        error.textContent = 'Публикация отзывов временно недоступна.';
+        return;
+      }
       const value = getRating();
       if (!value) {
         error.textContent = 'Выберите оценку от 1 до 5 звёзд.';
@@ -209,7 +224,7 @@ export async function renderProductPage(app: HTMLElement, id: number, navigate: 
         if (page.isConnected) error.textContent = 'Не удалось связаться с сервером. Попробуйте ещё раз.';
       } finally {
         saving = false;
-        publish.disabled = false;
+        publish.disabled = !editing && !settings.reviewsEnabled;
         publish.textContent = editing ? 'Сохранить изменения' : 'Опубликовать отзыв';
         form.setAttribute('aria-busy', 'false');
         text.disabled = false;

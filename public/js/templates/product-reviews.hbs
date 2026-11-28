@@ -61,7 +61,8 @@
     {{else if reviews.wasReview}}
       <button type="button" class="product-page__retry" data-own-review>Вы уже оставили отзыв</button>
     {{else if reviews.canReview}}
-      <button type="button" class="product-page__primary" data-write-review>Написать отзыв</button>
+      <button type="button" class="product-page__primary" data-write-review {{#if reviews.reviewsDisabled}}disabled{{/if}}>Написать отзыв</button>
+      {{#if reviews.reviewsDisabled}}<p role="status">Публикация отзывов временно недоступна.</p>{{/if}}
     {{/if}}
   </aside>
 </section>

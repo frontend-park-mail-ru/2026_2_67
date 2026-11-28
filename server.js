@@ -9,6 +9,7 @@ const staticRoot = process.argv.includes('--dist') ? 'dist' : 'public';
 const publicDirectory = resolve(staticRoot);
 const faviconPath = resolve(publicDirectory, staticRoot === 'dist' ? 'favicon.ico' : 'images/favicon.ico');
 const backendUrl = 'http://localhost:8080';
+const onlineConfUrl = process.env.ONLINECONF_URL;
 const frontendRoutes = new Set(['/', '/login', '/signup', '/profile', '/cart', '/checkout', '/orders']);
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -33,7 +34,18 @@ const server = createServer((request, response) => {
   }
 
   if (pathname.startsWith('/api/') || pathname.startsWith('/media/')) {
-    const upstreamUrl = new URL(request.url, pathname.startsWith('/media/') ? 'http://localhost:8090' : backendUrl);
+    if (pathname.startsWith('/api/v1/onlineconf/') && !onlineConfUrl) {
+      response.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+      response.end(JSON.stringify({ errMessage: 'Не задан адрес сервиса OnlineConf (ONLINECONF_URL).' }));
+      return;
+    }
+    let target = backendUrl;
+    if (pathname.startsWith('/api/v1/onlineconf/')) {
+      target = onlineConfUrl;
+    } else if (pathname.startsWith('/media/')) {
+      target = 'http://localhost:8090';
+    }
+    const upstreamUrl = new URL(request.url, target);
     const proxyRequest = httpRequest(upstreamUrl, {
       method: request.method,
       headers: {

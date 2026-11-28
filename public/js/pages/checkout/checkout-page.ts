@@ -6,6 +6,7 @@ import { showPickupMap } from './pickup-map.js';
 import type { PickupPoint } from './pickup-map.js';
 import { shouldLeaveEmptyCheckout } from '../../shared/route-guards.js';
 import { readPreviewProductErrors } from './preview-errors.js';
+import { settings } from '../../shared/onlineconf.js';
 
 class ProductsUnavailableError extends Error {}
 
@@ -47,6 +48,10 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
   const tileError = requireElement(page, '.checkout-page__map-error');
   const submitButton = requireButton(page, '.checkout-page__submit');
   const orderStatus = requireElement(page, '.checkout-page__order-status');
+  const limitsStatus = document.createElement('p');
+  limitsStatus.className = 'checkout-page__order-status';
+  limitsStatus.setAttribute('role', 'status');
+  orderStatus.after(limitsStatus);
   let selectedPickupPoint: PickupPoint | null = null;
   let orderCompleted = false;
   let isSubmitting = false;
@@ -64,7 +69,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
       isPageActive: page.isConnected,
       isLoading: cart.isLoading(),
       errorMessage: cart.getErrorMessage(),
-      canCheckout: cart.canCheckout(),
+      canCheckout: cart.hasItems(),
     })) {
       onEmptyCart();
       return;
@@ -86,6 +91,13 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     summaryCount.textContent = itemCountText;
     subtotal.textContent = formattedTotal;
     totalPrice.textContent = formattedTotal;
+    limitsStatus.textContent = '';
+    if (!settings.checkoutEnabled) {
+      limitsStatus.textContent = 'Оформление заказов временно недоступно.';
+    } else if (cart.getMinOrderRemaining() > 0) {
+      limitsStatus.textContent = 'Добавьте товаров до минимальной суммы заказа.';
+    }
+    limitsStatus.hidden = !limitsStatus.textContent;
     submitButton.disabled = !user?.userId || !cart.canCheckout() || !selectedPickupPoint || isSubmitting || !availabilityConfirmed || previewErrors.size > 0;
   }
 
@@ -180,6 +192,9 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     try {
       availabilityConfirmed = false;
       await checkPreview(selectedPickupPoint);
+      if (!settings.checkoutEnabled || cart.getMinOrderRemaining() > 0) {
+        throw new Error('Условия оформления изменились. Проверьте настройки заказа.');
+      }
       const response = await authorizedFetch('/orders/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

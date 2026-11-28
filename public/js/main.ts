@@ -10,6 +10,7 @@ import { renderProductPage } from './pages/product/product-page.js';
 import { renderCategories } from './components/categories/categories.js';
 import { initSearch } from './components/search/search.js';
 import { getCurrentUser, logout, restoreSession } from './shared/auth.js';
+import { loadSettings } from './shared/onlineconf.js';
 import { requiresAuthentication } from './shared/route-guards.js';
 import { productIdFromPath } from './shared/product-url.js';
 
@@ -64,6 +65,7 @@ const routes: Record<string, () => void> = {
  * @returns {void}
  */
 function renderCurrentRoute(): void {
+  void loadSettings();
   closeSearch();
   if (requiresAuthentication(window.location.pathname, getCurrentUser())) {
     window.history.replaceState({}, '', '/login');
@@ -234,6 +236,7 @@ async function startApplication(): Promise<void> {
       renderCurrentRoute();
     });
     await restoreSession();
+    window.setInterval(loadSettings, 15000);
     renderCurrentRoute();
   } catch {
     app.textContent = 'Не удалось загрузить приложение. Обновите страницу.';

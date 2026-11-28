@@ -2,6 +2,7 @@ import type { ApiProduct } from '../../data/map-api-product.js';
 import { authorizedFetch, avatarSource } from '../../shared/auth.js';
 import { productReviewsTemplate } from '../../templates/templates.js';
 import { fetchProduct } from './load-product.js';
+import { settings, watchSettings } from '../../shared/onlineconf.js';
 
 export interface ProductReview {
   buyerId: number;
@@ -51,6 +52,7 @@ export function productReviewsView(product: ApiProduct, data?: ProductReviews, f
     failed,
     wasReview: product.wasReview === true,
     canReview: product.canReview === true,
+    reviewsDisabled: !settings.reviewsEnabled,
     textCount: product.reviewsCount,
     rating: hasRating ? `${ratingValue}/5` : '—',
     basis: marksCount === undefined ? 'Количество оценок пока недоступно' : `На основе ${marksCount} ${ratingWords[pluralRules.select(marksCount)]}`,
@@ -214,6 +216,7 @@ export function initProductReviews(container: HTMLElement, product: ApiProduct, 
       image.src = '/images/profile-avatar-placeholder.png';
     }
   }, true);
+  watchSettings(container, render);
   void load();
   return async () => { await Promise.all([refreshProduct(), load()]); };
 }
