@@ -125,6 +125,7 @@ form, fieldset, .block { display: grid; gap: 14px; }
 fieldset { padding: 0; margin: 0; min-width: 0; border: 0; }
 .block { padding: 20px; }
 .login { max-width: 400px; margin: clamp(16px, 8vh, 96px) auto 0; padding: 28px; }
+.login-logo { margin: 0 auto; }
 .login p { margin: 0; color: var(--muted); }
 .login form { margin-top: 6px; }
 .login .form-field { position: relative; }

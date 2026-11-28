@@ -1,6 +1,6 @@
-<header><nav aria-label="Навигация OnlineConf">
+{{#if authorized}}<header><nav aria-label="Навигация OnlineConf">
   <a class="brand" href="/onlineconf/" data-route><span class="mark" aria-hidden="true">⌘</span>OnlineConf</a>
   {{#if authorized}}<a class="nav-link" href="/onlineconf/" data-route>Ключи</a>{{/if}}
   <a class="market" href="/" aria-label="VIBE — каталог"><span class="brand__wordmark">VIBE</span></a>
-</nav></header>
+</nav></header>{{/if}}
 <main id="onlineconf-screen"></main>
