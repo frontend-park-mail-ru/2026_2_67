@@ -74,7 +74,12 @@ const server = createServer((request, response) => {
     return;
   }
 
-  const requestedPath = pathname.startsWith('/onlineconf/') && !pathname.includes('.') ? 'onlineconf/index.html'
+  if (pathname === '/admin' || pathname === '/admin/') {
+    response.writeHead(302, { Location: '/onlineconf/' }).end();
+    return;
+  }
+
+  const requestedPath = (pathname === '/onlineconf' || pathname.startsWith('/onlineconf/')) && !pathname.includes('.') ? 'onlineconf/index.html'
     : frontendRoutes.has(pathname) || /^\/products\/[1-9]\d*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)?$/.test(pathname) ? 'index.html' : pathname.replace(/^\/+/, '');
   let filePath = resolve(publicDirectory, requestedPath);
   if (filePath !== publicDirectory && !filePath.startsWith(`${publicDirectory}${sep}`)) {

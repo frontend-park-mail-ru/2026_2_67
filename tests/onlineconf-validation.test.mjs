@@ -7,6 +7,7 @@ test('config types and flag rules follow the OnlineConf contract', () => {
   assert.throws(() => validateValue('number', '"1000"'));
   assert.deepEqual(validateValue('array', '[1,2]'), [1, 2]);
   assert.deepEqual(parseIds('1, 42'), [1, 42]);
+  assert.deepEqual(parseIds('1\n42'), [1, 42]);
   assert.throws(() => parseIds('email'));
   const flag = { key: 'checkout.enabled', scope: 'frontend', description: '', enabled: true,
     rolloutPercent: 50, whitelist: [42], blacklist: [] };

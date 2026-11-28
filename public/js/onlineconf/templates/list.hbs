@@ -1,0 +1,18 @@
+{{#if demo}}<p role="status">Демо: изменения хранятся только в памяти вкладки.</p>{{/if}}
+<section id="list">
+  <div class="heading"><h1>Ключи конфигурации</h1><a class="button" href="/onlineconf/new{{suffix}}" data-route><span aria-hidden="true">＋</span> Создать ключ</a></div>
+  <div class="panel">
+    <form class="filters" data-filter>
+      <label>Поиск по названию<input name="q" type="search" placeholder="Название ключа" value="{{q}}"></label>
+      <label>Тип<select name="kind"><option value="">Все типы</option><option value="configs" {{#if configsSelected}}selected{{/if}}>Config</option><option value="flags" {{#if flagsSelected}}selected{{/if}}>Feature Flag</option></select></label>
+      <label>Scope<select name="scope"><option value="">Все области</option>{{#each scopes}}<option value="{{name}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
+      <button type="submit" hidden>Найти</button>
+    </form>
+    <div class="table"><table><thead><tr><th>Название</th><th>Тип</th><th>Scope</th><th>Значение / статус</th></tr></thead><tbody>
+      {{#each rows}}<tr data-key="{{key}}" data-scope="{{scope}}" data-kind="{{kind}}"><td><a href="{{url}}" data-route>{{key}}</a>{{#if description}}<small>{{description}}</small>{{/if}}</td>
+        <td><span class="badge {{kind}}">{{label}}</span></td><td>{{scope}}</td><td>{{display}}</td></tr>{{/each}}
+    </tbody></table></div>
+    <p id="empty" {{#if rows}}hidden{{/if}}>Ключи не найдены.</p>
+    <div class="count">Показано ключей: {{rows.length}}</div>
+  </div>
+</section>

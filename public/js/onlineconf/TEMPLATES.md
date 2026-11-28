@@ -1,14 +1,14 @@
-# Контракт шаблонов OnlineConf
+# Шаблоны OnlineConf
 
-Временная разметка находится в `main.ts` в одном `Handlebars.compile`. Дизайнер может перенести её в `.hbs`, сохранив атрибуты ниже. Обработчики привязаны к `data-*`, не к CSS-классам.
+Шаблоны лежат в `public/js/onlineconf/templates/` и загружаются в `main.ts`. Стиль перенесён из ветки `feat/onlineconf-admin` без смены палитры и сетки. HTML-документ находится в `public/onlineconf/index.html`.
 
-| Часть | Данные | Действия / атрибуты | Состояния |
+| Шаблон | Входные данные | Действия и обязательные привязки | Состояния |
 |---|---|---|---|
-| Оболочка | `demo`, `suffix` | ссылки `/onlineconf/configs` и `/onlineconf/flags` с `data-route` | демо, ошибка доступа |
-| Список | `entries: Config[] \| FeatureFlag[]`, `title`, `q`, `scope` | `data-filter`, поля `q`, `scope`; у записи `data-edit-id="{{id}}"` | загрузка, пустой список, ошибка API |
-| Редактор Config | `entry: Config`, `editing`, `types`, `valueText` | `data-editor`; поля `key`, `scope`, `description`, `valueType`, `value`; `data-delete`, `data-error` | создание, редактирование, ошибка, сохранение |
-| Редактор FeatureFlag | `entry: FeatureFlag`, `editing`, `whitelist`, `blacklist` | `data-editor`; поля `key`, `scope`, `description`, `enabled`, `rolloutPercent`, `whitelist`, `blacklist`; `data-delete`, `data-error` | создание, редактирование, ошибка, сохранение |
+| `layout.hbs` | `authorized` | ссылки с `data-route`; контейнер `#onlineconf-screen` | вход, приложение |
+| `login.hbs` | `message` | контейнер `#login-fields`, сообщение `data-access-error`; форма VibeMarket вставляется из существующего `login.hbs` | 401, 403, ошибка сети |
+| `list.hbs` | `rows[]` с `key`, `description`, `scope`, `kind`, `display`, `url`; `scopes[]`, `q`, `demo`, `suffix` | `data-filter` с `q`, `kind`, `scope`; ссылки `data-route`; `tr[data-key][data-kind][data-scope]`; `#empty`, `.count` | загрузка, список, пусто, ошибка |
+| `editor.hbs` | `entry: Config \| FeatureFlag`, `editing`, `isConfig`, `types[]`, `valueText`, `whitelist`, `blacklist`, `history[]` | `data-editor`; поля `key`, `scope`, `description`, `kind`, `valueType`, `value`, `enabled`, `rolloutPercent`, `whitelist`, `blacklist`; `data-delete`, `data-error`; `data-evaluate` с `userId`; табы с `aria-controls` | создание, редактирование, сохранение, ошибка, история, оценка флага |
 
-При редактировании `key` и `scope` доступны только для чтения: `PUT` не позволяет их менять. `value` в конфиге вводится как JSON и проверяется по `valueType`. Списки ID вводятся через запятую. Handlebars должен экранировать переменные обычными `{{…}}`; не использовать тройные скобки для значения или описания.
+`key` и `scope` у сохранённой записи доступны только для чтения: документированный `PUT` их не меняет. `value` вводится как JSON и проверяется по `valueType`. Списки ID принимают запятые и новые строки. Используйте обычные `{{…}}`, чтобы Handlebars экранировал значения и описания.
 
-Сетевые модели и методы находятся в `api.ts`; демо-данные — отдельно в `demo-api.ts`. Админские данные и редактор показываются только после успешного `/admin/me`, кроме явного `?demo`.
+`api.ts` содержит единственный сетевой клиент. `demo-api.ts` применяется только при `?demo`, не сохраняет данные магазина и не заменяет серверную проверку прав, историю или оценку флага в обычном режиме.

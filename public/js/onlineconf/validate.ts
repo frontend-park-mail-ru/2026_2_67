@@ -24,7 +24,7 @@ export function validateFlag(input: FlagInput): FlagInput {
 }
 export function parseIds(text: string): number[] {
   if (!text.trim()) return [];
-  const ids = text.split(',').map((part) => Number(part.trim()));
+  const ids = text.split(/[,\n]/).map((part) => Number(part.trim()));
   if (!ids.every((id) => Number.isSafeInteger(id) && id > 0)) throw new Error('ID должны быть положительными целыми числами через запятую.');
   return ids;
 }

@@ -1,0 +1,38 @@
+{{#if demo}}<p role="status">Демо: изменения хранятся только в памяти вкладки.</p>{{/if}}
+<section id="editor" {{#if editing}}class="editing"{{/if}}>
+  <a href="/onlineconf/{{suffix}}" data-route>← К списку</a><h1>{{#if editing}}Редактирование ключа{{else}}Создание ключа{{/if}}</h1>
+  <div class="editor-layout">
+    <form data-editor novalidate>
+      <section class="panel block"><h2>Сведения о ключе</h2>
+        <label>Название<input id="name" name="key" required value="{{entry.key}}" {{#if editing}}readonly{{/if}} aria-describedby="name-hint"></label>
+        <small id="name-hint">Имя ключа внутри scope.</small>
+        <label>Описание<textarea id="description" name="description">{{entry.description}}</textarea></label>
+        <div class="pair"><label>Тип<select id="type" name="kind" {{#if editing}}disabled{{/if}}><option value="configs" {{#if isConfig}}selected{{/if}}>Config</option><option value="flags" {{#unless isConfig}}selected{{/unless}}>Feature Flag</option></select></label>
+        <label>Scope<input id="scope" name="scope" required value="{{entry.scope}}" {{#if editing}}readonly{{/if}}></label></div>
+      </section>
+      <section id="config" class="panel block" {{#unless isConfig}}hidden{{/unless}}><h2>Значение конфигурации</h2>
+        <label>Тип значения<select name="valueType" {{#unless isConfig}}disabled{{/unless}}>{{#each types}}<option value="{{name}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
+        <label>JSON-значение<textarea id="value" name="value" spellcheck="false" rows="5" {{#unless isConfig}}disabled{{/unless}}>{{valueText}}</textarea></label>
+      </section>
+      <fieldset id="flag" aria-label="Настройки флага" {{#if isConfig}}hidden disabled{{/if}}>
+        <section class="panel block"><h2>Состояние флага</h2><label class="check"><input id="enabled" name="enabled" type="checkbox" role="switch" {{#if entry.enabled}}checked{{/if}}> Флаг включён</label></section>
+        <section class="panel block"><h2>Процент раскатки</h2><div class="rollout"><input id="slider" type="range" min="0" max="100" value="{{entry.rolloutPercent}}" aria-label="Процент раскатки"><label class="number"><input id="percent" name="rolloutPercent" type="number" min="0" max="100" step="1" required value="{{entry.rolloutPercent}}"> %</label></div></section>
+        <section class="panel block"><h2>Пользователи</h2><p id="ids-hint">Введите числовые ID через запятую или каждый с новой строки.</p>
+          <div class="pair"><label>Принудительно включить<textarea id="include" name="whitelist" aria-describedby="ids-hint">{{whitelist}}</textarea></label>
+          <label>Исключить<textarea id="exclude" name="blacklist" aria-describedby="ids-hint">{{blacklist}}</textarea></label></div>
+        </section>
+      </fieldset>
+      <div class="actions"><a href="/onlineconf/{{suffix}}" data-route>Отмена</a>{{#if editing}}<button type="button" data-delete>Удалить</button>{{/if}}<button type="submit">Сохранить</button></div>
+      <p role="alert" data-error></p>
+    </form>
+    {{#if editing}}<aside id="details" class="panel" aria-label="Сведения о сохранённом ключе">
+      <div class="tabs" role="tablist" aria-label="Данные ключа"><button type="button" role="tab" aria-selected="true" aria-controls="info">Информация</button><button type="button" role="tab" aria-selected="false" aria-controls="history">История</button></div>
+      <section id="info" role="tabpanel"><dl id="facts">
+        <dt>ID ключа</dt><dd>{{entry.id}}</dd><dt>Создан</dt><dd>{{entry.createdAt}}</dd><dt>Обновлён</dt><dd>{{entry.updatedAt}}</dd><dt>Описание</dt><dd>{{entry.description}}</dd><dt>Тип</dt><dd>{{kindLabel}}</dd><dt>Scope</dt><dd>{{entry.scope}}</dd>
+      </dl>{{#unless isConfig}}<form id="evaluate" data-evaluate><label>ID пользователя<input name="userId" type="number" min="1" step="1" required></label><button type="submit">Проверить раскатку на пользователя</button><output aria-live="polite"></output></form>{{/unless}}</section>
+      <section id="history" role="tabpanel" hidden>
+        {{#each history}}<article><small>{{createdAt}} · ID {{changedBy}}</small><h3>{{action}}</h3>{{#each changes}}<p>{{label}}: {{before}} → {{after}}</p>{{/each}}</article>{{else}}<p>История для этого ключа пока недоступна.</p>{{/each}}
+      </section>
+    </aside>{{/if}}
+  </div>
+</section>

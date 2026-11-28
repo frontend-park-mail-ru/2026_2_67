@@ -103,6 +103,8 @@ export default {
           },
         },
         { from: 'public/onlineconf/index.html', to: 'onlineconf/index.html' },
+        { from: 'public/onlineconf/style.css', to: 'onlineconf/style.css' },
+        { from: 'public/js/onlineconf/templates', to: 'onlineconf/templates' },
         { from: 'public/images', to: 'images' },
         { from: 'public/images/favicon.ico', to: 'favicon.ico' },
         { from: 'public/vendor', to: 'vendor' },
