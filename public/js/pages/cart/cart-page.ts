@@ -4,6 +4,8 @@ import { initCart } from '../../components/cart/cart.js';
 import type { CartController } from '../../components/cart/cart.js';
 import { updateCartMarkup } from '../../components/cart/cart-dom.js';
 import { blockUnavailableNavigation } from '../../shared/route-guards.js';
+import { MIN_ORDER_AMOUNT } from '../../shared/min-order.js';
+import { formatMoney } from '../../shared/format-money.js';
 
 function requireElement(parent: Element, selector: string): Element {
   const element = parent.querySelector(selector);
@@ -28,6 +30,9 @@ export function renderCartPage(app: HTMLElement): void {
   const itemsContainer = requireElement(page, '.cart-page__items');
   const count = requireElement(page, '.cart-page__count');
   const totalPrice = requireElement(page, '.cart-page__total-price');
+  const minimum = requireElement(page, '.cart-page__minimum');
+  const remaining = requireElement(page, '.cart-page__remaining');
+  minimum.textContent = formatMoney(MIN_ORDER_AMOUNT);
   const checkoutLink = requireCheckoutLink(page);
   const userId = user && 'userId' in user && typeof user.userId === 'string' ? user.userId : undefined;
   const cart: CartController = initCart(page, userId, renderPageCart);
@@ -42,11 +47,13 @@ export function renderCartPage(app: HTMLElement): void {
     }));
     count.textContent = cart.getDisplayCount();
     totalPrice.textContent = cart.getDisplayTotal();
+    const missing = cart.getMinOrderRemaining();
+    remaining.textContent = missing && !cart.isLoading() ? `Добавьте товаров ещё на ${formatMoney(missing)}` : '';
     const canCheckout = cart.canCheckout();
     const hasItems = cart.hasItems();
     checkoutLink.dataset.empty = String(!hasItems);
     checkoutLink.setAttribute('aria-disabled', String(!canCheckout));
-    checkoutLink.tabIndex = hasItems ? 0 : -1;
+    checkoutLink.tabIndex = canCheckout ? 0 : -1;
   }
 
   checkoutLink.addEventListener('click', (event) => {

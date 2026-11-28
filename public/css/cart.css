@@ -339,6 +339,12 @@
   white-space: nowrap;
 }
 
+.cart-minimum {
+  margin: 0 4px 12px;
+  color: var(--vm-muted);
+  font-size: 14px;
+}
+
 .cart-footer__button {
   display: grid;
   place-items: center;
@@ -465,7 +471,7 @@
   text-decoration: none;
 }
 
-.cart-page__checkout[data-empty="true"] {
+.cart-page__checkout[aria-disabled="true"] {
   border-color: var(--vm-border);
   background: var(--vm-subtle);
   color: var(--vm-muted);

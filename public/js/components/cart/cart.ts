@@ -6,6 +6,7 @@ import { confirmAvailableCount, decorateStockItems, isQuantityRejected, isReques
 import { updateCartMarkup } from './cart-dom.js';
 import { formatMoney } from '../../shared/format-money.js';
 import { rememberedProduct } from '../../data/product-session.js';
+import { MIN_ORDER_AMOUNT, minOrderRemaining } from '../../shared/min-order.js';
 
 const itemCountRules = new Intl.PluralRules('ru-RU');
 const itemCountWords: Record<string, string> = { one: 'товар', few: 'товара', many: 'товаров', other: 'товара' };
@@ -24,6 +25,7 @@ export interface CartController {
   canUseCart(): boolean;
   hasItems(): boolean;
   canCheckout(): boolean;
+  getMinOrderRemaining(): number;
   getErrorMessage(): string;
   reloadCart(): Promise<void>;
   changeProductQuantity(productId: number, change: number): void;
@@ -89,7 +91,11 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
   }
 
   function canCheckout(): boolean {
-    return hasItems() && !isBusy();
+    return hasItems() && getMinOrderRemaining() === 0 && !isBusy();
+  }
+
+  function getMinOrderRemaining(): number {
+    return minOrderRemaining(cart?.priceSum ?? 0);
   }
 
   function isBusy(): boolean {
@@ -135,6 +141,8 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
       canUseCart: Boolean(cart),
       itemCountText: getDisplayCount(),
       totalPrice: getDisplayTotal(),
+      minOrderAmount: formatMoney(MIN_ORDER_AMOUNT),
+      minOrderRemaining: cart && getMinOrderRemaining() ? formatMoney(getMinOrderRemaining()) : '',
     }));
   }
 
@@ -504,6 +512,7 @@ export function initCart(page: Element, userId: string | undefined, onCartChange
     canUseCart: () => Boolean(cart),
     hasItems,
     canCheckout,
+    getMinOrderRemaining,
     getErrorMessage: () => errorMessage,
     reloadCart: loadCart,
     changeProductQuantity,

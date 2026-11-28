@@ -34,7 +34,7 @@ class OfflineManifestPlugin {
 }
 
 export default {
-  entry: { main: [
+  entry: { onlineconf: './public/js/onlineconf/main.ts', main: [
     './public/css/main.css',
     './public/css/cart.css',
     './public/css/checkout.css',
@@ -102,6 +102,7 @@ export default {
             );
           },
         },
+        { from: 'public/onlineconf/index.html', to: 'onlineconf/index.html' },
         { from: 'public/images', to: 'images' },
         { from: 'public/images/favicon.ico', to: 'favicon.ico' },
         { from: 'public/vendor', to: 'vendor' },

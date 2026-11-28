@@ -15,6 +15,8 @@
     <span>Итого</span>
     <strong class="cart-total__price">{{totalPrice}}</strong>
   </div>
+  <p class="cart-minimum">Минимальная сумма заказа — {{minOrderAmount}}</p>
+  {{#if minOrderRemaining}}<p class="cart-minimum" role="status">Добавьте товаров ещё на {{minOrderRemaining}}</p>{{/if}}
   <a class="cart-footer__button" href="/cart" data-page="cart">Перейти в корзину</a>
 </div>
 {{/if}}

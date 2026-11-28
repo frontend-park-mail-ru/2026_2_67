@@ -86,7 +86,7 @@ export function renderCheckoutPage(app: HTMLElement, onEmptyCart: () => void = (
     summaryCount.textContent = itemCountText;
     subtotal.textContent = formattedTotal;
     totalPrice.textContent = formattedTotal;
-    submitButton.disabled = !user?.userId || cart.getItems().length === 0 || !selectedPickupPoint || cart.isUpdating() || isSubmitting || !availabilityConfirmed || previewErrors.size > 0;
+    submitButton.disabled = !user?.userId || !cart.canCheckout() || !selectedPickupPoint || isSubmitting || !availabilityConfirmed || previewErrors.size > 0;
   }
 
   async function checkPreview(coordinates: PickupPoint): Promise<void> {
