@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OnlineConf · VibeMarket</title>
+  <link rel="stylesheet" href="/vendor/inter/fonts.css">
+  <link rel="stylesheet" href="/admin/style.css">
+  <script defer src="/admin/main.js"></script>
+</head>
+<body>
+  <header><nav aria-label="Навигация OnlineConf">
+    <a class="brand" href="/admin"><span class="mark" aria-hidden="true">⌘</span>OnlineConf</a>
+    <a class="nav-link" href="#" hidden>Ключи</a>
+    <a class="market" href="/">VibeMarket</a>
+  </nav></header>
+  <main>
+    <section id="login" class="panel block login" aria-labelledby="login-title">
+      <h1 id="login-title">Вход в OnlineConf</h1>
+      <p>Используйте аккаунт VibeMarket с правами администратора.</p>
+      <div id="login-fields" aria-busy="true"></div>
+    </section>
+    <p id="error" role="alert"></p>
+    <section id="list" hidden>
+      <div class="heading"><h1>Ключи конфигурации</h1><a class="button" href="#new"><span aria-hidden="true">＋</span> Создать ключ</a></div>
+      <div class="panel">
+      <div class="filters">
+        <label>Поиск по названию<input id="search" type="search" placeholder="Название ключа"></label>
+        <label>Тип<select id="filter"><option value="">Все типы</option><option value="config">Config</option><option value="flag">Feature Flag</option></select></label>
+        <label>Scope<select id="scopes"><option value="">Все области</option></select></label>
+      </div>
+      <div class="table"><table><thead><tr><th>Название</th><th>Тип</th><th>Scope</th><th>Значение / статус</th></tr></thead><tbody></tbody></table></div>
+      <p id="empty" hidden>Ключи не найдены.</p>
+      <div class="count" id="count"></div></div>
+    </section>
+    <section id="editor" hidden>
+      <a href="#">← К списку</a><h1 id="title"></h1>
+      <div class="editor-layout">
+      <form novalidate>
+        <section class="panel block"><h2>Сведения о ключе</h2>
+        <label>Название<input id="name" required placeholder="Например, catalog.banner" aria-describedby="name-hint"></label>
+        <small id="name-hint">От 1 до 64 символов: a–z, 0–9, точка, подчёркивание и дефис. В начале и конце — буква или цифра. Две точки подряд запрещены.</small>
+        <label>Описание<textarea id="description"></textarea></label>
+        <div class="pair"><label>Тип<select id="type"><option value="config">Config</option><option value="flag">Feature Flag</option></select></label>
+        <label>Scope<input id="scope" required placeholder="Например, catalog"></label></div></section>
+        <section id="config" class="panel block"><h2>Значение конфигурации</h2><label>Текст или JSON<textarea id="value" spellcheck="false" rows="5"></textarea></label></section>
+        <fieldset id="flag" hidden aria-label="Настройки флага">
+          <section class="panel block"><h2>Состояние флага</h2><label class="check"><input id="enabled" type="checkbox" role="switch"> Флаг включён</label></section>
+          <section class="panel block"><h2>Процент раскатки</h2><div class="rollout"><input id="slider" type="range" min="0" max="100" aria-label="Процент раскатки"><label class="number"><input aria-label="Точный процент раскатки" id="percent" type="number" min="0" max="100" step="1" required value="100"> %</label></div></section>
+          <section class="panel block"><h2>Пользователи</h2>
+          <p id="ids-hint">Введите ID <strong>через запятую</strong> (например, <code>101, 205, 309</code>) или укажите <strong>каждый ID с новой строки</strong>.</p>
+          <div class="pair">
+          <div><label>Принудительно включить<textarea id="include" aria-describedby="ids-hint" autocomplete="off" spellcheck="false"></textarea></label></div>
+          <div><label>Исключить<textarea id="exclude" aria-describedby="ids-hint" autocomplete="off" spellcheck="false"></textarea></label></div></div></section>
+        </fieldset>
+        <div class="actions"><a href="#">Отмена</a><button>Сохранить</button></div>
+      </form>
+      <aside id="details" class="panel" aria-label="Сведения о сохранённом ключе" hidden>
+        <div class="tabs" role="tablist" aria-label="Данные ключа">
+          <button id="info-tab" role="tab" aria-controls="info">Информация</button>
+          <button id="history-tab" role="tab" aria-controls="history">История</button>
+        </div>
+        <section id="info" role="tabpanel" aria-labelledby="info-tab">
+          <dl id="facts"></dl>
+          <form id="evaluate" hidden>
+            <label>ID пользователя<input name="user" inputmode="numeric" required pattern="[1-9][0-9]*"></label>
+            <button>Проверить раскатку на пользователя</button>
+            <output aria-live="polite"></output>
+          </form>
+        </section>
+        <section id="history" role="tabpanel" aria-labelledby="history-tab" hidden></section>
+      </aside>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

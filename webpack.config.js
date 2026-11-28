@@ -40,7 +40,7 @@ export default {
     './public/css/checkout.css',
     './public/css/product.css',
     './public/js/main.js',
-  ], 'service-worker': './public/js/service-worker.ts' },
+  ], 'service-worker': './public/js/service-worker.ts', 'admin/main': './admin/main.ts' },
   module: {
     rules: [
       {
@@ -92,6 +92,8 @@ export default {
     new OfflineManifestPlugin(),
     new CopyWebpackPlugin({
       patterns: [
+        { from: 'admin/index.html', to: 'admin/index.html' },
+        { from: 'admin/style.css', to: 'admin/style.css' },
         {
           from: 'public/index.html',
           to: 'index.html',

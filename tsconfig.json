@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["public/js/**/*.js", "public/js/**/*.ts"]
+  "include": ["public/js/**/*.js", "public/js/**/*.ts", "admin/**/*.ts"]
 }
