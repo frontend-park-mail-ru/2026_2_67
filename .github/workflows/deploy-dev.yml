@@ -24,6 +24,7 @@ jobs:
 
             PROJECT_DIR="${{ secrets.PROJECT_PATH }}" 
             export PORT=80
+            export ONLINECONF_URL=http://127.0.0.1:8081
             LOG_FILE="frontend.log"
             BRANCH="dev"
 
@@ -47,7 +48,7 @@ jobs:
             echo "==> Порт ${PORT} свободен"
 
             echo "==> Запуск frontend..."
-            nohup sudo npm start > "${LOG_FILE}" 2>&1 &
+            nohup sudo env PORT="${PORT}" ONLINECONF_URL="${ONLINECONF_URL}" npm start > "${LOG_FILE}" 2>&1 &
             
             echo "==> Ожидание запуска (5 секунд)..."
             sleep 5
